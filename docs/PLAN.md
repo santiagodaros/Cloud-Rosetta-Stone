@@ -150,8 +150,9 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 | F4-19 | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
 | F4-20 | **Votación del próximo patrón** con reacciones en GitHub Discussions, visible en el sitio | El ranking se lee en build time; la comunidad empuja el roadmap |
 | F4-21 | **Decisión: medir retención** sin romper "sin trackers": Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores RSS, tráfico de GitHub, descargas del dataset) | Decide el mantenedor antes de F4-09; si se adopta, actualizar README y D8 |
+| F4-22 | **Isla interactiva sobre el diagrama ELK**: hover/foco traza rol o conexión; click fija un panel con bindings por nube y gotchas del tramo; recorridos predefinidos (escritura, token, expiración, perímetro); contador de gotchas por rol; equivalentes parciales punteados. En mobile: tap expande el rol inline | Encima del mismo layout de ADR-0003, sin LLM ni dependencia nueva. Requiere schema: `role` opcional por gotcha y `equivalence: full \| partial \| none` por binding (validación cruzada en `content.ts`) |
 
-F4-09 a F4-21 apuntan a **uso recurrente**: que el sitio entre en el trabajo diario (PRs, ADRs,
+F4-09 a F4-22 apuntan a **uso recurrente**: que el sitio entre en el trabajo diario (PRs, ADRs,
 migraciones), en el estudio (repetición espaciada) y tenga novedades reales (changelog). Ritmo sugerido:
 una feature chica por mes junto con el patrón mensual, en lugar de lanzar todo junto.
 
