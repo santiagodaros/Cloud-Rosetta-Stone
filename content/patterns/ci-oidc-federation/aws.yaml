@@ -6,6 +6,10 @@ bindings:
   deploy-identity:
     service: IAM Role
     config: { es: "Trust policy: AssumeRoleWithWebIdentity con aud y sub exactos (StringEquals)", en: "Trust policy: AssumeRoleWithWebIdentity with exact aud and sub (StringEquals)" }
+    from:
+      azure:
+        es: "El rol junta identidad, confianza (trust policy) y permisos; en Azure son tres objetos separados. La trust policy admite StringLike, a diferencia del match exacto de un federated credential."
+        en: "The role bundles identity, trust (trust policy) and permissions; in Azure those are three separate objects. The trust policy allows StringLike, unlike a federated credential's exact match."
   permissions:
     service: { es: "IAM policies adjuntas al rol", en: "IAM policies attached to the role" }
     config: { es: "Policies administradas acotadas; nunca AdministratorAccess", en: "Scoped managed policies; never AdministratorAccess" }
@@ -30,6 +34,7 @@ gotchas:
       - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html
       - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_secure-by-default.html
     verified_at: 2026-10-06
+    roles: [federation, deploy-identity]
     exams: [SCS-C03, SAA-C03]
   - id: environment-changes-the-sub
     severity: iam
@@ -51,6 +56,7 @@ gotchas:
       - https://docs.github.com/en/actions/reference/security/oidc
       - https://repost.aws/knowledge-center/iam-idp-access-error
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [SCS-C03]
   - id: one-oidc-provider-per-account
     severity: operations
@@ -72,6 +78,7 @@ gotchas:
       - https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
       - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_openid_connect_provider
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [SCS-C03]
   - id: thumbprint-not-used
     severity: operations
@@ -92,6 +99,7 @@ gotchas:
       - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
       - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_openid_connect_provider
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [SCS-C03]
   - id: session-duration-long-applies
     severity: reliability
@@ -113,6 +121,7 @@ gotchas:
       - https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
       - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_manage-assume.html
     verified_at: 2026-10-06
+    roles: [deploy-identity]
     exams: [SCS-C03, SAA-C03]
 cost:
   scales_to_zero: 'yes'

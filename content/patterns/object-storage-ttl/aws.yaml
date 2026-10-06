@@ -6,12 +6,24 @@ bindings:
   private-access:
     service: { es: "Gateway VPC Endpoint para S3", en: "S3 Gateway VPC Endpoint" }
     config: { es: "asociado a la route table privada", en: "attached to the private route table" }
+    notes:
+      es: "Es una ruta en la route table, no una IP privada: no llega desde on-premises ni desde otra región (para eso, Interface Endpoint)."
+      en: "It's a route-table entry, not a private IP: it isn't reachable from on-premises or another region (that takes an Interface Endpoint)."
+    equivalence: partial
+    from:
+      azure:
+        es: "No es un Private Endpoint: es una entrada gratis en la route table que no llega desde on-premises ni desde otra región. El equivalente real es un Interface Endpoint, que se cobra por hora."
+        en: "It isn't a Private Endpoint: it's a free route-table entry that isn't reachable from on-premises or another region. The real equivalent is an Interface Endpoint, billed hourly."
   bucket:
     service: S3 bucket
     config: Block Public Access + BucketOwnerEnforced + SSE-KMS
   lifecycle:
     service: S3 Lifecycle rule
     config: Expiration.Days + AbortIncompleteMultipartUpload
+    from:
+      azure:
+        es: "El filtro es solo el prefijo dentro del bucket, y el cobro se corta en la fecha de expiración aunque el borrado físico tarde días."
+        en: "The filter is just the prefix inside the bucket, and billing stops at the expiration date even if physical deletion takes days."
   perimeter:
     service: Bucket policy
     config: { es: "Deny si aws:SourceVpce ≠ endpoint", en: "Deny if aws:SourceVpce ≠ endpoint" }
@@ -33,6 +45,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html
     verified_at: 2026-10-06
+    roles: [lifecycle]
     exams: [SAA-C03]
   - id: versioning-delete-marker
     severity: cost
@@ -51,6 +64,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html
     verified_at: 2026-10-06
+    roles: [lifecycle, bucket]
     exams: [SAA-C03]
   - id: abort-incomplete-multipart
     severity: cost
@@ -67,6 +81,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-abort-incomplete-mpu-lifecycle-config.html
     verified_at: 2026-10-06
+    roles: [lifecycle]
     exams: [SAA-C03]
   - id: secure-defaults-since-2023
     severity: security
@@ -86,6 +101,7 @@ gotchas:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
     verified_at: 2026-10-06
+    roles: [bucket]
     exams: [SAA-C03]
   - id: gateway-endpoint-scope
     severity: networking
@@ -106,6 +122,7 @@ gotchas:
       - https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html
     verified_at: 2026-10-06
+    roles: [private-access]
     exams: [SAA-C03, ANS-C01]
   - id: sourcevpce-lockout
     severity: iam
@@ -126,6 +143,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html
     verified_at: 2026-10-06
+    roles: [perimeter]
     exams: [SAA-C03, SCS-C03]
 cost:
   scales_to_zero: 'yes'

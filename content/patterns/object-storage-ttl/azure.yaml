@@ -3,21 +3,37 @@ bindings:
   identity:
     service: User-assigned Managed Identity
     config: { es: "Storage Blob Data Contributor sobre el contenedor", en: "Storage Blob Data Contributor on the container" }
+    from:
+      aws:
+        es: "El scope mínimo de un role assignment es el contenedor, no un prefijo como en una policy de S3: para acotar por ruta hace falta una condición ABAC."
+        en: "The smallest role assignment scope is the container, not a prefix as in an S3 policy: scoping by path needs an ABAC condition."
   private-access:
     service: Private Endpoint (subresource blob)
     config: { es: "+ zona privatelink.blob.core.windows.net", en: "+ privatelink.blob.core.windows.net zone" }
+    from:
+      aws:
+        es: "Además del endpoint necesitás la zona privatelink.blob.core.windows.net vinculada a la VNet; sin ella se resuelve la IP pública y la request da 403."
+        en: "Besides the endpoint you need the privatelink.blob.core.windows.net zone linked to the VNet; without it the public IP resolves and the request gets a 403."
   bucket:
     service: Storage Account (StorageV2) + container
     config: { es: "Shared Key deshabilitado, acceso público de red deshabilitado", en: "Shared Key disabled, public network access disabled" }
   lifecycle:
     service: Lifecycle management policy
     config: delete_after_days_since_creation_greater_than
+    from:
+      aws:
+        es: "El prefijo del filtro incluye el nombre del contenedor: un \"incoming/\" copiado de S3 no matchea nada y no da error."
+        en: "The filter prefix includes the container name: an \"incoming/\" copied from S3 matches nothing and raises no error."
+      gcp:
+        es: "El prefijo del filtro incluye el nombre del contenedor, y con soft delete activo el borrado no libera capacidad hasta que vence la retención."
+        en: "The filter prefix includes the container name, and with soft delete on, deletion doesn't free capacity until retention expires."
   perimeter:
     service: Storage firewall
     config: public_network_access = Disabled
     notes:
       es: Para un perímetro a nivel organización entre varios PaaS, ver Network Security Perimeter.
       en: For an organization-level perimeter across several PaaS services, see Network Security Perimeter.
+    equivalence: partial
 gotchas:
   - id: lifecycle-not-exact-ttl
     severity: reliability
@@ -37,6 +53,7 @@ gotchas:
       - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-overview
       - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-performance-characteristics
     verified_at: 2026-10-06
+    roles: [lifecycle]
     exams: [AZ-104]
   - id: soft-delete-keeps-capacity
     severity: cost
@@ -56,6 +73,7 @@ gotchas:
       - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-policy-delete
       - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-policy-faq
     verified_at: 2026-10-06
+    roles: [lifecycle, bucket]
     exams: [AZ-104]
   - id: prefix-includes-container
     severity: reliability
@@ -74,6 +92,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-policy-structure
     verified_at: 2026-10-06
+    roles: [lifecycle]
     exams: [AZ-104]
   - id: shared-key-needs-azuread-provider
     severity: iam
@@ -93,6 +112,7 @@ gotchas:
       - https://learn.microsoft.com/azure/storage/common/shared-key-authorization-prevent
       - https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs
     verified_at: 2026-10-06
+    roles: [bucket, identity]
     exams: [AZ-104, SC-500]
   - id: rbac-scope-is-container
     severity: iam
@@ -111,6 +131,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/storage/blobs/storage-auth-abac
     verified_at: 2026-10-06
+    roles: [identity]
     exams: [AZ-104, SC-500]
   - id: private-endpoint-needs-dns
     severity: networking
@@ -132,6 +153,7 @@ gotchas:
       - https://learn.microsoft.com/azure/private-link/private-endpoint-dns
       - https://learn.microsoft.com/azure/private-link/private-endpoint-overview
     verified_at: 2026-10-06
+    roles: [private-access]
     exams: [AZ-700, AZ-104]
 cost:
   scales_to_zero: partial

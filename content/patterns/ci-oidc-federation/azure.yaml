@@ -3,6 +3,13 @@ bindings:
   federation:
     service: { es: "Federated identity credential (workload identity federation)", en: "Federated identity credential (workload identity federation)" }
     config: { es: "Uno por environment: issuer de GitHub + subject exacto + audience api://AzureADTokenExchange", en: "One per environment: GitHub issuer + exact subject + audience api://AzureADTokenExchange" }
+    from:
+      aws:
+        es: "No hay trust policy con comodines: cada environment, rama o tag es una credencial con subject exacto, con un máximo de 20 por identidad."
+        en: "There's no trust policy with wildcards: each environment, branch or tag is a credential with an exact subject, up to 20 per identity."
+      gcp:
+        es: "No hay condición CEL: cada environment, rama o tag es una credencial con subject exacto, con un máximo de 20 por identidad."
+        en: "There's no CEL condition: each environment, branch or tag is a credential with an exact subject, up to 20 per identity."
   deploy-identity:
     service: User-assigned Managed Identity
     config: { es: "Sin secretos ni certificados; el workflow solo conoce client-id y tenant-id", en: "No secrets or certificates; the workflow only knows client-id and tenant-id" }
@@ -30,6 +37,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/entra/workload-id/workload-identity-federation-considerations
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [AZ-400, SC-300]
   - id: fic-propagation-aadsts70021
     severity: reliability
@@ -50,6 +58,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/entra/workload-id/workload-identity-federation-considerations
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [AZ-400]
   - id: fic-concurrent-writes-409
     severity: operations
@@ -69,6 +78,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/entra/workload-id/workload-identity-federation-considerations
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [AZ-400]
   - id: contributor-cannot-assign-roles
     severity: iam
@@ -91,6 +101,7 @@ gotchas:
       - https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-portal
       - https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-examples
     verified_at: 2026-10-06
+    roles: [permissions]
     exams: [AZ-104, SC-500, AZ-400]
   - id: github-sub-format-changed
     severity: iam
@@ -112,6 +123,7 @@ gotchas:
       - https://docs.github.com/en/actions/reference/security/oidc
       - https://learn.microsoft.com/azure/databricks/dev-tools/auth/provider-github
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [AZ-400]
 cost:
   scales_to_zero: 'yes'

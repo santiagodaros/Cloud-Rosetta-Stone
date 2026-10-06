@@ -48,4 +48,8 @@ edges:
   - { from: app, to: identity, label: { es: token, en: token } }
   - { from: app, to: db-access, label: { es: PostgreSQL + TLS, en: PostgreSQL + TLS } }
   - { from: db-access, to: database }
+paths:
+  - { id: request, label: { es: "Request", en: "Request" }, roles: [client, ingress, app] }
+  - { id: token, label: { es: "Token", en: "Token" }, roles: [app, identity] }
+  - { id: query, label: { es: "Consulta a la base", en: "Database query" }, roles: [app, db-access, database] }
 tags: [containers, postgres, zero-trust, passwordless, private-networking]

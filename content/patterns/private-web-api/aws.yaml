@@ -15,6 +15,10 @@ bindings:
   database:
     service: Amazon RDS for PostgreSQL
     config: iam_database_authentication_enabled
+    from:
+      azure:
+        es: "El \"token\" de IAM es una firma generada localmente que dura 15 minutos y solo sirve para abrir la conexión, con un límite de conexiones nuevas por segundo."
+        en: "The IAM \"token\" is a locally generated signature that lasts 15 minutes and only opens the connection, with a new-connections-per-second limit."
 gotchas:
   - id: rds-iam-user-needs-sql
     severity: iam
@@ -34,6 +38,7 @@ gotchas:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.DBAccounts.html
     verified_at: 2026-10-06
+    roles: [database, identity]
     exams: [SAA-C03, SCS-C03]
   - id: rds-iam-connection-rate
     severity: reliability
@@ -52,6 +57,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
     verified_at: 2026-10-06
+    roles: [identity, database]
     exams: [SAA-C03]
   - id: fargate-private-needs-endpoints
     severity: cost
@@ -73,6 +79,7 @@ gotchas:
       - https://repost.aws/knowledge-center/ecs-fargate-tasks-private-subnet
       - https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html
     verified_at: 2026-10-06
+    roles: [app]
     exams: [SAA-C03, ANS-C01]
   - id: internal-alb-certificate
     severity: security
@@ -92,6 +99,7 @@ gotchas:
       - https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
       - https://docs.aws.amazon.com/acm/latest/userguide/domain-ownership-validation.html
     verified_at: 2026-10-06
+    roles: [ingress]
     exams: [SAA-C03, SCS-C03]
   - id: master-password-in-secrets-manager
     severity: security
@@ -110,6 +118,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html
     verified_at: 2026-10-06
+    roles: [database]
     exams: [SAA-C03, SCS-C03]
 cost:
   scales_to_zero: 'no'

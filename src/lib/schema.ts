@@ -106,6 +106,13 @@ export const Edge = z.strictObject({
   label: Localized.optional(),
 });
 
+/** Recorrido predefinido sobre el diagrama (ej. "camino del token"): roles en orden. */
+export const PatternPath = z.strictObject({
+  id: slug,
+  label: Localized,
+  roles: z.array(slug).min(2),
+});
+
 export const Pattern = z.strictObject({
   id: slug,
   status: z.enum(['draft', 'published']),
@@ -115,6 +122,7 @@ export const Pattern = z.strictObject({
   problem: Localized,
   roles: z.array(Role).min(2),
   edges: z.array(Edge).min(1),
+  paths: z.array(PatternPath).default([]),
   tags: z.array(slug).default([]),
 });
 export type Pattern = z.infer<typeof Pattern>;
@@ -129,6 +137,13 @@ export const Binding = z.union([
     /** SKU/tier/config que hace que el patrón funcione (ej. "Premium", "Gateway endpoint"). */
     config: Text.optional(),
     notes: Localized.optional(),
+    /**
+     * `partial`: cumple el rol pero no es un equivalente directo (otro alcance u otro modelo).
+     * Se dibuja punteado y exige `notes` que explique la diferencia.
+     */
+    equivalence: z.enum(['full', 'partial']).default('full'),
+    /** "Venís de <nube>": qué cambia para quien conoce el servicio de esa nube en este rol. */
+    from: z.partialRecord(Provider, Localized).optional(),
   }),
   z.strictObject({ gap: Localized }),
 ]);
@@ -180,6 +195,8 @@ export const Gotcha = z.strictObject({
   body: Localized,
   sources: z.array(SourceUrl).min(1, 'cada gotcha necesita al menos una fuente oficial'),
   verified_at: z.iso.date(),
+  /** Roles del patrón a los que aplica (para el diagrama interactivo). */
+  roles: z.array(slug).default([]),
   /** Códigos de examen donde este conocimiento suma (AZ-104, SAA-C03, ACE...). Deben existir en `content/exams.yaml`. */
   exams: z.array(ExamCode).default([]),
 });

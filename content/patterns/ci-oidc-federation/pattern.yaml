@@ -43,4 +43,8 @@ edges:
   - { from: federation, to: deploy-identity, label: { es: token de corta duración, en: short-lived token } }
   - { from: permissions, to: deploy-identity, label: { es: rol sobre un scope, en: role on a scope } }
   - { from: deploy-identity, to: target, label: { es: terraform apply, en: terraform apply } }
+paths:
+  - { id: token, label: { es: "Token", en: "Token" }, roles: [pipeline, federation, deploy-identity] }
+  - { id: deploy, label: { es: "Despliegue", en: "Deploy" }, roles: [deploy-identity, target] }
+  - { id: permissions, label: { es: "Permisos", en: "Permissions" }, roles: [permissions, deploy-identity] }
 tags: [identity, ci-cd, zero-trust, github-actions]

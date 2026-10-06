@@ -3,6 +3,10 @@ bindings:
   queue:
     service: Azure Service Bus (Standard) — queue
     config: { es: "local_auth_enabled = false (solo Entra ID)", en: "local_auth_enabled = false (Entra ID only)" }
+    from:
+      aws:
+        es: "Peek-lock es el mismo modelo que el visibility timeout (at-least-once). La diferencia grande: red privada exige el tier Premium."
+        en: "Peek-lock is the same model as the visibility timeout (at-least-once). The big difference: private networking requires the Premium tier."
   worker:
     service: Container Apps Job (event-driven)
     config: { es: "Scaler KEDA azure-servicebus con identidad administrada", en: "KEDA azure-servicebus scaler with managed identity" }
@@ -37,6 +41,7 @@ gotchas:
       - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
       - https://azure.microsoft.com/pricing/details/service-bus/
     verified_at: 2026-10-06
+    roles: [queue]
     exams: [AZ-305, AZ-700, SC-500]
   - id: peek-lock-is-at-least-once
     severity: reliability
@@ -55,6 +60,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-message-loss-and-duplicates
     verified_at: 2026-10-06
+    roles: [queue, worker]
     exams: [AI-200, AZ-305]
   - id: dlq-fills-quota
     severity: reliability
@@ -74,6 +80,7 @@ gotchas:
       - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues
       - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-messaging-exceptions-latest
     verified_at: 2026-10-06
+    roles: [dead-letter, queue]
     exams: [AI-200]
   - id: keda-scaler-identity
     severity: iam
@@ -93,6 +100,7 @@ gotchas:
       - https://learn.microsoft.com/azure/container-apps/scale-app
       - https://learn.microsoft.com/azure/container-apps/managed-identity
     verified_at: 2026-10-06
+    roles: [worker, identity]
     exams: [AI-200]
 cost:
   scales_to_zero: partial
