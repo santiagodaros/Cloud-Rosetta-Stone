@@ -128,6 +128,23 @@ OG images funcionando, CI verde.
 | F4-06 | (Opcional, con sponsor) deploy real nightly en cuentas sandbox vía OIDC + destroy | Fuera del sitio; solo CI |
 | F4-07 | (Opcional) "Traducí mi Terraform" con IA, **solo BYOK client-side** y siempre con los gotchas curados al lado | Riesgo de alucinaciones vs. D2 |
 | F4-08 | OCI como cuarta nube | Solo si hay CODEOWNER de OCI |
+| F4-09 | **"Tu nube de origen"**: el usuario elige Azure/AWS/GCP una vez y el contenido se explica desde ahí ("venís de Azure: es como Private Endpoint, pero…") | Preferencia en `localStorage`, sin cuentas (D8). Requiere un campo opcional `from_<nube>` por binding |
+| F4-10 | **"Qué cambió"**: changelog de gotchas creados, corregidos o re-verificados, con diff de texto, + feed RSS/Atom | Build time desde el historial de git y `verified_at`; es la excusa honesta para volver cada semana |
+| F4-11 | **"Copiar como Markdown"** en cada gotcha y comparación (texto + fuente + `verified_at` + link) | Para pegar en PRs, ADRs y tickets; cada pegada es un link entrante (métrica §5) |
+| F4-12 | **"Reportar desactualizado"** en cada gotcha → abre `stale-gotcha.yml` con `location` precargado | Los issue forms aceptan precarga por query param (`?template=…&location=…`); baja la fricción para contribuir |
+| F4-13 | **Checklist de migración**: origen → destino → patrón = lista de gotchas a validar, exportable a Markdown/PDF | Uso directo en preventa y kick-off de migraciones; reutiliza los gotchas, sin contenido nuevo |
+| F4-14 | **Generador de ADR** desde la comparación: decisión, alternativas descartadas, gotchas citados con fuente | Plantilla MADR; 100% client-side |
+| F4-15 | **Mapa de recursos Terraform** `azurerm_*` ↔ `aws_*` ↔ `google_*`, curado, con marca "no es 1:1" | Nuevo tipo de contenido con schema y fuente obligatoria; es la alternativa verificada a F4-07 |
+| F4-16 | **Diccionario de conceptos** (no servicios): jerarquía de recursos (tenant/MG/subscription/RG · org/OU/account · org/folder/project), regiones y zonas, modelo de identidad | Donde más se confunde quien salta de nube; mismo formato hub-and-spoke que capabilities |
+| F4-17 | **Repetición espaciada** (Leitner) + "gotcha del día" sobre las flashcards de F3-02 | Progreso en `localStorage`; genera hábito diario sin login |
+| F4-18 | **Widgets embebibles**: card de gotcha o comparación para blogs y Notion | Snippet `<iframe>`/HTML estático con link de vuelta; respeta CC BY-SA (atribución incluida) |
+| F4-19 | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
+| F4-20 | **Votación del próximo patrón** con reacciones en GitHub Discussions, visible en el sitio | El ranking se lee en build time; la comunidad empuja el roadmap |
+| F4-21 | **Decisión: medir retención** sin romper "sin trackers": Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores RSS, tráfico de GitHub, descargas del dataset) | Decide el mantenedor antes de F4-09; si se adopta, actualizar README y D8 |
+
+F4-09 a F4-21 apuntan a **uso recurrente**: que el sitio entre en el trabajo diario (PRs, ADRs,
+migraciones), en el estudio (repetición espaciada) y tenga novedades reales (changelog). Ritmo sugerido:
+una feature chica por mes junto con el patrón mensual, en lugar de lanzar todo junto.
 
 ---
 
