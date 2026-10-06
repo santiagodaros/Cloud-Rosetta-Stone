@@ -41,6 +41,7 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImageUrl} />
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <link rel="alternate" type="application/atom+xml" title={`${BRAND.name} — ${s.changesTitle}`} href={href(`${lang}/feed.xml`)} />
   </head>
   <body class="min-h-screen antialiased">
     <header class="border-b border-line bg-surface">
@@ -79,8 +80,9 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
     <footer class="mt-16 border-t border-line">
       <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-muted sm:flex-row sm:justify-between">
         <p class="max-w-2xl">{s.disclaimer}</p>
-        <p class="flex gap-4">
-          <a href={href('api/v1/patterns.json')}>{s.openData}</a>
+        <p class="flex flex-wrap gap-4">
+          <a href={href(`${lang}/changes/`)}>{s.changesNav}</a>
+          <a href={href('api/v1/index.json')}>{s.openData}</a>
           <a href={repo}>GitHub</a>
           <span>{s.license}</span>
         </p>
