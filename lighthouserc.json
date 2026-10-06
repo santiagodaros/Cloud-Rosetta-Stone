@@ -13,7 +13,8 @@
         "http://localhost/es/practice/",
         "http://localhost/en/exams/az-104/",
         "http://localhost/es/migrate/",
-        "http://localhost/en/adr/"
+        "http://localhost/en/adr/",
+        "http://localhost/es/decide/managed-postgres/"
       ],
       "numberOfRuns": 1,
       "settings": {

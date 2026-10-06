@@ -7,7 +7,7 @@
  */
 import { PROVIDER_META, t, ui, type Locale } from './i18n.ts';
 import type { PatternBundle } from './content.ts';
-import { PROVIDERS, SEVERITIES, type TerraformMap } from './schema.ts';
+import { PROVIDERS, SEVERITIES, type Provider, type TerraformMap } from './schema.ts';
 import type { ToolImpl, ToolPattern, ToolStrings, ToolTerraform, ToolsData } from './tools-md.ts';
 
 export * from './tools-md.ts';
@@ -15,7 +15,10 @@ export * from './tools-md.ts';
 /** URL absoluta de un patrón (vista "all") con ancla opcional. */
 export type UrlFor = (patternId: string, anchor?: string) => string;
 
-export function toolsData(bundles: PatternBundle[], tfMap: TerraformMap | undefined, lang: Locale, urlFor: UrlFor): ToolsData {
+/** Piso mensual formateado por patrón y nube (ver `pricing.ts`); undefined si no hay precios. */
+export type FloorFor = (patternId: string, provider: Provider) => string | undefined;
+
+export function toolsData(bundles: PatternBundle[], tfMap: TerraformMap | undefined, lang: Locale, urlFor: UrlFor, floorFor: FloorFor = () => undefined): ToolsData {
   const patterns = bundles.map(({ pattern, implementations }): ToolPattern => {
     const clouds: ToolPattern['clouds'] = {};
     for (const p of PROVIDERS) {
@@ -50,6 +53,7 @@ export function toolsData(bundles: PatternBundle[], tfMap: TerraformMap | undefi
           scales_to_zero: impl.cost.scales_to_zero,
           fixed: impl.cost.fixed_cost_drivers.map((d) => t(d, lang)),
           notes: t(impl.cost.notes, lang).replace(/\s+/g, ' ').trim(),
+          ...(floorFor(pattern.id, p) ? { floor: floorFor(pattern.id, p) } : {}),
         },
       };
     }

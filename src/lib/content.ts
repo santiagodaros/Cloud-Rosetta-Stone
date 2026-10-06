@@ -16,10 +16,13 @@ import { z } from 'zod';
 import {
   Capability,
   Concept,
+  Decision,
   type Exam,
   ExamCatalog,
   Implementation,
   Pattern,
+  Prices,
+  Pricing,
   PROVIDERS,
   type Provider,
   TerraformMap,
@@ -49,6 +52,9 @@ export type ContentData = {
   exams: Exam[];
   concepts: Concept[];
   terraformMap?: TerraformMap;
+  pricing?: Pricing;
+  prices?: Prices;
+  decisions?: Decision[];
 };
 
 export type ExamStatus = 'active' | 'retiring' | 'retired';
@@ -154,7 +160,17 @@ export function loadContent(root = process.cwd()): LoadResult {
   const mapFile = join(contentDir, 'terraform-map.yaml');
   const terraformMap = existsSync(mapFile) ? readYaml(mapFile, TerraformMap, root, issues) : undefined;
 
-  const data = { capabilities, patterns, exams: catalog?.exams ?? [], concepts, terraformMap };
+  const pricingFile = join(contentDir, 'pricing.yaml');
+  const pricing = existsSync(pricingFile) ? readYaml(pricingFile, Pricing, root, issues) : undefined;
+  // prices.json lo escribe `pnpm prices:fetch`; YAML es superset de JSON, así que sirve el mismo lector.
+  const pricesFile = join(contentDir, 'prices.json');
+  const prices = existsSync(pricesFile) ? readYaml(pricesFile, Prices, root, issues) : undefined;
+
+  const decisions = listFiles(join(contentDir, 'decisions'), '.yaml')
+    .map((f) => readYaml(join(contentDir, 'decisions', f), Decision, root, issues))
+    .filter((d): d is Decision => d !== undefined);
+
+  const data = { capabilities, patterns, exams: catalog?.exams ?? [], concepts, terraformMap, pricing, prices, decisions };
   issues.push(...crossValidate(data));
   return { ...data, issues };
 }
@@ -198,6 +214,8 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
     const age = daysSince(data.terraformMap.verified_at, today);
     if (age > STALE_AFTER_DAYS) issues.push({ level: 'warning', file: MAP_FILE, message: `verificado hace ${age} días: re-verificar` });
   }
+
+  issues.push(...validatePricing(data, capIds, today));
 
   const EXAMS_FILE = 'content/exams.yaml';
   const exams = new Map<string, Exam>();
@@ -318,4 +336,91 @@ export function loadContentOrThrow(root = process.cwd()): ContentData {
     throw new Error(`Contenido inválido (corré \`pnpm validate\`):\n${errors.map((e) => `  ${e.file}: ${e.message}`).join('\n')}`);
   }
   return data;
+}
+
+/** Días a partir de los cuales un precio de lista se considera viejo (el job corre semanal). */
+export const PRICES_STALE_AFTER_DAYS = 45;
+
+function validatePricing(data: ContentData, capIds: Set<string>, today: Date): Issue[] {
+  const issues: Issue[] = [];
+  const PRICING = 'content/pricing.yaml';
+  const PRICES = 'content/prices.json';
+  const meters = new Map<string, Provider>();
+  if (data.pricing) {
+    const err = (message: string) => issues.push({ level: 'error', file: PRICING, message });
+    for (const m of data.pricing.meters) {
+      if (meters.has(m.id)) err(`meter duplicado: ${m.id}`);
+      meters.set(m.id, m.provider);
+      const sources = PROVIDERS.filter((p) => m[p]);
+      if (sources.some((p) => p !== m.provider)) err(`${m.id}: selector de otra nube (${sources.join(', ')})`);
+      if (!m[m.provider] && !m.manual) err(`${m.id}: necesita selector de API (${m.provider}) o precio manual`);
+      if (m.manual && daysSince(m.manual.verified_at, today) < 0) err(`${m.id}: manual.verified_at está en el futuro`);
+    }
+    const patternIds = new Set(data.patterns.map((b) => b.pattern.id));
+    for (const [pid, floors] of Object.entries(data.pricing.floors)) {
+      if (!patternIds.has(pid)) err(`floors: patrón inexistente "${pid}"`);
+      for (const p of PROVIDERS) {
+        for (const f of floors[p]) {
+          if (!meters.has(f.meter)) err(`floors.${pid}.${p}: meter inexistente "${f.meter}"`);
+          else if (meters.get(f.meter) !== p) err(`floors.${pid}.${p}: "${f.meter}" es un meter de ${meters.get(f.meter)}`);
+        }
+      }
+    }
+    // El piso es la versión con números de fixed_cost_drivers: si hay drivers, tiene que haber piso.
+    for (const b of data.patterns) {
+      if (b.pattern.status !== 'published') continue;
+      const floors = data.pricing.floors[b.pattern.id];
+      if (!floors) {
+        issues.push({ level: 'warning', file: PRICING, message: `${b.pattern.id}: sin piso mensual` });
+        continue;
+      }
+      for (const p of PROVIDERS) {
+        const drivers = b.implementations[p]?.cost.fixed_cost_drivers.length ?? 0;
+        if (drivers > 0 && floors[p].length === 0) err(`floors.${b.pattern.id}.${p}: el patrón declara costo fijo pero el piso está vacío`);
+        if (drivers === 0 && floors[p].length > 0) err(`floors.${b.pattern.id}.${p}: hay piso pero el patrón no declara fixed_cost_drivers`);
+      }
+    }
+  }
+  if (data.prices) {
+    for (const id of meters.keys()) {
+      // Warning y no error: el job de precios (CI) es el que falla si un selector no resuelve.
+      if (!data.prices.prices[id]) issues.push({ level: 'warning', file: PRICES, message: `falta el precio de "${id}": corré pnpm prices:fetch` });
+    }
+    for (const [id, e] of Object.entries(data.prices.prices)) {
+      if (!meters.has(id)) issues.push({ level: 'warning', file: PRICES, message: `precio huérfano "${id}" (no está en pricing.yaml)` });
+      const unit = data.pricing?.meters.find((m) => m.id === id)?.unit;
+      if (unit && unit !== e.unit) issues.push({ level: 'error', file: PRICES, message: `${id}: unidad ${e.unit}, pricing.yaml dice ${unit}` });
+      const age = daysSince(e.as_of, today);
+      if (age > PRICES_STALE_AFTER_DAYS) issues.push({ level: 'warning', file: PRICES, message: `${id}: precio de hace ${age} días` });
+    }
+  } else if (data.pricing) {
+    issues.push({ level: 'error', file: PRICES, message: 'falta content/prices.json: corré pnpm prices:fetch' });
+  }
+
+  const ids = new Set<string>();
+  for (const d of data.decisions ?? []) {
+    const file = `content/decisions/${d.id}.yaml`;
+    const err = (message: string) => issues.push({ level: 'error', file, message });
+    if (ids.has(d.id)) err(`decisión duplicada: ${d.id}`);
+    ids.add(d.id);
+    if (!capIds.has(d.capability)) err(`capability inexistente "${d.capability}"`);
+    const reqs = new Set(d.requirements.map((r) => r.id));
+    if (reqs.size !== d.requirements.length) err('requisitos duplicados');
+    const optIds = new Set<string>();
+    for (const o of d.options) {
+      if (optIds.has(o.id)) err(`opción duplicada: ${o.id}`);
+      optIds.add(o.id);
+      for (const r of reqs) if (!(r in o.meets)) err(`${o.id}: falta evaluar "${r}"`);
+      for (const r of Object.keys(o.meets)) if (!reqs.has(r)) err(`${o.id}: requisito inexistente "${r}"`);
+      for (const f of o.floor) {
+        if (!meters.has(f.meter)) err(`${o.id}: meter inexistente "${f.meter}"`);
+        else if (meters.get(f.meter) !== o.provider) err(`${o.id}: "${f.meter}" es un meter de ${meters.get(f.meter)}`);
+      }
+    }
+    for (const p of PROVIDERS) if (!d.options.some((o) => o.provider === p)) err(`sin opciones de ${p}`);
+    const age = daysSince(d.verified_at, today);
+    if (age < 0) err('verified_at está en el futuro');
+    else if (age > STALE_AFTER_DAYS) issues.push({ level: 'warning', file, message: `verificado hace ${age} días: re-verificar` });
+  }
+  return issues;
 }

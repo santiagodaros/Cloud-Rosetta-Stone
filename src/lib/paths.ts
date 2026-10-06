@@ -20,3 +20,4 @@ export const migrateHref = (lang: Locale, q?: { from?: Provider; to?: Provider; 
   href(`${lang}/migrate/${q ? `?${new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])}` : ''}`);
 export const adrHref = (lang: Locale, q?: { p?: string; cloud?: Provider }) =>
   href(`${lang}/adr/${q ? `?${new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])}` : ''}`);
+export const decideHref = (lang: Locale, id?: string) => href(`${lang}/decide/${id ? `${id}/` : ''}`);

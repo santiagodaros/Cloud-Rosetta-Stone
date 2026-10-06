@@ -1,0 +1,47 @@
+---
+/** Piso mensual de lista (F4-03): total + desglose por meter. */
+import { t, ui, type Locale } from '../lib/i18n.ts';
+import { formatUsd, type Floor } from '../lib/pricing.ts';
+
+interface Props {
+  floor: Floor;
+  lang: Locale;
+}
+const { floor, lang } = Astro.props;
+const s = ui(lang);
+const unitPrice = (n: number) => (n < 0.01 ? n.toPrecision(2) : n.toFixed(n < 1 ? 4 : 2).replace(/0+$/, '').replace(/\.$/, ''));
+---
+
+<div class="mt-3 border-t border-line pt-3" data-price-floor={floor.provider}>
+  <p class="text-xs text-muted">{s.floorTitle}</p>
+  <p class="text-lg font-semibold tabular-nums">
+    {floor.lines.length === 0 ? formatUsd(0, lang) : `${floor.complete ? '' : '≥ '}${formatUsd(floor.total, lang)}`}
+    <span class="text-xs font-normal text-muted">/ {s.priceUnit.month}</span>
+  </p>
+  {
+    floor.lines.length === 0 ? (
+      <p class="text-xs text-muted">{s.floorZero}</p>
+    ) : (
+      <details class="text-xs">
+        <summary class="inline-flex min-h-6 cursor-pointer items-center text-muted">{s.floorHint}</summary>
+        <ul class="mt-2 flex flex-col gap-1">
+          {floor.lines.map((l) => (
+            <li class="flex justify-between gap-3">
+              <span>
+                <a href={l.meter.docs} target="_blank" rel="noopener">{t(l.meter.label, lang)}</a>
+                <span class="text-muted">
+                  {' '}× {l.count}
+                  {l.price && ` · ${unitPrice(l.price.unit_price)} USD/${s.priceUnit[l.price.unit]}`}
+                </span>
+              </span>
+              <span class="shrink-0 tabular-nums">{l.monthly !== undefined ? formatUsd(l.monthly, lang) : '—'}</span>
+            </li>
+          ))}
+        </ul>
+        {floor.asOf && <p class="mt-2 text-muted">{s.floorMeta(floor.asOf, floor.region)}</p>}
+        {floor.manual && <p class="text-muted">{s.floorManual}</p>}
+        {!floor.complete && <p class="text-warn">{s.floorIncomplete}</p>}
+      </details>
+    )
+  }
+</div>

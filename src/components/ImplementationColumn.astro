@@ -9,6 +9,10 @@ import { PROVIDER_META, t, ui, type Locale } from '../lib/i18n.ts';
 import type { Provider } from '../lib/schema.ts';
 import { SEVERITIES } from '../lib/schema.ts';
 import { originNotes } from '../lib/origin.ts';
+import PriceFloor from './PriceFloor.astro';
+import { patternFloor } from '../lib/pricing.ts';
+import { site } from '../lib/site.ts';
+import { decideHref } from '../lib/paths.ts';
 
 interface Props {
   bundle: PatternBundle;
@@ -26,6 +30,8 @@ const { pattern } = bundle;
 const contents = nodeContents(pattern, impl, lang, s.gap);
 const capabilityRoles = pattern.roles.filter((r) => r.kind === 'capability');
 const counts = Object.fromEntries(capabilityRoles.map((r) => [r.id, (impl?.gotchas ?? []).filter((g) => g.roles.includes(r.id)).length]));
+const decisions = (site.decisions ?? []).filter((d) => capabilityRoles.some((r) => r.kind === 'capability' && r.capability === d.capability));
+const floor = patternFloor(pattern.id, provider, site.pricing, site.prices);
 const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.severity) - SEVERITIES.indexOf(b.severity)) : [];
 ---
 
@@ -95,6 +101,14 @@ const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.sev
           <p class="mb-2 text-xs text-muted">{s.noFixedCost}</p>
         )}
         <p class="text-muted">{t(impl.cost.notes, lang)}</p>
+        {floor && <PriceFloor floor={floor} lang={lang} />}
+        {decisions.length > 0 && (
+          <p class="mt-2 flex flex-wrap gap-x-3 text-xs">
+            {decisions.map((d) => (
+              <a class="inline-flex min-h-6 items-center" href={decideHref(lang, d.id)}>⚖ {s.decideThis}: {t(d.title, lang)} →</a>
+            ))}
+          </p>
+        )}
       </div>
     )
   }

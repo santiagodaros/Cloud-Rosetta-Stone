@@ -25,7 +25,8 @@ export type ToolGotcha = {
 export type ToolImpl = {
   bindings: Record<string, ToolBinding>;
   gotchas: ToolGotcha[];
-  cost: { scales_to_zero: 'yes' | 'no' | 'partial'; fixed: string[]; notes: string };
+  /** `floor`: piso mensual de lista ya formateado ("USD 12.41"), si hay precios. */
+  cost: { scales_to_zero: 'yes' | 'no' | 'partial'; fixed: string[]; notes: string; floor?: string };
 };
 
 export type ToolPattern = {
@@ -76,6 +77,8 @@ export type ToolStrings = {
   migCost: string;
   migFixedCost: string;
   migCostChange: string;
+  migFloorChange: string;
+  adrFloor: string;
   adrContext: string;
   adrDrivers: string;
   adrOptions: string;
@@ -173,7 +176,7 @@ export function buildChecklist(data: ToolsData, { from, to, patterns }: Migratio
         cost.push({
           id: id('cost', 'model'),
           text: fill(S.migCostChange, { from: S.scales[src.cost.scales_to_zero], to: S.scales[dst.cost.scales_to_zero] }),
-          detail: dst.cost.notes,
+          detail: src.cost.floor && dst.cost.floor ? `${fill(S.migFloorChange, { from: src.cost.floor, to: dst.cost.floor })} ${dst.cost.notes}` : dst.cost.notes,
         });
         dst.cost.fixed.forEach((d, i) => cost.push({ id: id('cost', `fixed-${i}`), text: fill(S.migFixedCost, { item: d }) }));
       }
@@ -236,6 +239,7 @@ function prosCons(data: ToolsData, p: ToolPattern, impl: ToolImpl, S: ToolString
   if (cost.scales_to_zero === 'yes') out.push(`${S.adrGood}, ${S.adrScalesGood}`);
   else if (cost.scales_to_zero === 'partial') out.push(`${S.adrNeutral}, ${S.adrScalesPartial}`);
   for (const d of cost.fixed) out.push(`${S.adrBad}, ${fill(S.adrFixedBad, { item: d })}`);
+  if (cost.floor) out.push(`${S.adrNeutral}, ${fill(S.adrFloor, { floor: cost.floor })}`);
   for (const r of p.roles) {
     const b = impl.bindings[r.id];
     if (b && 'gap' in b) out.push(`${S.adrBad}, ${fill(S.adrGapBad, { role: r.label, note: oneLine(b.gap) })}`);

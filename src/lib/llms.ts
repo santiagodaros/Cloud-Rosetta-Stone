@@ -5,7 +5,7 @@
 import { BRAND } from './brand.ts';
 import { absolute, datasetIndex, GENERATED_AT } from './dataset.ts';
 import { PROVIDER_META, t } from './i18n.ts';
-import { capabilitiesHref, conceptsHref, examsHref, href, patternHref, terraformMapHref } from './paths.ts';
+import { capabilitiesHref, conceptsHref, decideHref, examsHref, href, patternHref, terraformMapHref } from './paths.ts';
 import { PROVIDERS } from './schema.ts';
 import { publishedPatterns, site } from './site.ts';
 
@@ -35,6 +35,8 @@ export function llmsTxt(siteUrl: URL | undefined): string {
     `- [Exams](${idx.endpoints.exams}): certification catalog with derived status (active, retiring, retired)`,
     `- [Concepts](${idx.endpoints.concepts}): structural concepts (resource hierarchy, network scope, zones, identity, tags) per cloud, with caveats and sources`,
     `- [Terraform map](${idx.endpoints.terraform_map}): azurerm ↔ aws ↔ google resource equivalents, validated against the pinned provider schemas, with notes when not 1:1`,
+    `- [Pricing](${idx.endpoints.pricing}): list prices per meter and the monthly zero-traffic floor per pattern and cloud`,
+    `- [Decisions](${idx.endpoints.decisions}): requirement → SKU matrices (queue, PostgreSQL, hybrid DNS) with sources and monthly floor per option`,
     '',
     '## Optional',
     '',
@@ -42,6 +44,7 @@ export function llmsTxt(siteUrl: URL | undefined): string {
     `- [Dictionary](${absolute(capabilitiesHref('en'), siteUrl)})`,
     `- [Concepts](${absolute(conceptsHref('en'), siteUrl)})`,
     `- [Terraform resource map](${absolute(terraformMapHref('en'), siteUrl)})`,
+    `- [Decision matrix](${absolute(decideHref('en'), siteUrl)})`,
     `- [Gotchas by exam](${absolute(examsHref('en'), siteUrl)})`,
     `- [How content is verified](${absolute(href('en/methodology/'), siteUrl)})`,
     `- [Source code and contribution guide](${BRAND.repo})`,
@@ -101,6 +104,20 @@ export function llmsFullTxt(siteUrl: URL | undefined): string {
     for (const e of site.terraformMap.entries) {
       const res = PROVIDERS.map((p) => `${PROVIDER_META[p].short}: ${e.resources[p].join(', ') || 'none'}`).join(' · ');
       out.push(`- ${t(e.title, 'en')} [${e.match}] — ${res}${e.notes ? `. ${oneLine(t(e.notes, 'en'))}` : ''}`);
+    }
+    out.push('');
+  }
+  for (const d of site.decisions ?? []) {
+    out.push(`## Decision: ${t(d.title, 'en')}`, '');
+    for (const o of d.options) {
+      const meets = d.requirements
+        .map((r) => {
+          const m = o.meets[r.id];
+          const v = typeof m === 'string' ? m : `${m.value} (${oneLine(t(m.note, 'en'))})`;
+          return `${t(r.label, 'en')}: ${v}`;
+        })
+        .join('; ');
+      out.push(`- ${PROVIDER_META[o.provider].short} — ${t(o.name, 'en')}: ${meets}. Sources: ${o.sources.join(' ')}`);
     }
     out.push('');
   }

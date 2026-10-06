@@ -3,7 +3,9 @@
 import { site, publishedPatterns } from '../lib/site.ts';
 import { patternHref } from '../lib/paths.ts';
 import { toolStrings, toolsData } from '../lib/tools.ts';
-import type { Locale } from '../lib/i18n.ts';
+import { formatUsd, patternFloor } from '../lib/pricing.ts';
+import type { Provider } from '../lib/schema.ts';
+import { ui, type Locale } from '../lib/i18n.ts';
 
 interface Props {
   lang: Locale;
@@ -11,7 +13,12 @@ interface Props {
 }
 const { lang, extra = {} } = Astro.props;
 const urlFor = (id: string, anchor?: string) => new URL(`${patternHref(lang, id, 'all')}${anchor ? `#${anchor}` : ''}`, Astro.site).href;
-const payload = { data: toolsData(publishedPatterns, site.terraformMap, lang, urlFor), S: toolStrings(lang), ...extra };
+const floorFor = (id: string, p: Provider) => {
+  const f = patternFloor(id, p, site.pricing, site.prices);
+  // Un piso incompleto no se cita en un ADR ni en un checklist: sería un número engañoso.
+  return f?.complete ? `${formatUsd(f.total, lang)}/${ui(lang).priceUnit.month}` : undefined;
+};
+const payload = { data: toolsData(publishedPatterns, site.terraformMap, lang, urlFor, floorFor), S: toolStrings(lang), ...extra };
 ---
 
 <script is:inline type="application/json" id="tools-data" set:html={JSON.stringify(payload).replace(/</g, '\\u003c')} />

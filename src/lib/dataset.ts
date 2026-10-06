@@ -67,6 +67,8 @@ export function datasetIndex(siteUrl: URL | undefined) {
       exams: site.exams.length,
       concepts: site.concepts.length,
       terraform_map_entries: site.terraformMap?.entries.length ?? 0,
+      price_meters: site.pricing?.meters.length ?? 0,
+      decisions: site.decisions?.length ?? 0,
     },
     endpoints: {
       patterns: api('patterns'),
@@ -75,6 +77,8 @@ export function datasetIndex(siteUrl: URL | undefined) {
       exams: api('exams'),
       concepts: api('concepts'),
       terraform_map: api('terraform-map'),
+      pricing: api('pricing'),
+      decisions: api('decisions'),
       llms_txt: absolute(href('llms.txt'), siteUrl),
       llms_full_txt: absolute(href('llms-full.txt'), siteUrl),
     },

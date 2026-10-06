@@ -1,0 +1,87 @@
+id: hybrid-dns
+capability: dns-forwarding
+title:
+  es: DNS híbrido (on-premises ↔ nube)
+  en: Hybrid DNS (on-premises ↔ cloud)
+intro:
+  es: >-
+    El servicio administrado de cada nube para que on-premises resuelva nombres privados de la nube y viceversa.
+    Las tres resuelven lo mismo; cambia el modelo de costo y quién se ocupa de la alta disponibilidad.
+  en: >-
+    Each cloud's managed service for on-premises to resolve private cloud names and the other way around. All
+    three solve the same problem; what changes is the cost model and who takes care of high availability.
+verified_at: 2026-10-06
+requirements:
+  - id: inbound
+    label: { es: 'On-premises resuelve nombres privados de la nube', en: 'On-premises resolves private cloud names' }
+  - id: outbound
+    label: { es: 'La nube reenvía dominios al DNS on-premises', en: 'The cloud forwards domains to on-premises DNS' }
+  - id: no-fixed-cost
+    label: { es: 'Sin costo fijo por endpoint', en: 'No fixed cost per endpoint' }
+  - id: managed-ha
+    label: { es: 'Alta disponibilidad entre zonas sin configurarla', en: 'Cross-zone high availability without configuring it' }
+options:
+  - id: azure-dns-private-resolver
+    provider: azure
+    name: Azure DNS Private Resolver
+    meets:
+      inbound: 'yes'
+      outbound: 'yes'
+      no-fixed-cost:
+        value: 'no'
+        note: { es: 'Se cobra cada endpoint (inbound y outbound) y cada ruleset.', en: 'Each endpoint (inbound and outbound) and each ruleset is billed.' }
+      managed-ha:
+        value: 'yes'
+        note: { es: 'Zone-redundant automático en regiones con zonas, sin costo extra.', en: 'Automatically zone-redundant in regions with zones, at no extra cost.' }
+    floor:
+      - { meter: azure-dns-resolver-inbound, count: 1 }
+      - { meter: azure-dns-resolver-outbound, count: 1 }
+      - { meter: azure-dns-resolver-ruleset, count: 1 }
+    sources:
+      - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
+      - https://learn.microsoft.com/azure/reliability/reliability-dns-private-resolver
+      - https://azure.microsoft.com/pricing/details/dns/
+  - id: aws-route53-resolver
+    provider: aws
+    name: Route 53 Resolver endpoints
+    meets:
+      inbound: 'yes'
+      outbound: 'yes'
+      no-fixed-cost:
+        value: 'no'
+        note: { es: 'Por hora por cada IP (ENI); cada endpoint necesita al menos 2.', en: 'Hourly per IP (ENI); each endpoint needs at least 2.' }
+      managed-ha:
+        value: partial
+        note: { es: 'Vos elegís las subnets de cada IP; AWS recomienda AZ distintas.', en: 'You pick the subnet of each IP; AWS recommends different AZs.' }
+    floor:
+      - { meter: aws-resolver-eni, count: 4 }
+    sources:
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries-values.html
+      - https://aws.amazon.com/route53/pricing/
+  - id: gcp-cloud-dns
+    provider: gcp
+    name: Cloud DNS (server policy de inbound + zona de forwarding)
+    meets:
+      inbound: 'yes'
+      outbound: 'yes'
+      no-fixed-cost:
+        value: 'yes'
+        note:
+          es: La server policy no tiene cargo; se pagan las zonas (por mes) y las consultas.
+          en: The server policy has no charge; you pay for zones (monthly) and queries.
+      managed-ha:
+        value: partial
+        note:
+          es: >-
+            Hay un entry point (IP interna regional) por subnet. Para HA, on-premises tiene que apuntar a más de
+            uno.
+          en: >-
+            There's one entry point (regional internal IP) per subnet. For HA, on-premises has to point at more
+            than one.
+    floor:
+      - { meter: gcp-dns-managed-zone, count: 1 }
+    sources:
+      - https://docs.cloud.google.com/dns/docs/server-policies-overview
+      - https://docs.cloud.google.com/dns/docs/zones/forwarding-zones
+      - https://cloud.google.com/dns/pricing

@@ -141,6 +141,12 @@ roles, notas "venís de", letra chica del destino con fuente, recursos Terraform
 implementaciones como opciones, pros y contras derivados del contenido y la letra chica citada). Ambas 100%
 client-side, sin contenido nuevo.
 
+**Quinta entrega (✅):** F4-03 precios de lista (24 meters en eastus · us-east-1 · us-east1; Azure Retail
+Prices y AWS Price List por API, GCP por Billing Catalog si hay key y si no manual desde el SKU explorer
+oficial; workflow semanal que abre PR; piso mensual por patrón y nube en la sección de costo, el ADR y el
+checklist) · F4-05 matriz de decisión (`/decide/`: cola, PostgreSQL y DNS híbrido; 16 opciones con
+cumplimiento por requisito, fuente y piso mensual).
+
 **Segunda entrega (✅):** F4-22 isla interactiva del diagrama · F4-09 "Mi nube". Schema nuevo: `roles` por
 gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por patrón. F4-09 usa solo
 `localStorage`: no agrega medición, así que F4-21 sigue abierta como decisión independiente.
@@ -150,14 +156,15 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 1. ~~**F4-22** + **F4-09**~~ (hechos).
 2. ~~**F4-16** + **F4-15**~~ (hechos).
 3. ~~**F4-13** + **F4-14**~~ (hechos).
-4. **F4-03 / F4-05** pricing + matriz de decisión.
+4. ~~**F4-03** + **F4-05**~~ (hechos).
 5. **F4-18** widgets, **F4-19** PWA.
 
 **Decisiones del mantenedor (bloquean su ítem):**
 
 - **F4-21** medir retención: Cloudflare Web Analytics o solo métricas proxy.
-- **F4-03** pricing: Azure Retail Prices y el Price List de AWS son públicos; el Billing Catalog de GCP pide
-  una API key (secret de CI). **F4-04** Infracost también.
+- **F4-03** (hecho con fallback): para precios de GCP por API, crear el secret `GCP_BILLING_API_KEY` (Cloud
+  Billing Catalog API); y habilitar "Allow GitHub Actions to create and approve pull requests" para que el
+  workflow semanal abra el PR. **F4-04** Infracost sigue pidiendo su API key.
 - **F4-20** votación: requiere habilitar GitHub Discussions.
 - **F4-06** (sponsor con cuentas sandbox), **F4-07** (riesgo vs. D2) y **F4-08** (CODEOWNER de OCI) siguen
   condicionados.
@@ -166,9 +173,9 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 |---|---|---|
 | F4-01 ✅ | **MCP server read-only** sobre el dataset: que Claude/Copilot citen gotchas verificados | Sirve el mismo JSON; $0 |
 | F4-02 ✅ | `llms.txt` + dataset versionado (`schema_version`) | |
-| F4-03 | **Pricing job** semanal: Azure Retail Prices API, AWS Price List, GCP Billing Catalog → "piso mensual" por patrón/región | Build time, nunca runtime |
+| F4-03 ✅ | **Pricing job** semanal: Azure Retail Prices API, AWS Price List, GCP Billing Catalog → "piso mensual" por patrón/región | Build time, nunca runtime |
 | F4-04 | Alternativa: Infracost en CI sobre los módulos | Requiere API key gratuita como secret de CI |
-| F4-05 | **Matriz de decisión**: requisitos (private-only, scale-to-zero, FIFO) → SKUs que lo cumplen + piso de costo | |
+| F4-05 ✅ | **Matriz de decisión**: requisitos (private-only, scale-to-zero, FIFO) → SKUs que lo cumplen + piso de costo | |
 | F4-06 | (Opcional, con sponsor) deploy real nightly en cuentas sandbox vía OIDC + destroy | Fuera del sitio; solo CI |
 | F4-07 | (Opcional) "Traducí mi Terraform" con IA, **solo BYOK client-side** y siempre con los gotchas curados al lado | Riesgo de alucinaciones vs. D2 |
 | F4-08 | OCI como cuarta nube | Solo si hay CODEOWNER de OCI |

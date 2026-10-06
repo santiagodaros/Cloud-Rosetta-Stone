@@ -276,3 +276,100 @@ export const TerraformMap = z.strictObject({
   entries: z.array(TerraformMapEntry).min(1),
 });
 export type TerraformMap = z.infer<typeof TerraformMap>;
+
+// ---------------------------------------------------------------------------
+// Precios de lista (content/pricing.yaml + content/prices.json)
+// ---------------------------------------------------------------------------
+
+/** Unidad normalizada de un precio. `hour` se lleva a mes con 730 h. */
+export const PRICE_UNITS = ['hour', 'month', 'gb-month'] as const;
+export const PriceUnit = z.enum(PRICE_UNITS);
+export type PriceUnit = z.infer<typeof PriceUnit>;
+export const HOURS_PER_MONTH = 730;
+
+/** Igualdad exacta sobre campos de la API (Azure Retail Prices / atributos del Price List de AWS). */
+const MatchFields = z.record(z.string().min(1), z.string().min(1));
+
+export const PriceMeter = z.strictObject({
+  id: slug,
+  provider: Provider,
+  label: Localized,
+  unit: PriceUnit,
+  /** Cómo encontrarlo en la API de precios de su nube. Debe resolver a exactamente un precio. */
+  azure: z.strictObject({ service: z.string().min(1), match: MatchFields }).optional(),
+  aws: z.strictObject({ offer: z.string().min(1), match: MatchFields }).optional(),
+  gcp: z.strictObject({ service: z.string().min(1), description: z.string().min(1) }).optional(),
+  /**
+   * Precio cargado a mano desde la página oficial, para cuando la API no está disponible
+   * (el Billing Catalog de GCP pide API key). Si la API responde, gana la API.
+   */
+  manual: z.strictObject({ unit_price: z.number().nonnegative(), verified_at: z.iso.date(), source: SourceUrl }).optional(),
+  /** Página oficial de precios del servicio. */
+  docs: SourceUrl,
+});
+export type PriceMeter = z.infer<typeof PriceMeter>;
+
+/** Un componente del piso mensual: `count` instancias (o GB, si la unidad es gb-month) del meter. */
+export const FloorItem = z.strictObject({ meter: slug, count: z.number().positive() });
+export type FloorItem = z.infer<typeof FloorItem>;
+
+export const Pricing = z.strictObject({
+  /** Una región comparable por nube: los pisos solo se comparan en estas. */
+  regions: z.strictObject({ azure: z.string(), aws: z.string(), gcp: z.string() }),
+  meters: z.array(PriceMeter).min(1),
+  /**
+   * Piso mensual por patrón y nube: lo que se paga con cero tráfico, con la configuración
+   * por default del módulo Terraform. Lista vacía = sin costo fijo.
+   */
+  floors: z.record(slug, z.strictObject({ azure: z.array(FloorItem), aws: z.array(FloorItem), gcp: z.array(FloorItem) })),
+});
+export type Pricing = z.infer<typeof Pricing>;
+
+/** Salida del job de precios (`pnpm prices:fetch`). No se edita a mano. */
+export const PriceEntry = z.strictObject({
+  unit_price: z.number().nonnegative(),
+  unit: PriceUnit,
+  source: z.enum(['api', 'manual']),
+  as_of: z.iso.date(),
+  /** Qué devolvió la API, para auditar (SKU, meter, unidad original). */
+  ref: z.string(),
+});
+export type PriceEntry = z.infer<typeof PriceEntry>;
+
+export const Prices = z.strictObject({
+  generated_at: z.iso.datetime(),
+  currency: z.literal('USD'),
+  prices: z.record(slug, PriceEntry),
+});
+export type Prices = z.infer<typeof Prices>;
+
+// ---------------------------------------------------------------------------
+// Matriz de decisión (content/decisions/*.yaml)
+// ---------------------------------------------------------------------------
+
+export const MEETS = ['yes', 'no', 'partial'] as const;
+
+export const DecisionOption = z.strictObject({
+  id: slug,
+  provider: Provider,
+  /** Servicio + SKU/tier/modo concreto ("Service Bus Premium", "SQS FIFO"). */
+  name: Text,
+  /** Qué cumple. `partial` exige nota. */
+  meets: z.record(slug, z.union([z.enum(['yes', 'no']), z.strictObject({ value: z.enum(MEETS), note: Localized })])),
+  notes: Localized.optional(),
+  /** Piso mensual de esta opción (meters de content/pricing.yaml). Vacío = sin costo fijo. */
+  floor: z.array(FloorItem).default([]),
+  sources: z.array(SourceUrl).min(1),
+});
+export type DecisionOption = z.infer<typeof DecisionOption>;
+
+export const Decision = z.strictObject({
+  id: slug,
+  capability: slug,
+  title: Localized,
+  intro: Localized,
+  requirements: z.array(z.strictObject({ id: slug, label: Localized, hint: Localized.optional() })).min(2),
+  options: z.array(DecisionOption).min(3),
+  verified_at: z.iso.date(),
+});
+export type Decision = z.infer<typeof Decision>;

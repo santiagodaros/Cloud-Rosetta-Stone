@@ -33,6 +33,10 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 - **Qué cambió:** cada gotcha nuevo, corregido o re-verificado, con diff y feed Atom.
 - **Para el día a día:** cada gotcha y cada comparación se copian como Markdown (con fuente y atribución)
   para pegar en un PR o un ADR; "Reportar desactualizado" abre el issue ya completo.
+- **Piso mensual con precios de lista:** cuánto cuesta cada patrón con cero tráfico en cada nube, desglosado
+  por componente, con precios que un job semanal trae de las APIs oficiales de precios.
+- **Matriz de decisión:** marcás requisitos (FIFO, acceso privado, HA entre zonas, escala a cero…) y ves qué
+  SKU de cada nube los cumple, con fuente por celda y su piso mensual.
 - **Checklist de migración:** origen → destino → patrones, y sale la lista de qué validar (mapeo de roles,
   qué cambia viniendo de tu nube, letra chica del destino con fuente, recursos Terraform, costo fijo), con
   tildes guardadas en el navegador y export a Markdown o PDF.

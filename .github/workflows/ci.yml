@@ -148,6 +148,22 @@ jobs:
       - name: Validar recursos y bloques del mapa
         run: pnpm tf:map-check "$RUNNER_TEMP/schema.json"
 
+  prices:
+    name: Precios de lista (selectores contra las APIs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Cada meter de content/pricing.yaml tiene que resolver a exactamente un precio. Sin
+      # GCP_BILLING_API_KEY (los PR de forks no tienen secrets) GCP usa el precio manual.
+      - name: Resolver meters
+        run: pnpm prices:fetch --check --list "Service Bus"
+
   checkov:
     name: Checkov (seguridad IaC)
     runs-on: ubuntu-latest

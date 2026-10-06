@@ -71,6 +71,28 @@ Qué recurso de `azurerm`, `aws` y `google` cumple el mismo papel. Cada entrada 
 `gap`) y `notes` obligatorias si no es 1:1. CI baja los providers con las versiones del mapa, genera
 `terraform providers schema -json` y falla si algún recurso o bloque no existe (`pnpm tf:map-check`).
 
+## Precios de lista (`content/pricing.yaml` → `content/prices.json`)
+
+`meters`: cada uno dice cómo encontrar **un** precio en la API pública de su nube (`azure.match` sobre la
+Retail Prices API, `aws.match` sobre los atributos del Price List bulk, `gcp.description` en el Cloud Billing
+Catalog) y su `unit` (`hour`, `month`, `gb-month`). Un meter de GCP lleva además `manual` (precio tomado del
+SKU explorer oficial, con `verified_at` y `source`) porque la API de GCP pide key.
+
+`floors.<patrón>.{azure,aws,gcp}`: lista de `{ meter, count }` con lo que se paga con cero tráfico y la
+configuración por default del módulo. Lista vacía = sin costo fijo. Tiene que coincidir con
+`cost.fixed_cost_drivers`: hay piso si y solo si hay drivers.
+
+`content/prices.json` lo escribe `pnpm prices:fetch` (workflow semanal `prices.yml`, que abre un PR si algo
+cambió). No se edita a mano: cada entrada guarda de qué SKU o meter salió (`ref`) y si vino de la API o es
+manual (`source`). El job `prices` de CI falla si algún selector no resuelve a exactamente un precio.
+
+## Matriz de decisión (`content/decisions/*.yaml`)
+
+Una por capability: `requirements` (id + label) y `options`, cada una con `provider`, `name` (servicio + SKU o
+modo), `meets.<requisito>` (`yes`, `no` o `{ value: partial, note }`; también se puede dar nota a yes/no),
+`floor` (meters de `pricing.yaml`), `notes` y `sources` (mínimo una). Las tres nubes tienen que tener al
+menos una opción.
+
 ## Validaciones cruzadas (`pnpm validate`)
 
 | Regla | Nivel |
@@ -87,6 +109,10 @@ Qué recurso de `azurerm`, `aws` y `google` cumple el mismo papel. Cada entrada 
 | `equivalence: partial` sin `notes`; `from` de la propia nube | error |
 | Mapa Terraform: prefijo de otra nube, `gap` sin nube vacía o nube vacía sin `gap`, `partial`/`gap` sin notas, capability o concepto inexistente | error |
 | Recurso o bloque del mapa inexistente en el provider pinneado | error (job `terraform-map` de CI) |
+| Precios: meter duplicado, sin selector ni `manual`, selector de otra nube; piso con meter inexistente o de otra nube; piso vacío con `fixed_cost_drivers` (o al revés) | error |
+| Precios: meter sin entrada en `prices.json`, precio de más de 45 días | warning |
+| Selector de precio que no resuelve a exactamente un precio | error (job `prices` de CI) |
+| Decisión: capability inexistente, requisito sin evaluar o inexistente, opción o requisito duplicado, nube sin opciones | error |
 | Falta traducción al inglés | warning |
 
 ## Textos localizados
