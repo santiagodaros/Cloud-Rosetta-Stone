@@ -1,0 +1,84 @@
+---
+import { BRAND } from '../../../lib/brand.ts';
+import Base from '../../../layouts/Base.astro';
+import ExamStatus from '../../../components/ExamStatus.astro';
+import GotchaCard from '../../../components/GotchaCard.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../lib/i18n.ts';
+import { examsHref, patternHref, practiceHref } from '../../../lib/paths.ts';
+import { examStatus } from '../../../lib/content.ts';
+import { examsByCode, gotchasForExam, site, type GotchaEntry } from '../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) => site.exams.map((exam) => ({ params: { lang, code: exam.code.toLowerCase() }, props: { exam } })));
+}
+
+const lang = Astro.params.lang as Locale;
+const { exam } = Astro.props;
+const s = ui(lang);
+const entries = gotchasForExam(exam.code);
+const replacement = exam.replaced_by ? examsByCode.get(exam.replaced_by) : undefined;
+const status = examStatus(exam);
+
+const byPattern = new Map<string, GotchaEntry[]>();
+for (const e of entries) byPattern.set(e.pattern.id, [...(byPattern.get(e.pattern.id) ?? []), e]);
+const newIssue = `${BRAND.repo}/issues/new?title=${encodeURIComponent(`[gotcha] ${exam.code}: `)}`;
+---
+
+<Base lang={lang} title={`${exam.code}: ${s.examsTitle} — ${BRAND.name}`} description={`${exam.name} · ${s.gotchaCount(entries.length)}`} altPath={`exams/${exam.code.toLowerCase()}/`}>
+  <p class="mb-2 text-sm"><a href={examsHref(lang)}>← {s.examsTitle}</a></p>
+  <header class="mb-8 max-w-3xl" data-pagefind-body>
+    <p class="mb-1 text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[exam.provider].color}`}>
+      {PROVIDER_META[exam.provider].name} · {s.level[exam.level]}
+    </p>
+    <h1 class="mb-1 text-2xl font-bold tracking-tight sm:text-3xl"><span class="font-mono">{exam.code}</span> · {exam.name}</h1>
+    <p class="mb-3 text-muted">{exam.certification}</p>
+    <div class="flex flex-wrap items-center gap-3 text-sm">
+      <ExamStatus exam={exam} lang={lang} />
+      {
+        replacement && (
+          <span>
+            {s.examReplacedBy}: <a class="font-mono" href={examsHref(lang, replacement.code)}>{replacement.code}</a>
+          </span>
+        )
+      }
+      <a class="inline-flex min-h-6 items-center" href={exam.url} target="_blank" rel="noopener">↗ {s.examOfficial}</a>
+      {
+        entries.length > 0 && status !== 'retired' && (
+          <a class="inline-flex min-h-6 items-center rounded-lg border border-line bg-surface px-3 py-1 font-medium no-underline hover:bg-surface-2" href={practiceHref(lang, exam.code)}>
+            🃏 {s.practiceThis}
+          </a>
+        )
+      }
+    </div>
+  </header>
+
+  {status === 'retired' && <p class="mb-6 max-w-3xl rounded-lg border border-line bg-surface p-3 text-sm text-muted">{s.examRetiredNote}</p>}
+  {
+    entries.length === 0 ? (
+      status === 'retired' ? null :
+      <p class="text-muted">
+        {s.examEmpty} <a href={newIssue}>{s.examEmptyCta}</a>
+      </p>
+    ) : (
+      <div class="flex max-w-3xl flex-col gap-8">
+        {[...byPattern.values()].map((list) => (
+          <section>
+            <h2 class="mb-3 text-lg font-semibold">
+              <a class="text-fg no-underline hover:underline" href={patternHref(lang, list[0].pattern.id, 'all')}>{t(list[0].pattern.title, lang)}</a>
+            </h2>
+            <div class="flex flex-col gap-3">
+              {list.map((e) => (
+                <div>
+                  <GotchaCard gotcha={e.gotcha} lang={lang} anchor={`${e.pattern.id}-${e.anchor}`} level={3} pattern={e.pattern.id} provider={e.provider} />
+                  <p class="mt-1 text-right text-xs">
+                    <a class="inline-flex min-h-6 items-center" href={`${patternHref(lang, e.pattern.id, 'all')}#${e.anchor}`}>{s.examInPattern} →</a>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    )
+  }
+</Base>

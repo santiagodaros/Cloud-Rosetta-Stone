@@ -1,0 +1,121 @@
+provider: azure
+bindings:
+  inbound:
+    service: { es: "DNS Private Resolver: inbound endpoint", en: "DNS Private Resolver: inbound endpoint" }
+    config: { es: "IP estática en una subnet /28 dedicada y delegada", en: "Static IP in a dedicated, delegated /28 subnet" }
+  private-zone:
+    service: Azure Private DNS
+    config: { es: "Zona vinculada al hub; los spokes la resuelven por una regla al inbound endpoint", en: "Zone linked to the hub; spokes resolve it through a rule to the inbound endpoint" }
+  outbound:
+    service: { es: "DNS Private Resolver: outbound endpoint + forwarding ruleset", en: "DNS Private Resolver: outbound endpoint + forwarding ruleset" }
+    config: { es: "Ruleset linkeado a los spokes (no al hub)", en: "Ruleset linked to the spokes (not the hub)" }
+gotchas:
+  - id: resolver-dedicated-subnets
+    severity: networking
+    title:
+      es: Cada endpoint necesita su propia subnet delegada, y el resolver queda atado a una VNet y una región
+      en: Each endpoint needs its own delegated subnet, and the resolver is tied to one VNet and one region
+    body:
+      es: >-
+        Inbound y outbound no pueden compartir subnet: cada uno va en una dedicada de /28 a /24, delegada a
+        Microsoft.Network/dnsResolvers y sin ningún otro recurso. Hay un solo resolver por VNet, los rulesets solo
+        se linkean a VNets de la misma región y no funciona con subnets IPv6 ni con VNets que tienen virtual
+        network encryption. Reservá las dos /28 en el diseño del hub antes de que el espacio se llene.
+      en: >-
+        Inbound and outbound can't share a subnet: each goes in a dedicated /28 to /24, delegated to
+        Microsoft.Network/dnsResolvers and with no other resources. There's one resolver per VNet, rulesets only
+        link to VNets in the same region, and it doesn't work with IPv6 subnets or VNets with virtual network
+        encryption. Reserve both /28s in the hub design before the address space fills up.
+    sources:
+      - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
+    verified_at: 2026-10-06
+    exams: [AZ-700, AZ-305]
+  - id: private-zone-beats-ruleset
+    severity: networking
+    title:
+      es: En Azure la zona privada vinculada gana sobre el ruleset; en AWS es al revés
+      en: In Azure the linked private zone wins over the ruleset; in AWS it's the other way around
+    body:
+      es: >-
+        Con el DNS de Azure en la VNet, primero se consultan las Private DNS zones vinculadas y recién si no hay
+        match se evalúan las reglas del ruleset (gana el sufijo más largo). En Route 53 Resolver, una regla de
+        forward le gana a una private hosted zone con el mismo nombre. Si migrás un diseño de "reenviar todo
+        corp.example.com a on-prem" con una zona privada del mismo nombre, el comportamiento se invierte.
+      en: >-
+        With Azure DNS on the VNet, linked Private DNS zones are checked first, and only if nothing matches are
+        ruleset rules evaluated (longest suffix wins). In Route 53 Resolver, a forward rule beats a private hosted
+        zone with the same name. If you migrate a "forward all of corp.example.com to on-prem" design with a private
+        zone of the same name, the behavior flips.
+    sources:
+      - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html
+    verified_at: 2026-10-06
+    exams: [AZ-700]
+  - id: ruleset-hub-loop
+    severity: reliability
+    title:
+      es: Linkear el ruleset al hub, con una regla que apunta a su propio inbound endpoint, arma un loop
+      en: Linking the ruleset to the hub, with a rule pointing at its own inbound endpoint, creates a loop
+    body:
+      es: >-
+        El diseño típico manda la zona privada desde los spokes al inbound endpoint del hub. Si ese mismo ruleset
+        también se linkea a la VNet del hub, las consultas del hub vuelven al hub y se arma un loop. Por eso el
+        módulo linkea solo spokes. Si los workloads del hub necesitan resolver corp.example.com, usá un segundo
+        ruleset sin la regla al inbound endpoint.
+      en: >-
+        The typical design sends the private zone from spokes to the hub's inbound endpoint. If that same ruleset
+        is also linked to the hub VNet, the hub's queries come back to the hub and loop. That's why the module links
+        only spokes. If hub workloads need to resolve corp.example.com, use a second ruleset without the rule to the
+        inbound endpoint.
+    sources:
+      - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
+    verified_at: 2026-10-06
+    exams: [AZ-700]
+  - id: wildcard-rule-and-azure-dns-target
+    severity: reliability
+    title:
+      es: Una regla comodín "." tiene que resolver nombres públicos, y 168.63.129.16 no sirve como destino
+      en: A wildcard "." rule must resolve public names, and 168.63.129.16 can't be a target
+    body:
+      es: >-
+        Si reenviás todo con ".", el DNS destino tiene que resolver nombres públicos: varios servicios de Azure
+        dependen de eso. Algunos dominios reservados de Azure se ignoran igual en la regla comodín. Además,
+        168.63.129.16 no se acepta como destino de una regla, y Microsoft desaconseja el comodín en una VNet con un
+        gateway de ExpressRoute porque puede romper la conectividad de gestión.
+      en: >-
+        If you forward everything with ".", the target DNS must resolve public names: several Azure services
+        depend on it. Some reserved Azure domains are ignored by the wildcard rule anyway. Also, 168.63.129.16 isn't
+        accepted as a rule target, and Microsoft advises against the wildcard in a VNet with an ExpressRoute gateway
+        because it can break management connectivity.
+    sources:
+      - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
+      - https://learn.microsoft.com/azure/architecture/networking/architecture/azure-dns-private-resolver
+    verified_at: 2026-10-06
+    exams: [AZ-700, AZ-104]
+  - id: resolver-not-lighthouse-compatible
+    severity: operations
+    title:
+      es: DNS Private Resolver no es compatible con Azure Lighthouse ni con ExpressRoute FastPath
+      en: DNS Private Resolver isn't compatible with Azure Lighthouse or ExpressRoute FastPath
+    body:
+      es: >-
+        Si un partner administra el tenant del cliente con Lighthouse, no puede operar el resolver por esa vía:
+        hace falta acceso directo en el tenant. Tampoco soporta FastPath de ExpressRoute ni linkear rulesets entre
+        tenants. Para un MSP es una decisión de diseño de día uno, no un detalle de implementación.
+      en: >-
+        If a partner manages the customer's tenant with Lighthouse, it can't operate the resolver that way: it needs
+        direct access in the tenant. It also doesn't support ExpressRoute FastPath or linking rulesets across
+        tenants. For an MSP that's a day-one design decision, not an implementation detail.
+    sources:
+      - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
+    verified_at: 2026-10-06
+    exams: [AZ-700, AZ-305]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Inbound endpoint (por hora)", en: "Inbound endpoint (hourly)" }
+    - { es: "Outbound endpoint (por hora)", en: "Outbound endpoint (hourly)" }
+    - { es: "Forwarding ruleset (por mes)", en: "Forwarding ruleset (monthly)" }
+  notes:
+    es: Los endpoints y el ruleset se cobran aunque no haya consultas, más un cargo por consulta. Sigue siendo más barato que mantener dos VMs de DNS con alta disponibilidad.
+    en: Endpoints and the ruleset are billed even with zero queries, plus a per-query charge. Still cheaper than running two highly available DNS VMs.

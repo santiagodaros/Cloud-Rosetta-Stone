@@ -15,6 +15,8 @@ import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import {
   Capability,
+  type Exam,
+  ExamCatalog,
   Implementation,
   Pattern,
   PROVIDERS,
@@ -41,7 +43,16 @@ export type PatternBundle = {
 export type ContentData = {
   capabilities: Capability[];
   patterns: PatternBundle[];
+  exams: Exam[];
 };
+
+export type ExamStatus = 'active' | 'retiring' | 'retired';
+
+/** Estado derivado de `retires_on` (último día en que se puede rendir). */
+export function examStatus(exam: Exam, today = new Date()): ExamStatus {
+  if (!exam.retires_on) return 'active';
+  return daysSince(exam.retires_on, today) > 0 ? 'retired' : 'retiring';
+}
 
 export type LoadResult = ContentData & { issues: Issue[] };
 
@@ -127,7 +138,11 @@ export function loadContent(root = process.cwd()): LoadResult {
     patterns.push(bundle);
   }
 
-  const data = { capabilities, patterns };
+  const examsFile = join(contentDir, 'exams.yaml');
+  const catalog = existsSync(examsFile) ? readYaml(examsFile, ExamCatalog, root, issues) : undefined;
+  if (!existsSync(examsFile)) issues.push({ level: 'error', file: 'content/exams.yaml', message: 'falta el catálogo de exámenes' });
+
+  const data = { capabilities, patterns, exams: catalog?.exams ?? [] };
   issues.push(...crossValidate(data));
   return { ...data, issues };
 }
@@ -139,6 +154,21 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
   for (const c of data.capabilities) {
     if (capIds.has(c.id)) issues.push({ level: 'error', file: `content/capabilities/${c.id}.yaml`, message: `capability duplicada: ${c.id}` });
     capIds.add(c.id);
+  }
+
+  const EXAMS_FILE = 'content/exams.yaml';
+  const exams = new Map<string, Exam>();
+  for (const e of data.exams) {
+    if (exams.has(e.code)) issues.push({ level: 'error', file: EXAMS_FILE, message: `examen duplicado: ${e.code}` });
+    exams.set(e.code, e);
+  }
+  for (const e of data.exams) {
+    if (e.replaced_by && !exams.has(e.replaced_by)) {
+      issues.push({ level: 'error', file: EXAMS_FILE, message: `${e.code}: replaced_by "${e.replaced_by}" no está en el catálogo` });
+    }
+    if (e.replaced_by && !e.retires_on) {
+      issues.push({ level: 'error', file: EXAMS_FILE, message: `${e.code}: tiene replaced_by pero no retires_on` });
+    }
   }
 
   for (const { pattern, implementations, terraform } of data.patterns) {
@@ -186,6 +216,17 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
         if (age < 0) err(file, `gotcha "${g.id}": verified_at está en el futuro`);
         else if (age > STALE_AFTER_DAYS) warn(file, `gotcha "${g.id}" verificado hace ${age} días (> ${STALE_AFTER_DAYS}): re-verificar`);
         if (!g.title.en || !g.body.en) warn(file, `gotcha "${g.id}": falta traducción al inglés`);
+        for (const code of g.exams) {
+          const exam = exams.get(code);
+          if (!exam) {
+            err(file, `gotcha "${g.id}": el examen "${code}" no está en ${EXAMS_FILE}`);
+          } else if (exam.provider !== provider) {
+            err(file, `gotcha "${g.id}": ${code} es un examen de ${exam.provider}, no de ${provider}`);
+          } else if (examStatus(exam, today) === 'retired') {
+            const hint = exam.replaced_by ? ` (reemplazo: ${exam.replaced_by})` : '';
+            warn(file, `gotcha "${g.id}": ${code} se retiró el ${exam.retires_on}; re-etiquetar${hint}`);
+          }
+        }
       }
 
       const tf = terraform[provider];

@@ -1,15 +1,24 @@
 ---
-import type { Gotcha } from '../lib/schema.ts';
+import type { Gotcha, Provider } from '../lib/schema.ts';
+import { gotchaMarkdown, staleIssueUrl } from '../lib/share.ts';
 import { daysSince, STALE_AFTER_DAYS } from '../lib/content.ts';
 import { isFallback, t, ui, type Locale } from '../lib/i18n.ts';
+import { examsHref, patternHref } from '../lib/paths.ts';
 
 interface Props {
   gotcha: Gotcha;
   lang: Locale;
   anchor: string;
+  /** Nivel del título según dónde se usa la tarjeta (el orden de headings importa para a11y). */
+  level?: 3 | 4;
+  pattern: string;
+  provider: Provider;
 }
 
-const { gotcha: g, lang, anchor } = Astro.props;
+const { gotcha: g, lang, anchor, level = 4, pattern, provider } = Astro.props;
+// Link canónico: la vista de las tres nubes, que es la que indexa la búsqueda.
+const ref = { pattern, provider, gotcha: g, url: `${new URL(patternHref(lang, pattern, 'all'), Astro.site).href}#${provider}-${g.id}` };
+const Heading = `h${level}` as 'h3' | 'h4';
 const s = ui(lang);
 const age = daysSince(g.verified_at);
 const freshness = age > STALE_AFTER_DAYS ? 'bad' : age > STALE_AFTER_DAYS - 30 ? 'warn' : 'ok';
@@ -33,7 +42,7 @@ const shortUrl = (u: string) => {
     </span>
     {isFallback(g.title, lang) && <span class="text-muted italic">({s.untranslated})</span>}
   </div>
-  <h4 class="mb-1.5 flex items-start gap-2 text-[15px] leading-snug font-semibold">
+  <Heading class="mb-1.5 flex items-start gap-2 text-[15px] leading-snug font-semibold">
     <a href={`#${anchor}`} class="flex-1 text-fg no-underline hover:underline">{t(g.title, lang)}</a>
     <button
       type="button"
@@ -43,7 +52,7 @@ const shortUrl = (u: string) => {
       data-done={s.linkCopied}
       aria-label={s.copyLink}
       title={s.copyLink}>🔗</button>
-  </h4>
+  </Heading>
   <p class="text-sm leading-relaxed text-muted">{t(g.body, lang)}</p>
   <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs" data-pagefind-ignore>
     <ul class="flex flex-col gap-0.5">
@@ -60,11 +69,25 @@ const shortUrl = (u: string) => {
         <div class="flex flex-wrap items-center gap-1 text-muted">
           <span>{s.exams}:</span>
           {g.exams.map((e) => (
-            <span class="rounded border border-line px-1.5 py-px font-mono text-[11px]">{e}</span>
+            <a href={examsHref(lang, e)} class="inline-flex min-h-6 items-center rounded border border-line px-1.5 font-mono text-[11px] text-muted no-underline! hover:border-accent hover:text-fg">{e}</a>
           ))}
         </div>
       )
     }
+  </div>
+  <div class="mt-2 flex flex-wrap items-center justify-end gap-1 border-t border-line pt-2 text-xs" data-pagefind-ignore>
+    <button
+      type="button"
+      class="gotcha-md inline-flex min-h-6 items-center rounded px-1.5 text-muted hover:bg-surface-2 hover:text-fg"
+      data-md={gotchaMarkdown(ref, lang)}
+      data-done={s.copiedMarkdown}
+      title={s.copyMarkdownHint}>⧉ {s.copyMarkdown}</button>
+    <a
+      class="inline-flex min-h-6 items-center rounded px-1.5 text-muted no-underline! hover:bg-surface-2 hover:text-fg"
+      href={staleIssueUrl(ref)}
+      target="_blank"
+      rel="noopener"
+      title={s.reportStaleHint}>⚑ {s.reportStale}</a>
   </div>
 </article>
 
@@ -80,6 +103,18 @@ const shortUrl = (u: string) => {
         location.hash = btn.dataset.anchor ?? '';
       }
       setTimeout(() => (btn.textContent = '🔗'), 1500);
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('.gotcha-md').forEach((btn) => {
+    const label = btn.textContent;
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.md ?? '');
+        btn.textContent = `✓ ${btn.dataset.done}`;
+        setTimeout(() => (btn.textContent = label), 1500);
+      } catch {
+        /* Sin permiso de portapapeles: no hay nada útil que hacer. */
+      }
     });
   });
 </script>

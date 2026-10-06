@@ -38,7 +38,7 @@ Pregunta para los que trabajan en más de una nube: ¿qué diferencia te costó 
 ### Variante B — datos
 
 ```text
-Leí la documentación oficial de Azure, AWS y Google Cloud para tres patrones de arquitectura comunes y encontré 45 diferencias que no aparecen en ninguna tabla de "servicios equivalentes".
+Leí la documentación oficial de Azure, AWS y Google Cloud para cinco patrones de arquitectura comunes y encontré 74 diferencias que no aparecen en ninguna tabla de "servicios equivalentes".
 
 Tres ejemplos:
 
@@ -72,8 +72,10 @@ Letra Chica compara patrones completos, no servicios sueltos:
 🔹 Web API privada Zero Trust con PostgreSQL sin contraseñas
 🔹 Worker asíncrono que escala a cero, con dead-letter
 🔹 Ingesta privada de objetos con expiración
+🔹 Despliegue desde CI sin secretos (OIDC)
+🔹 DNS privado híbrido entre on-premises y la nube
 
-Para cada uno, en Azure, AWS y GCP: el diagrama, qué implementa cada pieza, el modelo de costo, la letra chica (45 diferencias, cada una con fuente oficial y fecha de verificación) y el Terraform.
+Para cada uno, en Azure, AWS y GCP: el diagrama, qué implementa cada pieza, el modelo de costo, la letra chica (74 diferencias, cada una con fuente oficial y fecha de verificación) y el Terraform.
 
 Ese Terraform no es decorativo: en cada cambio pasa validate, tests sin credenciales, tflint y checkov. Si mañana un provider cambia un atributo, el CI lo marca.
 
@@ -90,10 +92,10 @@ Link en el primer comentario.
 Lancé Letra Chica, una herramienta abierta para traducir arquitecturas entre Azure, AWS y Google Cloud.
 
 Lo que tiene hoy:
-→ 3 patrones completos comparados en las 3 nubes
-→ 45 diferencias documentadas, cada una con fuente oficial y fecha de verificación
-→ 9 módulos de Terraform que pasan validate, tests, tflint y checkov en cada cambio
-→ Diccionario de 26 servicios con los huecos explícitos (sí: a veces no hay equivalente)
+→ 5 patrones completos comparados en las 3 nubes
+→ 74 diferencias documentadas, cada una con fuente oficial y fecha de verificación
+→ 15 módulos de Terraform que pasan validate, tests, tflint y checkov en cada cambio
+→ Diccionario de 28 servicios con los huecos explícitos (sí: a veces no hay equivalente)
 → Español e inglés, sin cuentas, sin costo, datos abiertos en JSON
 
 Lo que no es: un ranking de nubes. Si algo es más simple en una, el texto dice qué se paga en otra.
@@ -130,7 +132,7 @@ Tres cosas que aparecen al mover un worker de SQS a Service Bus (o al revés):
 
 Está comparado lado a lado (también contra Pub/Sub), con las fuentes y el Terraform. Link en el primer comentario.
 
-#Azure #AWS #Messaging #AZ204
+#Azure #AWS #Messaging #AI200
 ```
 
 ### Variante B — checklist
@@ -156,7 +158,7 @@ Cada punto tiene su fuente oficial en el link del primer comentario.
 ```text
 I launched Letra Chica ("the fine print" in Spanish): an open tool that translates architecture patterns across Azure, AWS and Google Cloud.
 
-Not a service-equivalence table. Full patterns, compared side by side: diagram, what implements each role, cost model, and the fine print, meaning 45 documented differences, each with an official source and a verification date. Plus Terraform that passes validate, mock-provider tests, tflint and checkov on every change.
+Not a service-equivalence table. Full patterns, compared side by side: diagram, what implements each role, cost model, and the fine print, meaning 74 documented differences, each with an official source and a verification date. Plus Terraform that passes validate, mock-provider tests, tflint and checkov on every change.
 
 Spanish first, English included, no accounts, open data.
 

@@ -1,0 +1,123 @@
+provider: gcp
+bindings:
+  federation:
+    service: Workload Identity Federation (pool + provider OIDC)
+    config: { es: "attribute_condition sobre repository_owner_id, repository_id y environment", en: "attribute_condition on repository_owner_id, repository_id and environment" }
+  deploy-identity:
+    service: Service Account (impersonada)
+    config: { es: "roles/iam.workloadIdentityUser solo para el principalSet del repositorio", en: "roles/iam.workloadIdentityUser only for the repository's principalSet" }
+  permissions:
+    service: IAM
+    config: { es: "Roles de proyecto acotados; nunca owner/editor", en: "Scoped project roles; never owner/editor" }
+gotchas:
+  - id: attribute-condition-mandatory
+    severity: security
+    title:
+      es: Sin attribute_condition, el issuer compartido de GitHub deja entrar a cualquier repo
+      en: Without attribute_condition, GitHub's shared issuer lets any repo in
+    body:
+      es: >-
+        GitHub usa un solo issuer para todos sus clientes, así que validar el issuer no alcanza. Google exige una
+        condición que restrinja los tokens a tu organización o repositorio. En Terraform el campo figura como
+        opcional y, sin condición, se acepta toda credencial válida del issuer. Además, todo claim que uses en la
+        condición o en un principalSet tiene que estar mapeado en attribute_mapping.
+      en: >-
+        GitHub uses one issuer for all its customers, so validating the issuer isn't enough. Google requires a
+        condition restricting tokens to your organization or repository. In Terraform the field is listed as
+        optional and, without a condition, every valid credential from the issuer is accepted. Also, every claim
+        you use in the condition or in a principalSet must be mapped in attribute_mapping.
+    sources:
+      - https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider
+    verified_at: 2026-10-06
+    exams: [PCSE, PCDOE]
+  - id: use-immutable-ids
+    severity: security
+    title:
+      es: Condicioná sobre los IDs numéricos, no sobre los nombres de org y repo
+      en: Condition on numeric IDs, not on org and repo names
+    body:
+      es: >-
+        Un nombre de organización o de repositorio se puede liberar y volver a registrar: si tu condición dice
+        repository == 'org/repo', el próximo dueño de ese nombre hereda la confianza. Google recomienda atributos
+        inmutables, y GitHub manda repository_id y repository_owner_id en cada token. Es la misma razón por la que
+        GitHub cambió el formato del sub en los repos creados desde el 15/07/2026.
+      en: >-
+        An organization or repository name can be released and registered again: if your condition says
+        repository == 'org/repo', the next owner of that name inherits the trust. Google recommends immutable
+        attributes, and GitHub sends repository_id and repository_owner_id in every token. It's the same reason
+        GitHub changed the sub format for repos created since 2026-07-15.
+    sources:
+      - https://docs.cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation
+      - https://docs.github.com/en/actions/reference/security/oidc
+    verified_at: 2026-10-06
+    exams: [PCSE]
+  - id: pool-soft-delete-30-days
+    severity: operations
+    title:
+      es: Un pool borrado bloquea su ID durante unos 30 días
+      en: A deleted pool locks its ID for about 30 days
+    body:
+      es: >-
+        Pools y providers se borran en modo soft delete y se eliminan de verdad a los ~30 días. Mientras tanto no
+        podés crear otro con el mismo ID, así que un terraform destroy seguido de apply con el mismo pool_id falla.
+        Las salidas son restaurarlo (undelete) e importarlo, o usar otro ID. Para entornos efímeros, generá el ID
+        con un sufijo.
+      en: >-
+        Pools and providers are soft-deleted and only permanently removed after ~30 days. Meanwhile you can't create
+        another with the same ID, so a terraform destroy followed by apply with the same pool_id fails. The way out
+        is to restore it (undelete) and import it, or use a different ID. For ephemeral environments, generate the
+        ID with a suffix.
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool
+      - https://docs.cloud.google.com/iam/docs/manage-workload-identity-pools-providers
+    verified_at: 2026-10-06
+    exams: [ACE, PCDOE]
+  - id: direct-access-vs-impersonation
+    severity: iam
+    title:
+      es: El acceso directo sin service account no funciona con todos los servicios
+      en: Direct access without a service account doesn't work with every service
+    body:
+      es: >-
+        Se puede dar roles directamente al principal federado, sin service account. Pero algunas APIs tienen
+        limitaciones con identidades federadas y para esas hay que impersonar una service account. Este módulo
+        impersona: funciona con todo y deja un solo lugar donde auditar permisos. Para esa ruta Google pide
+        habilitar cuatro APIs: IAM, Resource Manager, Service Account Credentials y Security Token Service.
+      en: >-
+        You can grant roles directly to the federated principal, without a service account. But some APIs have
+        limitations with federated identities, and for those you have to impersonate a service account. This module
+        impersonates: it works with everything and leaves a single place to audit permissions. For that path Google
+        asks you to enable four APIs: IAM, Resource Manager, Service Account Credentials and Security Token Service.
+    sources:
+      - https://docs.cloud.google.com/iam/docs/federated-identity-supported-services
+      - https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines
+    verified_at: 2026-10-06
+    exams: [PCSE, ACE]
+  - id: project-number-and-propagation
+    severity: reliability
+    title:
+      es: Los identificadores usan el número de proyecto, y los permisos tardan minutos en propagarse
+      en: Identifiers use the project number, and permissions take minutes to propagate
+    body:
+      es: >-
+        El principalSet y el workload_identity_provider que le pasás a la action son
+        projects/NÚMERO/locations/global/..., no el ID del proyecto: con el ID el token exchange falla. Además, un
+        cambio de IAM suele aplicarse en 2 minutos pero puede tardar 7 o más, así que un pipeline que se acaba de
+        configurar puede fallar en la primera corrida sin que nada esté mal.
+      en: >-
+        The principalSet and the workload_identity_provider you pass to the action are
+        projects/NUMBER/locations/global/..., not the project ID: with the ID, the token exchange fails. Also, an
+        IAM change usually applies within 2 minutes but can take 7 or more, so a freshly configured pipeline can
+        fail its first run with nothing actually wrong.
+    sources:
+      - https://docs.cloud.google.com/iam/docs/workload-identity-federation
+      - https://docs.cloud.google.com/iam/docs/granting-changing-revoking-access
+    verified_at: 2026-10-06
+    exams: [ACE]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: Workload Identity Federation, service accounts e IAM no tienen costo. Pagás solo los recursos que despliega el pipeline.
+    en: Workload Identity Federation, service accounts and IAM are free. You only pay for what the pipeline deploys.

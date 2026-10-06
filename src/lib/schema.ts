@@ -44,6 +44,8 @@ export const OFFICIAL_SOURCE_HOSTS = [
   'docs.cloud.google.com',
   'registry.terraform.io',
   'developer.hashicorp.com',
+  // El IdP de los patrones de CI/CD: su documentación es la fuente oficial del formato de los tokens.
+  'docs.github.com',
 ] as const;
 
 export const SourceUrl = z.url({ protocol: /^https$/ }).refine(
@@ -136,6 +138,41 @@ export const SEVERITIES = ['security', 'iam', 'networking', 'cost', 'reliability
 export const Severity = z.enum(SEVERITIES);
 export type Severity = z.infer<typeof Severity>;
 
+// ---------------------------------------------------------------------------
+// Exámenes de certificación (content/exams.yaml)
+// ---------------------------------------------------------------------------
+
+export const ExamCode = z.string().regex(/^[A-Z0-9-]+$/, 'código de examen en mayúsculas (AZ-104, SAA-C03, ACE)');
+
+export const EXAM_LEVELS = ['foundational', 'associate', 'professional', 'expert', 'specialty'] as const;
+
+export const Exam = z.strictObject({
+  code: ExamCode,
+  provider: Provider,
+  /** Nombre oficial del examen, tal cual lo publica el proveedor (no se traduce). */
+  name: z.string().min(1),
+  /** Certificación que otorga (o de la que forma parte). */
+  certification: z.string().min(1),
+  level: z.enum(EXAM_LEVELS),
+  /** Página oficial (study guide o página de la certificación). */
+  url: SourceUrl,
+  /**
+   * Último día en que se puede rendir. El estado se deriva de esta fecha
+   * (retirado si ya pasó, "se retira" si es futura), así nadie tiene que acordarse de cambiarlo.
+   */
+  retires_on: z.iso.date().optional(),
+  /** Código del examen que lo reemplaza (debe existir en el catálogo). */
+  replaced_by: ExamCode.optional(),
+});
+export type Exam = z.infer<typeof Exam>;
+
+export const ExamCatalog = z.strictObject({
+  /** Fecha en que se verificó el catálogo completo contra las páginas oficiales. */
+  verified_at: z.iso.date(),
+  exams: z.array(Exam).min(1),
+});
+export type ExamCatalog = z.infer<typeof ExamCatalog>;
+
 export const Gotcha = z.strictObject({
   id: slug,
   severity: Severity,
@@ -143,8 +180,8 @@ export const Gotcha = z.strictObject({
   body: Localized,
   sources: z.array(SourceUrl).min(1, 'cada gotcha necesita al menos una fuente oficial'),
   verified_at: z.iso.date(),
-  /** Códigos de examen donde este conocimiento suma (AZ-104, SAA-C03, ACE...). */
-  exams: z.array(z.string().regex(/^[A-Z0-9-]+$/)).default([]),
+  /** Códigos de examen donde este conocimiento suma (AZ-104, SAA-C03, ACE...). Deben existir en `content/exams.yaml`. */
+  exams: z.array(ExamCode).default([]),
 });
 export type Gotcha = z.infer<typeof Gotcha>;
 

@@ -1,0 +1,74 @@
+---
+import { BRAND } from '../../lib/brand.ts';
+import Base from '../../layouts/Base.astro';
+import { changelog, wordDiff, type ChangeEvent } from '../../lib/changelog.ts';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { href, patternHref } from '../../lib/paths.ts';
+import { publishedPatterns } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const events = changelog();
+const published = new Set(publishedPatterns.map((b) => b.pattern.id));
+
+// Agrupado por commit (cada commit es un cambio con un motivo).
+const groups: { commit: string; date: string; subject: string; events: ChangeEvent[] }[] = [];
+for (const e of events) {
+  const last = groups[groups.length - 1];
+  if (last?.commit === e.commit) last.events.push(e);
+  else groups.push({ commit: e.commit, date: e.date, subject: e.subject, events: [e] });
+}
+const kindClass = { added: 'text-ok', updated: 'text-warn', reverified: 'text-muted', removed: 'text-bad' } as const;
+---
+
+<Base lang={lang} title={`${s.changesTitle} — ${BRAND.name}`} description={s.changesIntro} altPath="changes/">
+  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.changesTitle}</h1>
+  <p class="mb-3 max-w-3xl text-muted">{s.changesIntro}</p>
+  <div class="mb-8"><a class="inline-flex min-h-8 items-center rounded-full border border-line px-3 text-sm no-underline hover:bg-surface-2" href={href(`${lang}/feed.xml`)}>⌁ {s.changesFeed}</a></div>
+
+  {events.length === 0 && <p class="text-muted">{s.changesEmpty}</p>}
+
+  <div class="flex max-w-3xl flex-col gap-8">
+    {
+      groups.map((grp) => (
+        <section>
+          <h2 class="mb-1 text-sm font-semibold">
+            <time datetime={grp.date}>{grp.date}</time>
+            <span class="font-normal text-muted"> · {grp.subject}</span>
+          </h2>
+          <p class="mb-3 text-xs text-muted">
+            {s.changeCommit} <a class="font-mono" href={`${BRAND.repo}/commit/${grp.commit}`}>{grp.commit}</a>
+          </p>
+          <ul class="flex flex-col gap-2">
+            {grp.events.map((e) => (
+              <li id={`${e.commit}-${e.pattern}-${e.provider}-${e.id}`} class="rounded-lg border border-line bg-surface p-3 text-sm">
+                <span class:list={['mr-2 text-xs font-semibold', kindClass[e.kind]]}>{s.changeKind[e.kind]}</span>
+                <span class="mr-1 text-xs font-bold" style={`color: ${PROVIDER_META[e.provider].color}`}>{PROVIDER_META[e.provider].short}</span>
+                {e.kind !== 'removed' && published.has(e.pattern) ? (
+                  <a href={`${patternHref(lang, e.pattern, 'all')}#${e.provider}-${e.id}`}>{t(e.title, lang)}</a>
+                ) : (
+                  <span>{t(e.title, lang)}</span>
+                )}
+                {e.sourcesChanged && <span class="ml-1 text-xs text-muted">({s.changeSources})</span>}
+                {e.kind === 'updated' && e.before && e.after && (
+                  <details class="mt-2">
+                    <summary class="cursor-pointer text-xs text-muted">{s.changeDiff}</summary>
+                    <p class="mt-1 text-xs leading-relaxed">
+                      {wordDiff(t(e.before, lang), t(e.after, lang)).map((part) =>
+                        part.op === 'same' ? <span class="text-muted">{part.text}</span> : part.op === 'del' ? <del class="text-bad">{part.text}</del> : <ins class="text-ok no-underline">{part.text}</ins>,
+                      )}
+                    </p>
+                  </details>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</Base>

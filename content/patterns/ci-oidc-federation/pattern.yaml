@@ -1,0 +1,46 @@
+id: ci-oidc-federation
+status: published
+category: identity
+title:
+  es: Despliegue desde CI sin secretos (federación OIDC)
+  en: Secretless CI/CD deployments (OIDC federation)
+summary:
+  es: Un job de GitHub Actions despliega con Terraform en la nube usando su token OIDC, sin client secrets ni access keys guardados en el repositorio.
+  en: A GitHub Actions job deploys to the cloud with Terraform using its OIDC token, with no client secrets or access keys stored in the repository.
+problem:
+  es: >-
+    El pipeline necesita credenciales para desplegar, y una clave guardada como secret del repo es la credencial
+    de larga duración más expuesta que tiene una organización: no vence sola, se copia entre repos y nadie sabe
+    quién la usó. Los requisitos son: cero secretos estáticos, confianza acotada a un repositorio y a un
+    environment concreto (no a cualquier rama ni a cualquier repo de la organización), permisos mínimos sobre
+    un scope y tokens que duran minutos.
+  en: >-
+    The pipeline needs credentials to deploy, and a key stored as a repo secret is the most exposed long-lived
+    credential an organization has: it never expires on its own, gets copied across repos, and nobody knows who
+    used it. Requirements: zero static secrets, trust scoped to one repository and one specific environment (not
+    any branch or any repo in the org), least-privilege permissions on a scope, and tokens that last minutes.
+roles:
+  - id: pipeline
+    kind: actor
+    label: { es: Job de GitHub Actions, en: GitHub Actions job }
+  - id: federation
+    kind: capability
+    capability: external-identity-federation
+    label: { es: Confianza federada, en: Federated trust }
+  - id: deploy-identity
+    kind: capability
+    capability: workload-identity
+    label: { es: Identidad de despliegue, en: Deployment identity }
+  - id: permissions
+    kind: capability
+    capability: access-control
+    label: { es: Permisos mínimos, en: Least-privilege permissions }
+  - id: target
+    kind: actor
+    label: { es: Recursos destino, en: Target resources }
+edges:
+  - { from: pipeline, to: federation, label: { es: "token OIDC (aud, sub)", en: "OIDC token (aud, sub)" } }
+  - { from: federation, to: deploy-identity, label: { es: token de corta duración, en: short-lived token } }
+  - { from: permissions, to: deploy-identity, label: { es: rol sobre un scope, en: role on a scope } }
+  - { from: deploy-identity, to: target, label: { es: terraform apply, en: terraform apply } }
+tags: [identity, ci-cd, zero-trust, github-actions]

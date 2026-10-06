@@ -1,0 +1,158 @@
+# Catálogo de exámenes de certificación que referencian los gotchas (`exams: [...]`).
+#
+# - Un código que no está acá es un error de validación.
+# - `retires_on` es el último día en que se puede rendir. El estado se deriva solo:
+#   cuando la fecha pasa, el examen figura como retirado y los gotchas que lo
+#   referencian dan un warning para re-etiquetarlos con `replaced_by`.
+# - Las páginas oficiales cambian seguido: verificá contra la fuente antes de editar
+#   y actualizá `verified_at`.
+#
+# Fuentes de retiros:
+#   Microsoft: https://learn.microsoft.com/credentials/support/retired-certification-exams
+#   AWS:       https://aws.amazon.com/certification/ (página de cada certificación)
+#   Google:    https://cloud.google.com/learn/certification
+verified_at: 2026-10-06
+exams:
+  # --- Microsoft -------------------------------------------------------------
+  - code: AZ-104
+    provider: azure
+    name: Microsoft Azure Administrator
+    certification: 'Microsoft Certified: Azure Administrator Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/az-104
+  - code: AZ-305
+    provider: azure
+    name: Designing Microsoft Azure Infrastructure Solutions
+    certification: 'Microsoft Certified: Azure Solutions Architect Expert'
+    level: expert
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/az-305
+  - code: AZ-400
+    provider: azure
+    name: Designing and Implementing Microsoft DevOps Solutions
+    certification: 'Microsoft Certified: DevOps Engineer Expert'
+    level: expert
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/az-400
+  - code: AZ-700
+    provider: azure
+    name: Designing and Implementing Microsoft Azure Networking Solutions
+    certification: 'Microsoft Certified: Azure Network Engineer Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/az-700
+  - code: SC-300
+    provider: azure
+    name: Microsoft Identity and Access Administrator
+    certification: 'Microsoft Certified: Identity and Access Administrator Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/sc-300
+  - code: SC-100
+    provider: azure
+    name: Microsoft Cybersecurity Architect
+    certification: 'Microsoft Certified: Cybersecurity Architect Expert'
+    level: expert
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/sc-100
+  - code: SC-500
+    provider: azure
+    name: Implementing End-to-End Security Controls for Cloud and AI Workloads
+    certification: 'Microsoft Certified: Cloud and AI Security Engineer Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/sc-500
+  - code: AI-200
+    provider: azure
+    name: Developing AI Cloud Solutions on Azure
+    certification: 'Microsoft Certified: Azure AI Cloud Developer Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/ai-200
+  - code: AZ-500
+    provider: azure
+    name: Microsoft Azure Security Technologies
+    certification: 'Microsoft Certified: Azure Security Engineer Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/az-500
+    retires_on: 2026-08-31
+    replaced_by: SC-500
+  - code: AZ-204
+    provider: azure
+    name: Developing Solutions for Microsoft Azure
+    certification: 'Microsoft Certified: Azure Developer Associate'
+    level: associate
+    url: https://learn.microsoft.com/credentials/certifications/resources/study-guides/az-204
+    retires_on: 2026-07-31
+    replaced_by: AI-200
+
+  # --- AWS -------------------------------------------------------------------
+  - code: SAA-C03
+    provider: aws
+    name: AWS Certified Solutions Architect - Associate (SAA-C03)
+    certification: AWS Certified Solutions Architect - Associate
+    level: associate
+    url: https://aws.amazon.com/certification/certified-solutions-architect-associate/
+  - code: DVA-C02
+    provider: aws
+    name: AWS Certified Developer - Associate (DVA-C02)
+    certification: AWS Certified Developer - Associate
+    level: associate
+    url: https://aws.amazon.com/certification/certified-developer-associate/
+    retires_on: 2026-11-30
+    replaced_by: DVA-C03
+  - code: DVA-C03
+    provider: aws
+    name: AWS Certified Developer - Associate (DVA-C03)
+    certification: AWS Certified Developer - Associate
+    level: associate
+    url: https://aws.amazon.com/certification/certified-developer-associate/
+  - code: SCS-C03
+    provider: aws
+    name: AWS Certified Security - Specialty (SCS-C03)
+    certification: AWS Certified Security - Specialty
+    level: specialty
+    url: https://aws.amazon.com/certification/certified-security-specialty/
+  - code: ANS-C01
+    provider: aws
+    name: AWS Certified Advanced Networking - Specialty (ANS-C01)
+    certification: AWS Certified Advanced Networking - Specialty
+    level: specialty
+    url: https://aws.amazon.com/certification/certified-advanced-networking-specialty/
+
+  # --- Google Cloud (Google no usa códigos: estos son los acrónimos de uso común) ---
+  - code: ACE
+    provider: gcp
+    name: Associate Cloud Engineer
+    certification: Google Cloud Certified - Associate Cloud Engineer
+    level: associate
+    url: https://cloud.google.com/learn/certification/cloud-engineer
+  - code: PCA
+    provider: gcp
+    name: Professional Cloud Architect
+    certification: Google Cloud Certified - Professional Cloud Architect
+    level: professional
+    url: https://cloud.google.com/learn/certification/cloud-architect
+  - code: PCD
+    provider: gcp
+    name: Professional Cloud Developer
+    certification: Google Cloud Certified - Professional Cloud Developer
+    level: professional
+    url: https://cloud.google.com/learn/certification/cloud-developer
+  - code: PCSE
+    provider: gcp
+    name: Professional Cloud Security Engineer
+    certification: Google Cloud Certified - Professional Cloud Security Engineer
+    level: professional
+    url: https://cloud.google.com/learn/certification/cloud-security-engineer
+  - code: PCNE
+    provider: gcp
+    name: Professional Cloud Network Engineer
+    certification: Google Cloud Certified - Professional Cloud Network Engineer
+    level: professional
+    url: https://cloud.google.com/learn/certification/cloud-network-engineer
+  - code: PCDOE
+    provider: gcp
+    name: Professional Cloud DevOps Engineer
+    certification: Google Cloud Certified - Professional Cloud DevOps Engineer
+    level: professional
+    url: https://cloud.google.com/learn/certification/cloud-devops-engineer
+  - code: PDE
+    provider: gcp
+    name: Professional Data Engineer
+    certification: Google Cloud Certified - Professional Data Engineer
+    level: professional
+    url: https://cloud.google.com/learn/certification/data-engineer

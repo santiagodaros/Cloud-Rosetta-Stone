@@ -1,0 +1,46 @@
+id: hybrid-private-dns
+status: published
+category: networking
+title:
+  es: DNS privado híbrido (on-premises ↔ nube)
+  en: Hybrid private DNS (on-premises ↔ cloud)
+summary:
+  es: On-premises resuelve las zonas privadas de la nube (Private Endpoints incluidos) y la nube resuelve el dominio corporativo, sin servidores DNS propios en la nube.
+  en: On-premises resolves the cloud's private zones (Private Endpoints included) and the cloud resolves the corporate domain, with no self-managed DNS servers in the cloud.
+problem:
+  es: >-
+    Con un enlace VPN o dedicado ya hay conectividad IP, pero los nombres no cruzan: on-premises no puede consultar
+    el resolver interno de la nube y los workloads de la nube no conocen corp.example.com. La solución clásica son
+    VMs con DNS en la nube, que hay que parchear y escalar. Los requisitos son: reenvío condicional en las dos
+    direcciones, alta disponibilidad, que los spokes resuelvan sin configuración propia y sin loops de reenvío.
+  en: >-
+    With a VPN or dedicated link there's already IP connectivity, but names don't cross: on-premises can't query the
+    cloud's internal resolver and cloud workloads don't know corp.example.com. The classic fix is DNS VMs in the
+    cloud that need patching and scaling. Requirements: conditional forwarding both ways, high availability, spokes
+    resolving with no config of their own, and no forwarding loops.
+roles:
+  - id: onprem-dns
+    kind: actor
+    label: { es: DNS on-premises, en: On-prem DNS }
+  - id: inbound
+    kind: capability
+    capability: dns-forwarding
+    label: { es: Entrada (on-prem → nube), en: Inbound (on-prem → cloud) }
+  - id: private-zone
+    kind: capability
+    capability: private-dns
+    label: { es: Zona privada de la nube, en: Cloud private zone }
+  - id: workloads
+    kind: actor
+    label: { es: Workloads en la nube, en: Cloud workloads }
+  - id: outbound
+    kind: capability
+    capability: dns-forwarding
+    label: { es: Salida (nube → on-prem), en: Outbound (cloud → on-prem) }
+edges:
+  - { from: onprem-dns, to: inbound, label: { es: reenvío condicional, en: conditional forwarder } }
+  - { from: inbound, to: private-zone, label: { es: resuelve, en: resolves } }
+  - { from: workloads, to: private-zone }
+  - { from: workloads, to: outbound, label: { es: corp.example.com, en: corp.example.com } }
+  - { from: outbound, to: onprem-dns, label: { es: reenvía por VPN, en: forwards over VPN } }
+tags: [networking, dns, hybrid, hub-and-spoke]

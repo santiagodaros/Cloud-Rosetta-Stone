@@ -10,4 +10,7 @@ export const capabilitiesHref = (lang: Locale) => href(`${lang}/capabilities/`);
 export const patternHref = (lang: Locale, slug: string, view?: string) =>
   href(`${lang}/patterns/${slug}/${view ? `${view}/` : ''}`);
 
+export const examsHref = (lang: Locale, code?: string) => href(`${lang}/exams/${code ? `${code.toLowerCase()}/` : ''}`);
+export const practiceHref = (lang: Locale, exam?: string) => href(`${lang}/practice/${exam ? `?exam=${exam}` : ''}`);
+
 export const pairView = (a: Provider, b: Provider) => `${a}-vs-${b}`;

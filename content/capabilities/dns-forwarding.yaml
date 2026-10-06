@@ -1,0 +1,24 @@
+id: dns-forwarding
+category: networking
+name:
+  es: Reenvío DNS híbrido (entrada y salida)
+  en: Hybrid DNS forwarding (inbound and outbound)
+description:
+  es: Puntos de entrada para que on-premises consulte las zonas privadas de la nube, y reglas para que la nube reenvíe dominios corporativos a los DNS on-premises.
+  en: Entry points for on-premises to query the cloud's private zones, and rules for the cloud to forward corporate domains to on-premises DNS.
+providers:
+  azure:
+    services:
+      - service: { es: "DNS Private Resolver (inbound/outbound endpoints + forwarding ruleset)", en: "DNS Private Resolver (inbound/outbound endpoints + forwarding ruleset)" }
+        docs: https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
+  aws:
+    services:
+      - service: { es: "Route 53 Resolver (inbound/outbound endpoints + forwarding rules)", en: "Route 53 Resolver (inbound/outbound endpoints + forwarding rules)" }
+        docs: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html
+  gcp:
+    services:
+      - service: { es: "Cloud DNS: inbound server policy + forwarding zones", en: "Cloud DNS: inbound server policy + forwarding zones" }
+        docs: https://docs.cloud.google.com/dns/docs/server-policies-overview
+caveats:
+  - es: "En Azure y AWS la entrada y la salida son endpoints con IPs en subnets que pagás por hora aunque no haya consultas. En GCP no hay endpoints: la inbound policy toma una IP de cada subnet de la VPC y la salida es una forwarding zone, que se cobra como cualquier zona más las consultas."
+    en: "In Azure and AWS, inbound and outbound are endpoints with IPs in subnets that you pay for hourly even with zero queries. In GCP there are no endpoints: the inbound policy takes one IP from each subnet in the VPC and outbound is a forwarding zone, billed like any zone plus queries."

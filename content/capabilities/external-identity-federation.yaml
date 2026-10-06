@@ -1,0 +1,25 @@
+id: external-identity-federation
+category: identity
+name:
+  es: Federación de identidad externa (OIDC)
+  en: External identity federation (OIDC)
+description:
+  es: Confianza en tokens de un IdP externo (GitHub Actions, GitLab, Kubernetes, otra nube) para cambiarlos por credenciales de corta duración, sin secretos guardados.
+  en: Trust in tokens from an external IdP (GitHub Actions, GitLab, Kubernetes, another cloud) to exchange them for short-lived credentials, with no stored secrets.
+providers:
+  azure:
+    services:
+      - service: { es: "Workload identity federation (federated identity credential)", en: "Workload identity federation (federated identity credential)" }
+        docs: https://learn.microsoft.com/entra/workload-id/workload-identity-federation
+        notes: { es: "Sobre una user-assigned managed identity o una app registration.", en: "On a user-assigned managed identity or an app registration." }
+  aws:
+    services:
+      - service: { es: "IAM OIDC identity provider + AssumeRoleWithWebIdentity", en: "IAM OIDC identity provider + AssumeRoleWithWebIdentity" }
+        docs: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
+  gcp:
+    services:
+      - service: Workload Identity Federation (pools y providers)
+        docs: https://docs.cloud.google.com/iam/docs/workload-identity-federation
+caveats:
+  - es: "Cambia dónde vive la regla de confianza. En Azure, cada federated identity credential es un par issuer + subject que tiene que coincidir exacto (sin comodines, máximo 20 por identidad). En AWS es una trust policy con operadores de condición (StringEquals/StringLike). En GCP es una expresión CEL (attribute_condition) más los bindings IAM sobre atributos mapeados."
+    en: "Where the trust rule lives differs. In Azure, each federated identity credential is an issuer + subject pair that must match exactly (no wildcards, up to 20 per identity). In AWS it's a trust policy with condition operators (StringEquals/StringLike). In GCP it's a CEL expression (attribute_condition) plus IAM bindings on mapped attributes."

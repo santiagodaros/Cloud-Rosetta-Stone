@@ -1,0 +1,29 @@
+{
+  "name": "letra-chica-mcp",
+  "version": "0.1.0",
+  "description": "MCP server de solo lectura sobre el dataset de Letra Chica: gotchas multicloud verificados, con fuente oficial y fecha.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "letra-chica-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^6.0.3"
+  }
+}

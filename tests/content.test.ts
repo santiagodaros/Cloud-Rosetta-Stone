@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { crossValidate, daysSince, loadContent, parseRequiredProviders, type ContentData } from '../src/lib/content.ts';
+import { crossValidate, daysSince, examStatus, loadContent, parseRequiredProviders, type ContentData } from '../src/lib/content.ts';
 import { Gotcha, SourceUrl } from '../src/lib/schema.ts';
 import { wrap } from '../src/lib/diagram.ts';
 
@@ -74,6 +74,11 @@ describe('crossValidate', () => {
         terraform: {},
       },
     ],
+    exams: [
+      { code: 'SAA-C03', provider: 'aws', name: 'n', certification: 'c', level: 'associate', url: 'https://aws.amazon.com/x' },
+      { code: 'AZ-104', provider: 'azure', name: 'n', certification: 'c', level: 'associate', url: 'https://learn.microsoft.com/x' },
+      { code: 'OLD-01', provider: 'aws', name: 'n', certification: 'c', level: 'associate', url: 'https://aws.amazon.com/x', retires_on: '2026-01-31', replaced_by: 'SAA-C03' },
+    ],
   });
   const errors = (data: ContentData, today = new Date('2026-10-06')) =>
     crossValidate(data, today).filter((i) => i.level === 'error').map((i) => i.message);
@@ -125,6 +130,43 @@ describe('crossValidate', () => {
     const issues = crossValidate(d, new Date('2026-10-06'));
     expect(issues.some((i) => i.level === 'warning' && /"old" verificado hace/.test(i.message))).toBe(true);
     expect(issues.some((i) => i.level === 'error' && /"future".*futuro/.test(i.message))).toBe(true);
+  });
+
+  it('valida los exámenes de cada gotcha contra el catálogo', () => {
+    const d = minimal();
+    d.patterns[0].implementations.aws = {
+      provider: 'aws',
+      bindings: { q: { service: 'SQS' } },
+      gotchas: [
+        {
+          id: 'g', severity: 'cost', title: { es: 't', en: 't' }, body: { es: 'b', en: 'b' },
+          sources: ['https://docs.aws.amazon.com/x'], verified_at: '2026-10-01', exams: ['SAA-C03', 'NOPE-01', 'AZ-104', 'OLD-01'],
+        },
+      ],
+      cost: { scales_to_zero: 'yes', fixed_cost_drivers: [], notes: { es: 'n' } },
+    };
+    const issues = crossValidate(d, new Date('2026-10-06'));
+    const errs = issues.filter((i) => i.level === 'error').map((i) => i.message).join('\n');
+    expect(errs).toMatch(/"NOPE-01" no está en content\/exams.yaml/);
+    expect(errs).toMatch(/AZ-104 es un examen de azure, no de aws/);
+    expect(errs).not.toMatch(/SAA-C03/);
+    expect(issues.some((i) => i.level === 'warning' && /OLD-01 se retiró.*reemplazo: SAA-C03/.test(i.message))).toBe(true);
+  });
+
+  it('exige que replaced_by exista en el catálogo', () => {
+    const d = minimal();
+    d.exams[2].replaced_by = 'GHOST-01';
+    expect(errors(d)).toEqual(['OLD-01: replaced_by "GHOST-01" no está en el catálogo']);
+  });
+});
+
+describe('examStatus', () => {
+  const e = { code: 'X-01', provider: 'aws' as const, name: 'n', certification: 'c', level: 'associate' as const, url: 'https://aws.amazon.com/x' };
+  it('deriva el estado de retires_on (último día rendible)', () => {
+    const today = new Date('2026-10-06');
+    expect(examStatus(e, today)).toBe('active');
+    expect(examStatus({ ...e, retires_on: '2026-10-06' }, today)).toBe('retiring');
+    expect(examStatus({ ...e, retires_on: '2026-10-05' }, today)).toBe('retired');
   });
 });
 

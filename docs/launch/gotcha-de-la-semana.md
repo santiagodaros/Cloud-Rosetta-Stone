@@ -54,7 +54,7 @@ Si el worker muere después de procesar pero antes de completar el mensaje, el l
 
 ¿Y en las otras nubes? Está comparado lado a lado, con la fuente oficial y el Terraform que lo resuelve. Link en el primer comentario.
 
-#Multicloud #Azure #AZ204 #AZ305
+#Multicloud #Azure #AI200 #AZ305
 ```
 
 Fuentes:
@@ -132,7 +132,7 @@ Un Deny explícito gana sobre cualquier Allow, incluido el del admin. Si la poli
 
 ¿Y en las otras nubes? Está comparado lado a lado, con la fuente oficial y el Terraform que lo resuelve. Link en el primer comentario.
 
-#Multicloud #AWS #SAAC03 #SCSC02
+#Multicloud #AWS #SAAC03 #SCSC03
 ```
 
 Fuentes:

@@ -37,7 +37,7 @@ gotchas:
       - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
       - https://azure.microsoft.com/pricing/details/service-bus/
     verified_at: 2026-10-06
-    exams: [AZ-305, AZ-700, AZ-204]
+    exams: [AZ-305, AZ-700, SC-500]
   - id: peek-lock-is-at-least-once
     severity: reliability
     title:
@@ -55,7 +55,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-message-loss-and-duplicates
     verified_at: 2026-10-06
-    exams: [AZ-204, AZ-305]
+    exams: [AI-200, AZ-305]
   - id: dlq-fills-quota
     severity: reliability
     title:
@@ -74,7 +74,7 @@ gotchas:
       - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues
       - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-messaging-exceptions-latest
     verified_at: 2026-10-06
-    exams: [AZ-204]
+    exams: [AI-200]
   - id: keda-scaler-identity
     severity: iam
     title:
@@ -93,7 +93,7 @@ gotchas:
       - https://learn.microsoft.com/azure/container-apps/scale-app
       - https://learn.microsoft.com/azure/container-apps/managed-identity
     verified_at: 2026-10-06
-    exams: [AZ-204]
+    exams: [AI-200]
 cost:
   scales_to_zero: partial
   fixed_cost_drivers:

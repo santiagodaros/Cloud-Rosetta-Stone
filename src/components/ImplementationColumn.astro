@@ -95,7 +95,7 @@ const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.sev
       {s.gotchas} <span class="font-normal normal-case">· {s.gotchaCount(gotchas.length)}</span>
     </h3>
     <div class="flex flex-col gap-3">
-      {gotchas.map((g) => <GotchaCard gotcha={g} lang={lang} anchor={`${provider}-${g.id}`} />)}
+      {gotchas.map((g) => <GotchaCard gotcha={g} lang={lang} anchor={`${provider}-${g.id}`} pattern={pattern.id} provider={provider} />)}
     </div>
   </div>
 

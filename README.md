@@ -23,17 +23,25 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
   rol, modelo de costo, "letra chica" y Terraform.
 - **Gotchas verificables:** severidad, fuente oficial obligatoria, `verified_at` y examen de certificación
   donde suma (AZ-104, AZ-700, SAA-C03, ACE…).
+- **Por examen:** cada certificación tiene su página con los gotchas que aplican y su estado (vigente, se
+  retira, retirado → reemplazo), derivado de la fecha de retiro oficial.
+- **Práctica:** modo a ciegas ("¿de qué nube es este gotcha?", con los nombres de producto tapados) y
+  flashcards por examen con repetición espaciada (sin cuentas), más un gotcha del día.
+- **Qué cambió:** cada gotcha nuevo, corregido o re-verificado, con diff y feed Atom.
+- **Para el día a día:** cada gotcha y cada comparación se copian como Markdown (con fuente y atribución)
+  para pegar en un PR o un ADR; "Reportar desactualizado" abre el issue ya completo.
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
 - **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").
-- **Datos abiertos:** `/api/v1/patterns.json` y `/api/v1/capabilities.json`.
+- **Datos abiertos y para asistentes:** dataset JSON versionado (`/api/v1/`), `llms.txt` y un MCP server de
+  solo lectura para que Claude o Copilot citen gotchas con su fuente. Ver [docs/DATASET.md](docs/DATASET.md).
 - **Para compartir:** cada comparación tiene su imagen OG y cada gotcha un deep link.
 - **Búsqueda** estática (Pagefind) en español e inglés.
 - **Español primero**, inglés incluido. Sin cuentas, sin credenciales, sin trackers, $0.
 
 ## Estado
 
-Fase 1 cerrada: 3 patrones en las 3 nubes, 45 gotchas con fuente oficial, 26 capabilities. Ver el
+Fase 3 en curso: 5 patrones en las 3 nubes, 74 gotchas con fuente oficial, 28 capabilities, modo práctica y páginas por examen. Ver el
 [plan](docs/PLAN.md) y el [análisis que lo originó](docs/ANALISIS-END-TO-END.md).
 
 | Patrón | Azure | AWS | GCP |

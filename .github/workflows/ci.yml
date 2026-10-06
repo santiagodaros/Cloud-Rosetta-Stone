@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # el changelog ("Qué cambió") se calcula desde el historial de git
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -38,12 +40,20 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: MCP server (build + prueba de humo contra el dataset recién generado)
+        working-directory: mcp
+        run: |
+          pnpm install --frozen-lockfile --ignore-workspace
+          pnpm build
+          pnpm smoke
 
   lighthouse:
     name: Lighthouse (performance, a11y, SEO)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
