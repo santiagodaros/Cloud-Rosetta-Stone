@@ -69,7 +69,7 @@ const newIssue = `${BRAND.repo}/issues/new?title=${encodeURIComponent(`[gotcha] 
             <div class="flex flex-col gap-3">
               {list.map((e) => (
                 <div>
-                  <GotchaCard gotcha={e.gotcha} lang={lang} anchor={`${e.pattern.id}-${e.anchor}`} level={3} />
+                  <GotchaCard gotcha={e.gotcha} lang={lang} anchor={`${e.pattern.id}-${e.anchor}`} level={3} pattern={e.pattern.id} provider={e.provider} />
                   <p class="mt-1 text-right text-xs">
                     <a class="inline-flex min-h-6 items-center" href={`${patternHref(lang, e.pattern.id, 'all')}#${e.anchor}`}>{s.examInPattern} →</a>
                   </p>

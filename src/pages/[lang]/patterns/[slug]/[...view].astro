@@ -7,6 +7,7 @@ import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../../lib/i18n
 import { patternHref } from '../../../../lib/paths.ts';
 import { PROVIDERS } from '../../../../lib/schema.ts';
 import { DEFAULT_VIEW, publishedPatterns, VIEWS } from '../../../../lib/site.ts';
+import { comparisonMarkdown } from '../../../../lib/share.ts';
 
 export function getStaticPaths() {
   return LOCALES.flatMap((lang) =>
@@ -27,6 +28,7 @@ const view = VIEWS.find((v) => v.id === viewId)!;
 const layout = await layoutPattern(pattern, bundle.implementations, lang, s.gap);
 const title = t(pattern.title, lang);
 const providersLabel = view.providers.map((p) => PROVIDER_META[p].short).join(` ${s.vs} `);
+const comparisonMd = comparisonMarkdown(bundle, view.providers, lang, new URL(patternHref(lang, pattern.id, viewId), Astro.site).href);
 const gridCols = view.providers.length === 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2';
 
 // Un botón por par en orden canónico (azure, aws, gcp); si la vista actual es el
@@ -75,6 +77,13 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
           </a>
         )
       }
+      <button
+        type="button"
+        id="copy-comparison"
+        class="ml-auto inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs text-muted hover:bg-surface-2 hover:text-fg"
+        data-md={comparisonMd}
+        data-done={s.copiedMarkdown}
+        data-pagefind-ignore>⧉ {s.copyComparison}</button>
     </nav>
 
     <div class:list={['grid grid-cols-1 gap-8', gridCols]}>
@@ -82,3 +91,19 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
     </div>
   </article>
 </Base>
+
+<script>
+  const btn = document.getElementById('copy-comparison') as HTMLButtonElement | null;
+  if (btn) {
+    const label = btn.textContent;
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.md ?? '');
+        btn.textContent = `✓ ${btn.dataset.done}`;
+        setTimeout(() => (btn.textContent = label), 1500);
+      } catch {
+        /* Sin permiso de portapapeles. */
+      }
+    });
+  }
+</script>

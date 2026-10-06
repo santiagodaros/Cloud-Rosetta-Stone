@@ -1,8 +1,9 @@
 ---
-import type { Gotcha } from '../lib/schema.ts';
+import type { Gotcha, Provider } from '../lib/schema.ts';
+import { gotchaMarkdown, staleIssueUrl } from '../lib/share.ts';
 import { daysSince, STALE_AFTER_DAYS } from '../lib/content.ts';
 import { isFallback, t, ui, type Locale } from '../lib/i18n.ts';
-import { examsHref } from '../lib/paths.ts';
+import { examsHref, patternHref } from '../lib/paths.ts';
 
 interface Props {
   gotcha: Gotcha;
@@ -10,9 +11,13 @@ interface Props {
   anchor: string;
   /** Nivel del título según dónde se usa la tarjeta (el orden de headings importa para a11y). */
   level?: 3 | 4;
+  pattern: string;
+  provider: Provider;
 }
 
-const { gotcha: g, lang, anchor, level = 4 } = Astro.props;
+const { gotcha: g, lang, anchor, level = 4, pattern, provider } = Astro.props;
+// Link canónico: la vista de las tres nubes, que es la que indexa la búsqueda.
+const ref = { pattern, provider, gotcha: g, url: `${new URL(patternHref(lang, pattern, 'all'), Astro.site).href}#${provider}-${g.id}` };
 const Heading = `h${level}` as 'h3' | 'h4';
 const s = ui(lang);
 const age = daysSince(g.verified_at);
@@ -70,6 +75,20 @@ const shortUrl = (u: string) => {
       )
     }
   </div>
+  <div class="mt-2 flex flex-wrap items-center justify-end gap-1 border-t border-line pt-2 text-xs" data-pagefind-ignore>
+    <button
+      type="button"
+      class="gotcha-md inline-flex min-h-6 items-center rounded px-1.5 text-muted hover:bg-surface-2 hover:text-fg"
+      data-md={gotchaMarkdown(ref, lang)}
+      data-done={s.copiedMarkdown}
+      title={s.copyMarkdownHint}>⧉ {s.copyMarkdown}</button>
+    <a
+      class="inline-flex min-h-6 items-center rounded px-1.5 text-muted no-underline! hover:bg-surface-2 hover:text-fg"
+      href={staleIssueUrl(ref)}
+      target="_blank"
+      rel="noopener"
+      title={s.reportStaleHint}>⚑ {s.reportStale}</a>
+  </div>
 </article>
 
 <script>
@@ -84,6 +103,18 @@ const shortUrl = (u: string) => {
         location.hash = btn.dataset.anchor ?? '';
       }
       setTimeout(() => (btn.textContent = '🔗'), 1500);
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('.gotcha-md').forEach((btn) => {
+    const label = btn.textContent;
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.md ?? '');
+        btn.textContent = `✓ ${btn.dataset.done}`;
+        setTimeout(() => (btn.textContent = label), 1500);
+      } catch {
+        /* Sin permiso de portapapeles: no hay nada útil que hacer. */
+      }
     });
   });
 </script>
