@@ -30,31 +30,31 @@ meters:
     provider: azure
     label: { es: 'Private Endpoint', en: 'Private Endpoint' }
     unit: hour
-    azure: { service: Virtual Network, match: { productName: Virtual Network Private Link, meterName: Standard Private Endpoint } }
+    azure: { service: Virtual Network, region: Global, match: { productName: Virtual Network Private Link, meterName: Standard Private Endpoint } }
     docs: https://azure.microsoft.com/pricing/details/private-link/
   - id: azure-private-dns-zone
     provider: azure
     label: { es: 'Zona DNS privada', en: 'Private DNS zone' }
     unit: month
-    azure: { service: Azure DNS, match: { productName: Azure DNS, meterName: Private Zone } }
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private, meterName: Private Zone } }
     docs: https://azure.microsoft.com/pricing/details/dns/
   - id: azure-dns-resolver-inbound
     provider: azure
     label: { es: 'DNS Private Resolver — inbound endpoint', en: 'DNS Private Resolver — inbound endpoint' }
-    unit: hour
-    azure: { service: Azure DNS, match: { productName: Azure DNS Private Resolver, meterName: Inbound Endpoint } }
+    unit: month
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private Resolver, meterName: Private Resolver Inbound Endpoint } }
     docs: https://azure.microsoft.com/pricing/details/dns/
   - id: azure-dns-resolver-outbound
     provider: azure
     label: { es: 'DNS Private Resolver — outbound endpoint', en: 'DNS Private Resolver — outbound endpoint' }
-    unit: hour
-    azure: { service: Azure DNS, match: { productName: Azure DNS Private Resolver, meterName: Outbound Endpoint } }
+    unit: month
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private Resolver, meterName: Private Resolver Outbound Endpoint } }
     docs: https://azure.microsoft.com/pricing/details/dns/
   - id: azure-dns-resolver-ruleset
     provider: azure
     label: { es: 'DNS Private Resolver — forwarding ruleset', en: 'DNS Private Resolver — forwarding ruleset' }
     unit: month
-    azure: { service: Azure DNS, match: { productName: Azure DNS Private Resolver, meterName: Ruleset } }
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private Resolver, meterName: Private Resolver DNS Forwarding Ruleset } }
     docs: https://azure.microsoft.com/pricing/details/dns/
   - id: azure-pg-b1ms
     provider: azure

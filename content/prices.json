@@ -51,6 +51,27 @@
       "as_of": "2026-10-06",
       "ref": "AmazonVPC EN2N5TATXE673A3B: $0.01 per VPC Endpoint Hour"
     },
+    "azure-dns-resolver-inbound": {
+      "unit_price": 180,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private Resolver / Private Resolver Inbound Endpoint (1)"
+    },
+    "azure-dns-resolver-outbound": {
+      "unit_price": 180,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private Resolver / Private Resolver Outbound Endpoint (1)"
+    },
+    "azure-dns-resolver-ruleset": {
+      "unit_price": 2.5,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private Resolver / Private Resolver DNS Forwarding Ruleset (1)"
+    },
     "azure-pg-b1ms": {
       "unit_price": 0.017,
       "unit": "hour",
@@ -58,12 +79,33 @@
       "as_of": "2026-10-06",
       "ref": "Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute / B1MS / B1MS (1 Hour)"
     },
+    "azure-pg-d2ds-v5": {
+      "unit_price": 0.178,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure Database for PostgreSQL Flexible Server General Purpose Ddsv5 Series Compute / 2 vCore / vCore (1 Hour)"
+    },
     "azure-pg-storage": {
       "unit_price": 0.115,
       "unit": "gb-month",
       "source": "api",
       "as_of": "2026-10-06",
       "ref": "Azure Database for PostgreSQL Flex Server Storage / Storage / Storage Data Stored (1 GB/Month)"
+    },
+    "azure-private-dns-zone": {
+      "unit_price": 0.5,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private / Private Zone (1)"
+    },
+    "azure-private-endpoint": {
+      "unit_price": 0.01,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Virtual Network Private Link / Standard / Standard Private Endpoint (1 Hour)"
     },
     "azure-servicebus-premium-mu": {
       "unit_price": 0.9275,

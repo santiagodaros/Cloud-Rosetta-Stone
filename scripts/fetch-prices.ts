@@ -101,7 +101,8 @@ async function resolveAzure(m: PriceMeter): Promise<Resolved> {
     throw new ResolveError(`${hits.length} coincidencias en "${sel.service}" (${all.length} ítems). Candidatos (productName | skuName | meterName | unit | price):\n${[...new Set(near)].slice(0, 40).join('\n')}`);
   }
   const it = hits[0];
-  const u = parseAzureUnit(it.unitOfMeasure);
+  const bare = /^\d+$/.test(it.unitOfMeasure.trim());
+  const u = bare && sel.per ? { unit: sel.per, per: Number(it.unitOfMeasure) } : parseAzureUnit(it.unitOfMeasure);
   if (!u) throw new ResolveError(`unidad desconocida "${it.unitOfMeasure}"`);
   return { unit_price: it.retailPrice / u.per, unit: u.unit, ref: `${it.productName} / ${it.skuName} / ${it.meterName} (${it.unitOfMeasure})` };
 }
