@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand.ts';
 import { Code } from 'astro:components';
 import type { TerraformModule } from '../lib/content.ts';
 import { ui, type Locale } from '../lib/i18n.ts';
@@ -11,10 +12,10 @@ interface Props {
 
 const { tf, lang, repoPath } = Astro.props;
 const s = ui(lang);
-const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
+const repo = BRAND.repo;
 ---
 
-<div class="flex flex-col gap-2">
+<div class="flex flex-col gap-2" data-pagefind-ignore>
   <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
     {
       Object.entries(tf.providers).map(([name, version]) => (
@@ -31,7 +32,7 @@ const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
       <details class="tf-file overflow-hidden rounded-lg border border-line" open={i === 0}>
         <summary class="flex cursor-pointer items-center justify-between bg-surface-2 px-3 py-1.5 font-mono text-xs select-none">
           <span>{f.name}</span>
-          <button type="button" class="tf-copy rounded border border-line bg-surface px-2 py-0.5 font-sans text-[11px]" data-copied={s.copied}>
+          <button type="button" class="tf-copy min-h-6 min-w-6 rounded border border-line bg-surface px-2 py-1 font-sans text-[11px]" data-copied={s.copied}>
             {s.copy}
           </button>
         </summary>

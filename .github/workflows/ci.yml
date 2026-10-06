@@ -39,6 +39,27 @@ jobs:
       - name: Build
         run: pnpm build
 
+  lighthouse:
+    name: Lighthouse (performance, a11y, SEO)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Lighthouse CI (budget en lighthouserc.json)
+        run: pnpm lighthouse
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          if-no-files-found: ignore
+
   terraform-matrix:
     name: Descubrir módulos de Terraform
     runs-on: ubuntu-latest

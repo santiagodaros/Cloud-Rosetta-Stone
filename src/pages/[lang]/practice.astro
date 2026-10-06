@@ -1,0 +1,301 @@
+---
+import { BRAND } from '../../lib/brand.ts';
+import Base from '../../layouts/Base.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { examsHref, patternHref } from '../../lib/paths.ts';
+import { maskProviderTerms } from '../../lib/mask.ts';
+import { examStatus } from '../../lib/content.ts';
+import { PROVIDERS } from '../../lib/schema.ts';
+import { allGotchas, gotchasForExam, site } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+
+// Todo se resuelve en build time: el cliente recibe JSON listo para mostrar.
+const cards = allGotchas.map(({ pattern, provider, gotcha: g, anchor }) => ({
+  id: `${pattern.id}/${anchor}`,
+  provider,
+  pattern: t(pattern.title, lang),
+  severity: s.severity[g.severity],
+  sev: g.severity,
+  title: t(g.title, lang),
+  body: t(g.body, lang),
+  maskedTitle: maskProviderTerms(t(g.title, lang)),
+  maskedBody: maskProviderTerms(t(g.body, lang)),
+  exams: g.exams,
+  source: g.sources[0],
+  href: `${patternHref(lang, pattern.id, 'all')}#${anchor}`,
+}));
+
+const examOptions = site.exams
+  .filter((e) => examStatus(e) !== 'retired' && gotchasForExam(e.code).length > 0)
+  .sort((a, b) => PROVIDERS.indexOf(a.provider) - PROVIDERS.indexOf(b.provider) || a.code.localeCompare(b.code))
+  .map((e) => ({ code: e.code, label: `${e.code} · ${e.name} (${gotchasForExam(e.code).length})` }));
+
+// Las funciones de i18n no viajan al cliente: se serializan como plantillas.
+const strings = {
+  correct: s.correct,
+  wrong: s.wrong('{p}'),
+  score: s.score(1111, 2222).replace('1111', '{ok}').replace('2222', '{n}'),
+  progress: s.progress(1111, 2222).replace('1111', '{i}').replace('2222', '{n}'),
+  next: s.next,
+  reveal: s.reveal,
+  knewIt: s.knewIt,
+  reviewAgain: s.reviewAgain,
+  deckDone: s.deckDone,
+  restart: s.restart,
+  inPattern: s.examInPattern,
+  examsBase: examsHref(lang),
+};
+const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, color: PROVIDER_META[p].color }));
+---
+
+<Base lang={lang} title={`${s.practiceTitle} — ${BRAND.name}`} description={s.practiceIntro} altPath="practice/">
+  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.practiceTitle}</h1>
+  <p class="mb-6 max-w-3xl text-muted">{s.practiceIntro}</p>
+
+  <noscript><p class="text-muted">{s.noJs}</p></noscript>
+
+  <div id="practice" class="max-w-3xl" hidden>
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <div role="tablist" class="inline-flex rounded-lg border border-line bg-surface p-1 text-sm">
+        <button type="button" role="tab" data-mode="quiz" class="mode-tab min-h-9 rounded-md px-3 font-medium">{s.modeQuiz}</button>
+        <button type="button" role="tab" data-mode="cards" class="mode-tab min-h-9 rounded-md px-3 font-medium">{s.modeCards}</button>
+      </div>
+      <label id="exam-filter" class="flex items-center gap-2 text-sm text-muted" hidden>
+        {s.filterExam}
+        <select id="exam" class="min-h-9 rounded-md border border-line bg-surface px-2 text-fg">
+          <option value="">{s.allExams}</option>
+          {examOptions.map((o) => <option value={o.code}>{o.label}</option>)}
+        </select>
+      </label>
+      <span id="status" class="ml-auto text-sm text-muted" aria-live="polite"></span>
+    </div>
+
+    <article id="card" class="rounded-xl border border-line bg-surface p-5">
+      <p class="mb-2 flex flex-wrap items-center gap-2 text-xs">
+        <span id="sev" class="rounded-full px-2 py-0.5 font-semibold"></span>
+        <span id="pattern" class="text-muted"></span>
+        <span id="cloud" class="ml-auto font-bold tracking-wide uppercase"></span>
+      </p>
+      <h2 id="title" class="mb-2 text-lg leading-snug font-semibold"></h2>
+      <p id="body" class="text-sm leading-relaxed text-muted"></p>
+      <div id="meta" class="mt-3 flex flex-wrap items-center gap-3 text-xs" hidden>
+        <a id="source" class="inline-flex min-h-6 items-center" target="_blank" rel="noopener">↗ source</a>
+        <a id="link" class="inline-flex min-h-6 items-center"></a>
+        <span id="exams" class="flex flex-wrap gap-1"></span>
+      </div>
+    </article>
+
+    <div id="quiz-actions" class="mt-4" hidden>
+      <p class="mb-2 text-sm font-medium">{s.whichCloud}</p>
+      <div class="grid grid-cols-3 gap-2">
+        {
+          providers.map((p, i) => (
+            <button type="button" data-guess={p.id} class="guess min-h-11 rounded-lg border-2 bg-surface font-semibold" style={`border-color: ${p.color}; color: ${p.color}`}>
+              <span class="mr-1 text-xs text-muted">{i + 1}</span>
+              {p.name}
+            </button>
+          ))
+        }
+      </div>
+      <p id="verdict" class="mt-3 text-sm font-semibold" aria-live="polite"></p>
+      <p class="mt-1 text-xs text-muted">{s.keyboardHint}</p>
+    </div>
+
+    <div id="cards-actions" class="mt-4 flex flex-wrap gap-2" hidden></div>
+    <div id="next-wrap" class="mt-4" hidden></div>
+  </div>
+
+  <script is:inline type="application/json" id="practice-data" set:html={JSON.stringify({ cards, strings, providers })} />
+</Base>
+
+<script>
+  type Card = {
+    id: string; provider: string; pattern: string; severity: string; sev: string; title: string; body: string;
+    maskedTitle: string; maskedBody: string; exams: string[]; source: string; href: string;
+  };
+  type Data = { cards: Card[]; strings: Record<string, string>; providers: { id: string; name: string; color: string }[] };
+
+  const data: Data = JSON.parse(document.getElementById('practice-data')!.textContent!);
+  const S = data.strings;
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const root = $('practice');
+  const fill = (tpl: string, vars: Record<string, string | number>) => tpl.replace(/\{(\w+)\}/g, (_, k) => String(vars[k]));
+  const shuffle = <T,>(xs: T[]) => {
+    const a = [...xs];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const button = (label: string, onClick: () => void, primary = false) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.className = `min-h-11 rounded-lg border border-line px-4 font-medium ${primary ? 'bg-surface-2' : 'bg-surface'} hover:bg-surface-2`;
+    b.addEventListener('click', onClick);
+    return b;
+  };
+
+  const params = new URLSearchParams(location.search);
+  // Con ?exam= (link desde la página del examen) arranca en flashcards: el modo a ciegas mezcla nubes.
+  let mode: 'quiz' | 'cards' = params.get('mode') === 'cards' || (params.has('exam') && params.get('mode') !== 'quiz') ? 'cards' : 'quiz';
+  const examSelect = $<HTMLSelectElement>('exam');
+  if (params.get('exam') && [...examSelect.options].some((o) => o.value === params.get('exam'))) examSelect.value = params.get('exam')!;
+
+  let deck: Card[] = [];
+  let i = 0;
+  let answered = false;
+  let score = { ok: 0, n: 0 };
+
+  function render(card: Card, revealed: boolean, masked: boolean) {
+    const sev = $('sev');
+    sev.textContent = card.severity;
+    sev.style.color = `var(--c-sev-${card.sev})`;
+    sev.style.background = `color-mix(in srgb, var(--c-sev-${card.sev}) 12%, transparent)`;
+    $('pattern').textContent = card.pattern;
+    const p = data.providers.find((x) => x.id === card.provider)!;
+    const cloud = $('cloud');
+    cloud.textContent = masked && !revealed ? '?' : p.name;
+    cloud.style.color = masked && !revealed ? '' : p.color;
+    $('title').textContent = masked && !revealed ? card.maskedTitle : card.title;
+    const body = $('body');
+    body.textContent = masked && !revealed ? card.maskedBody : card.body;
+    body.hidden = !masked && !revealed;
+    $('meta').hidden = !revealed;
+    $<HTMLAnchorElement>('source').href = card.source;
+    $<HTMLAnchorElement>('source').textContent = `↗ ${new URL(card.source).hostname.replace(/^www\./, '')}`;
+    const link = $<HTMLAnchorElement>('link');
+    link.href = card.href;
+    link.textContent = `${S.inPattern} →`;
+    const exams = $('exams');
+    exams.replaceChildren(
+      ...card.exams.map((code) => {
+        const a = document.createElement('a');
+        a.href = `${S.examsBase}${code.toLowerCase()}/`;
+        a.textContent = code;
+        a.className = 'inline-flex min-h-6 items-center rounded border border-line px-1.5 font-mono text-[11px] text-muted no-underline';
+        return a;
+      }),
+    );
+  }
+
+  function setNext(label: string, onClick: () => void) {
+    const wrap = $('next-wrap');
+    const b = button(label, onClick, true);
+    wrap.replaceChildren(b);
+    wrap.hidden = false;
+    b.focus();
+  }
+
+  function start() {
+    const exam = examSelect.value;
+    const pool = mode === 'cards' && exam ? data.cards.filter((c) => c.exams.includes(exam)) : data.cards;
+    deck = shuffle(pool);
+    i = 0;
+    score = { ok: 0, n: 0 };
+    document.querySelectorAll<HTMLButtonElement>('.mode-tab').forEach((t) => {
+      const active = t.dataset.mode === mode;
+      t.setAttribute('aria-selected', String(active));
+      t.classList.toggle('bg-surface-2', active);
+    });
+    $('exam-filter').hidden = mode !== 'cards';
+    const url = new URL(location.href);
+    url.searchParams.set('mode', mode);
+    if (mode === 'cards' && exam) url.searchParams.set('exam', exam);
+    else url.searchParams.delete('exam');
+    history.replaceState(null, '', url);
+    show();
+  }
+
+  function show() {
+    $('next-wrap').hidden = true;
+    $('quiz-actions').hidden = mode !== 'quiz';
+    $('cards-actions').hidden = mode !== 'cards';
+    if (i >= deck.length) {
+      $('title').textContent = S.deckDone;
+      $('body').textContent = mode === 'quiz' ? fill(S.score, score) : '';
+      $('body').hidden = false;
+      $('meta').hidden = true;
+      $('quiz-actions').hidden = true;
+      $('cards-actions').hidden = true;
+      $('cloud').textContent = '';
+      setNext(S.restart, start);
+      return;
+    }
+    const card = deck[i];
+    answered = false;
+    if (mode === 'quiz') {
+      render(card, false, true);
+      $('verdict').textContent = '';
+      document.querySelectorAll<HTMLButtonElement>('.guess').forEach((b) => {
+        b.disabled = false;
+        b.style.opacity = '';
+      });
+      $('status').textContent = score.n ? fill(S.score, score) : fill(S.progress, { i: i + 1, n: deck.length });
+    } else {
+      render(card, false, false);
+      $('status').textContent = fill(S.progress, { i: i + 1, n: deck.length });
+      $('cards-actions').replaceChildren(button(S.reveal, reveal, true));
+    }
+  }
+
+  function guess(provider: string) {
+    if (answered || mode !== 'quiz') return;
+    answered = true;
+    const card = deck[i];
+    const ok = provider === card.provider;
+    score = { ok: score.ok + (ok ? 1 : 0), n: score.n + 1 };
+    document.querySelectorAll<HTMLButtonElement>('.guess').forEach((b) => {
+      b.disabled = true;
+      if (b.dataset.guess !== card.provider) b.style.opacity = '0.4';
+    });
+    const name = data.providers.find((p) => p.id === card.provider)!.name;
+    $('verdict').textContent = ok ? S.correct : fill(S.wrong, { p: name });
+    $('verdict').className = `mt-3 text-sm font-semibold ${ok ? 'text-ok' : 'text-bad'}`;
+    $('status').textContent = fill(S.score, score);
+    render(card, true, true);
+    i++;
+    setNext(S.next, show);
+  }
+
+  function reveal() {
+    render(deck[i], true, false);
+    answered = true;
+    $('cards-actions').replaceChildren(
+      button(S.knewIt, () => {
+        i++;
+        show();
+      }, true),
+      button(S.reviewAgain, () => {
+        deck.push(deck[i]);
+        i++;
+        show();
+      }),
+    );
+    ($('cards-actions').firstElementChild as HTMLButtonElement).focus();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.guess').forEach((b) => b.addEventListener('click', () => guess(b.dataset.guess!)));
+  document.querySelectorAll<HTMLButtonElement>('.mode-tab').forEach((t) =>
+    t.addEventListener('click', () => {
+      mode = t.dataset.mode as 'quiz' | 'cards';
+      start();
+    }),
+  );
+  examSelect.addEventListener('change', start);
+  document.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLSelectElement || e.metaKey || e.ctrlKey || e.altKey) return;
+    const n = Number(e.key);
+    if (mode === 'quiz' && n >= 1 && n <= data.providers.length) guess(data.providers[n - 1].id);
+  });
+
+  root.hidden = false;
+  start();
+</script>

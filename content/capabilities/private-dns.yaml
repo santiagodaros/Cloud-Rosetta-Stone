@@ -1,0 +1,30 @@
+id: private-dns
+category: networking
+name:
+  es: "DNS privado e híbrido"
+  en: "Private and hybrid DNS"
+description:
+  es: "Zonas DNS resolubles solo desde redes privadas, y resolución entre la nube y on-premises."
+  en: "DNS zones resolvable only from private networks, and resolution between cloud and on-premises."
+providers:
+  azure:
+    services:
+      - service: "Azure Private DNS"
+        docs: https://learn.microsoft.com/azure/dns/private-dns-overview
+      - service: "Azure DNS Private Resolver"
+        docs: https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
+  aws:
+    services:
+      - service: "Route 53 private hosted zones"
+        docs: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html
+      - service: "Route 53 Resolver endpoints"
+        docs: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
+  gcp:
+    services:
+      - service: "Cloud DNS private zones"
+        docs: https://docs.cloud.google.com/dns/docs/overview
+      - service: "Cloud DNS server policies (inbound forwarding)"
+        docs: https://docs.cloud.google.com/dns/docs/server-policies-overview
+caveats:
+  - es: "La zona privada resuelve dentro de la nube; para que on-premises resuelva nombres de Private Endpoints/interface endpoints (y viceversa) hace falta un componente aparte en las tres: Private Resolver, Resolver endpoints o inbound server policy."
+    en: "The private zone resolves inside the cloud; for on-premises to resolve Private Endpoint/interface endpoint names (and vice versa) all three need a separate component: Private Resolver, Resolver endpoints or an inbound server policy."

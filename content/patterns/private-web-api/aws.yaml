@@ -1,0 +1,129 @@
+provider: aws
+bindings:
+  ingress:
+    service: { es: "Application Load Balancer interno", en: "Internal Application Load Balancer" }
+    config: { es: "Listener HTTPS con certificado de ACM", en: "HTTPS listener with an ACM certificate" }
+  app:
+    service: Amazon ECS on Fargate
+    config: { es: "Subnets privadas, sin IP pública, sin NAT", en: "Private subnets, no public IP, no NAT" }
+  identity:
+    service: IAM Role (ECS task role)
+    config: { es: "rds-db:connect sobre un usuario de base concreto", en: "rds-db:connect on one specific database user" }
+  db-access:
+    service: { es: "RDS en subnets privadas + security groups", en: "RDS in private subnets + security groups" }
+    config: { es: "Nativo de la VPC (no requiere endpoint)", en: "VPC-native (no endpoint needed)" }
+  database:
+    service: Amazon RDS for PostgreSQL
+    config: iam_database_authentication_enabled
+gotchas:
+  - id: rds-iam-user-needs-sql
+    severity: iam
+    title:
+      es: El usuario IAM de la base se crea con SQL, y con rds_iam deja de aceptar contraseña
+      en: The IAM database user is created with SQL, and with rds_iam it stops accepting passwords
+    body:
+      es: >-
+        Habilitar IAM auth en la instancia no crea ningún usuario. Hay que ejecutar CREATE USER app; GRANT rds_iam
+        TO app; y además los GRANT sobre tablas. En PostgreSQL, a un usuario con rds_iam (incluido el master) la
+        autenticación IAM le gana a la contraseña: no se lo asignes al master si lo necesitás como break-glass.
+      en: >-
+        Enabling IAM auth on the instance doesn't create any user. You must run CREATE USER app; GRANT rds_iam TO
+        app; plus table GRANTs. In PostgreSQL, for a user with rds_iam (including master) IAM auth takes
+        precedence over the password: don't grant it to master if you need it as break-glass.
+    sources:
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.DBAccounts.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, SCS-C03]
+  - id: rds-iam-connection-rate
+    severity: reliability
+    title:
+      es: IAM auth tiene un límite de conexiones nuevas por segundo
+      en: IAM auth has a new-connections-per-second limit
+    body:
+      es: >-
+        El token dura 15 minutos y solo sirve para abrir la conexión (una sesión abierta no expira). AWS
+        recomienda IAM auth cuando la app abre menos de 200 conexiones nuevas por segundo. Con autoscaling
+        agresivo o sin pool de conexiones lo pasás rápido: usá pooling en la app o RDS Proxy.
+      en: >-
+        The token lasts 15 minutes and is only used to open the connection (an open session doesn't expire). AWS
+        recommends IAM auth when the app opens fewer than 200 new connections per second. With aggressive
+        autoscaling or no connection pool you'll exceed it quickly: use app-side pooling or RDS Proxy.
+    sources:
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03]
+  - id: fargate-private-needs-endpoints
+    severity: cost
+    title:
+      es: Fargate en subnet privada sin NAT necesita varios VPC endpoints pagos
+      en: Fargate in a private subnet without NAT needs several paid VPC endpoints
+    body:
+      es: >-
+        Para bajar la imagen y mandar logs sin salida a internet, la tarea necesita interface endpoints de ECR (api
+        y dkr) y CloudWatch Logs, más el gateway endpoint de S3 (donde ECR guarda las capas). Cada interface
+        endpoint se cobra por hora por AZ: es el costo fijo que en ACA y Cloud Run no existe. La alternativa (NAT
+        Gateway) también tiene cargo por hora y por GB.
+      en: >-
+        To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch
+        Logs interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is
+        billed hourly per AZ: it's the fixed cost that doesn't exist in ACA or Cloud Run. The alternative (NAT
+        Gateway) is also billed hourly and per GB.
+    sources:
+      - https://repost.aws/knowledge-center/ecs-fargate-tasks-private-subnet
+      - https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, ANS-C01]
+  - id: internal-alb-certificate
+    severity: security
+    title:
+      es: HTTPS en un ALB interno igual necesita un certificado de un dominio que controles
+      en: HTTPS on an internal ALB still needs a certificate for a domain you control
+    body:
+      es: >-
+        El listener HTTPS requiere un certificado en ACM. Un certificado público de ACM se valida contra DNS o mail
+        de un dominio real aunque el ALB sea interno; la alternativa es AWS Private CA, que tiene cargo mensual.
+        En ACA y Cloud Run el certificado del dominio por defecto lo gestiona la plataforma.
+      en: >-
+        The HTTPS listener needs an ACM certificate. A public ACM certificate is validated via DNS or email for a
+        real domain even if the ALB is internal; the alternative is AWS Private CA, which has a monthly fee. In ACA
+        and Cloud Run the platform manages the default domain's certificate.
+    sources:
+      - https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
+      - https://docs.aws.amazon.com/acm/latest/userguide/domain-ownership-validation.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, SCS-C03]
+  - id: master-password-in-secrets-manager
+    severity: security
+    title:
+      es: El master user existe siempre; que su contraseña la gestione Secrets Manager
+      en: The master user always exists; let Secrets Manager manage its password
+    body:
+      es: >-
+        Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets
+        Manager: nunca pasa por variables ni por el estado de Terraform. Es incompatible con pasar password a mano,
+        y no está soportado en algunos escenarios (por ejemplo Blue/Green deployments), así que decidilo de entrada.
+      en: >-
+        With manage_master_user_password = true, RDS generates the master password and stores it in Secrets
+        Manager: it never goes through variables or Terraform state. It's incompatible with passing a password
+        manually, and isn't supported in some scenarios (for example Blue/Green deployments), so decide upfront.
+    sources:
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, SCS-C03]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - es: Application Load Balancer (cargo por hora + LCU)
+      en: Application Load Balancer (hourly + LCU)
+    - es: Interface endpoints de ECR api, ECR dkr y CloudWatch Logs (por hora, por AZ)
+      en: ECR api, ECR dkr and CloudWatch Logs interface endpoints (hourly, per AZ)
+    - es: RDS (instancia + storage)
+      en: RDS (instance + storage)
+  notes:
+    es: >-
+      Es el patrón con más costo fijo de las tres nubes: ALB y endpoints cobran aunque no haya requests, y el
+      servicio de ECS mantiene al menos una tarea corriendo.
+    en: >-
+      It's the pattern with the highest fixed cost of the three clouds: ALB and endpoints bill with zero requests,
+      and the ECS service keeps at least one task running.

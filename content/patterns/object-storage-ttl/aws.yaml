@@ -2,10 +2,10 @@ provider: aws
 bindings:
   identity:
     service: IAM Role (ECS task role)
-    config: s3:PutObject acotado a bucket/incoming/*
+    config: { es: "s3:PutObject acotado a bucket/incoming/*", en: "s3:PutObject scoped to bucket/incoming/*" }
   private-access:
-    service: Gateway VPC Endpoint para S3
-    config: asociado a la route table privada
+    service: { es: "Gateway VPC Endpoint para S3", en: "S3 Gateway VPC Endpoint" }
+    config: { es: "asociado a la route table privada", en: "attached to the private route table" }
   bucket:
     service: S3 bucket
     config: Block Public Access + BucketOwnerEnforced + SSE-KMS
@@ -14,7 +14,7 @@ bindings:
     config: Expiration.Days + AbortIncompleteMultipartUpload
   perimeter:
     service: Bucket policy
-    config: Deny si aws:SourceVpce ≠ endpoint
+    config: { es: "Deny si aws:SourceVpce ≠ endpoint", en: "Deny if aws:SourceVpce ≠ endpoint" }
 gotchas:
   - id: lifecycle-async-billing-stops
     severity: cost
@@ -126,7 +126,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html
     verified_at: 2026-10-06
-    exams: [SAA-C03, SCS-C02]
+    exams: [SAA-C03, SCS-C03]
 cost:
   scales_to_zero: 'yes'
   fixed_cost_drivers: []

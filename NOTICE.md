@@ -1,6 +1,6 @@
 # Aviso de marcas y afiliación
 
-Cloud Rosetta Stone es un proyecto comunitario independiente. **No está afiliado, patrocinado ni avalado**
+Letra Chica es un proyecto comunitario independiente. **No está afiliado, patrocinado ni avalado**
 por Microsoft, Amazon Web Services, Google ni HashiCorp.
 
 Microsoft, Azure y Entra son marcas de Microsoft Corporation. Amazon Web Services, AWS y Amazon S3 son

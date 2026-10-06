@@ -1,14 +1,16 @@
-import type { Localized, Locale, Provider, Severity } from './schema.ts';
+import type { Locale, Provider, Severity, Text } from './schema.ts';
 import { LOCALES } from './schema.ts';
 
 export { LOCALES };
 export type { Locale };
 
 /** Texto localizado con fallback a español (idioma primario del contenido). */
-export const t = (text: Localized | undefined, lang: Locale): string => (text ? (text[lang] ?? text.es) : '');
+export const t = (text: Text | undefined, lang: Locale): string =>
+  text === undefined ? '' : typeof text === 'string' ? text : (text[lang] ?? text.es);
 
 /** true si el texto se está mostrando en fallback (para marcarlo en la UI). */
-export const isFallback = (text: Localized | undefined, lang: Locale) => !!text && lang !== 'es' && !text[lang];
+export const isFallback = (text: Text | undefined, lang: Locale) =>
+  !!text && typeof text !== 'string' && lang !== 'es' && !text[lang];
 
 export const PROVIDER_META: Record<Provider, { name: string; short: string; color: string }> = {
   azure: { name: 'Microsoft Azure', short: 'Azure', color: 'var(--c-azure)' },
@@ -18,7 +20,7 @@ export const PROVIDER_META: Record<Provider, { name: string; short: string; colo
 
 const UI = {
   es: {
-    tagline: 'Traducí arquitecturas entre Azure, AWS y GCP: dónde se rompe la analogía, con Terraform verificado.',
+    tagline: 'La letra chica del multicloud: dónde se rompe la analogía entre Azure, AWS y GCP, con fuentes oficiales y Terraform verificado.',
     patterns: 'Patrones',
     dictionary: 'Diccionario',
     contribute: 'Contribuir',
@@ -61,10 +63,52 @@ const UI = {
     } satisfies Record<Severity, string>,
     gotchaCount: (n: number) => `${n} gotcha${n === 1 ? '' : 's'}`,
     patternCount: (n: number) => `${n} patrón${n === 1 ? '' : 'es'}`,
+    ogKicker: 'Comparación de arquitectura',
+    ogFooter: (n: number) => `${n} gotchas con fuente oficial · Terraform testeado`,
+    search: 'Buscar',
+    searchPlaceholder: 'Buscá un servicio, un gotcha o un examen…',
+    methodology: 'Cómo verificamos',
+    copyLink: 'Copiar link a este gotcha',
+    linkCopied: 'Link copiado',
     capabilityCount: (n: number) => `${n} capabilities`,
+    examsNav: 'Exámenes',
+    examsTitle: 'Letra chica por examen',
+    examsIntro:
+      'Los gotchas agrupados por certificación. No reemplazan la guía oficial del examen: son las diferencias que suelen aparecer como distractor cuando ya sabés una nube y estudiás otra.',
+    examStatus: { active: 'Vigente', retiring: 'Se retira', retired: 'Retirado' },
+    examRetiresOn: (d: string) => `último día para rendirlo: ${d}`,
+    examReplacedBy: 'Reemplazo',
+    examOfficial: 'Guía oficial',
+    examEmpty: 'Todavía no hay gotchas para este examen.',
+    examEmptyCta: 'Proponé uno',
+    examRetiredNote: 'Este examen ya no se puede rendir. Los gotchas que lo referenciaban se re-etiquetaron con su reemplazo.',
+    examInPattern: 'Ver en el patrón',
+    practice: 'Practicar',
+    practiceThis: 'Practicar estos gotchas',
+    practiceTitle: 'Practicar',
+    practiceIntro:
+      'Dos formas de repasar la letra chica. A ciegas: leés el gotcha con los nombres de producto tapados y adivinás de qué nube es. Flashcards: filtrás por examen y te tomás el tema.',
+    modeQuiz: '¿Qué nube es?',
+    modeCards: 'Flashcards',
+    filterExam: 'Examen',
+    allExams: 'Todos los exámenes',
+    whichCloud: '¿De qué nube es este gotcha?',
+    correct: '¡Bien!',
+    wrong: (p: string) => `No: es de ${p}.`,
+    next: 'Siguiente',
+    score: (ok: number, n: number) => `${ok} de ${n} aciertos`,
+    reveal: 'Mostrar respuesta',
+    knewIt: 'La sabía',
+    reviewAgain: 'Repasar de nuevo',
+    progress: (i: number, n: number) => `${i} de ${n}`,
+    deckDone: 'Terminaste el mazo.',
+    restart: 'Empezar de nuevo',
+    noJs: 'El modo práctica necesita JavaScript.',
+    keyboardHint: 'Atajos: 1 / 2 / 3 para responder, Enter para seguir.',
+    level: { foundational: 'Fundamentos', associate: 'Associate', professional: 'Professional', expert: 'Expert', specialty: 'Specialty' },
   },
   en: {
-    tagline: 'Translate architectures across Azure, AWS and GCP: where the analogy breaks, with verified Terraform.',
+    tagline: 'The fine print of multicloud: where the analogy breaks across Azure, AWS and GCP, with official sources and verified Terraform.',
     patterns: 'Patterns',
     dictionary: 'Dictionary',
     contribute: 'Contribute',
@@ -107,7 +151,49 @@ const UI = {
     } satisfies Record<Severity, string>,
     gotchaCount: (n: number) => `${n} gotcha${n === 1 ? '' : 's'}`,
     patternCount: (n: number) => `${n} pattern${n === 1 ? '' : 's'}`,
+    ogKicker: 'Architecture comparison',
+    ogFooter: (n: number) => `${n} gotchas with official sources · Tested Terraform`,
+    search: 'Search',
+    searchPlaceholder: 'Search a service, a gotcha or an exam…',
+    methodology: 'How we verify',
+    copyLink: 'Copy link to this gotcha',
+    linkCopied: 'Link copied',
     capabilityCount: (n: number) => `${n} capabilities`,
+    examsNav: 'Exams',
+    examsTitle: 'Fine print by exam',
+    examsIntro:
+      'Gotchas grouped by certification. They don’t replace the official exam guide: they are the differences that tend to show up as distractors when you already know one cloud and study another.',
+    examStatus: { active: 'Current', retiring: 'Retiring', retired: 'Retired' },
+    examRetiresOn: (d: string) => `last day to take it: ${d}`,
+    examReplacedBy: 'Replaced by',
+    examOfficial: 'Official guide',
+    examEmpty: 'No gotchas for this exam yet.',
+    examEmptyCta: 'Suggest one',
+    examRetiredNote: 'This exam can no longer be taken. Gotchas that referenced it were re-tagged with its replacement.',
+    examInPattern: 'See it in the pattern',
+    practice: 'Practice',
+    practiceThis: 'Practice these gotchas',
+    practiceTitle: 'Practice',
+    practiceIntro:
+      'Two ways to review the fine print. Blind: read the gotcha with product names masked and guess which cloud it belongs to. Flashcards: filter by exam and quiz yourself.',
+    modeQuiz: 'Which cloud?',
+    modeCards: 'Flashcards',
+    filterExam: 'Exam',
+    allExams: 'All exams',
+    whichCloud: 'Which cloud is this gotcha from?',
+    correct: 'Correct!',
+    wrong: (p: string) => `No: it’s ${p}.`,
+    next: 'Next',
+    score: (ok: number, n: number) => `${ok} of ${n} correct`,
+    reveal: 'Show answer',
+    knewIt: 'I knew it',
+    reviewAgain: 'Review again',
+    progress: (i: number, n: number) => `${i} of ${n}`,
+    deckDone: 'You finished the deck.',
+    restart: 'Start over',
+    noJs: 'Practice mode requires JavaScript.',
+    keyboardHint: 'Shortcuts: 1 / 2 / 3 to answer, Enter to continue.',
+    level: { foundational: 'Foundational', associate: 'Associate', professional: 'Professional', expert: 'Expert', specialty: 'Specialty' },
   },
 } as const;
 

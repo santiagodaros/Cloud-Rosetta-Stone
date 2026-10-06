@@ -1,0 +1,24 @@
+id: cdn-edge
+category: networking
+name:
+  es: "CDN y entrada global"
+  en: "CDN and global entry point"
+description:
+  es: "Cache y terminación TLS en el borde, con WAF y ruteo global hacia orígenes."
+  en: "Edge caching and TLS termination, with WAF and global routing to origins."
+providers:
+  azure:
+    services:
+      - service: "Azure Front Door"
+        docs: https://learn.microsoft.com/azure/frontdoor/front-door-overview
+  aws:
+    services:
+      - service: "Amazon CloudFront"
+        docs: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html
+  gcp:
+    services:
+      - service: "Cloud CDN"
+        docs: https://docs.cloud.google.com/cdn/docs/overview
+caveats:
+  - es: "Cloud CDN no es un servicio independiente: se habilita sobre un Application Load Balancer externo global. Front Door y CloudFront sí son el punto de entrada por sí mismos."
+    en: "Cloud CDN isn't a standalone service: it's enabled on a global external Application Load Balancer. Front Door and CloudFront are entry points by themselves."

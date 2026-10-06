@@ -11,6 +11,8 @@ content/
     └── terraform/<nube>/            ← módulo real: versions.tf, main.tf, variables.tf, outputs.tf, tests/
 ```
 
+Categorías: `compute-web`, `async-event`, `storage-data`, `networking`, `identity`, `governance`, `observability`.
+
 ## Capability (hub-and-spoke)
 
 Una capability es un concepto independiente de la nube (`object-storage`, `workload-identity`). Cada nube
@@ -32,9 +34,19 @@ Con N nubes, hub-and-spoke necesita N entradas por concepto; el mapeo par a par 
   - `severity`: `security | iam | networking | cost | reliability | operations`
   - `sources`: ≥ 1 URL https de un dominio oficial (lista en `OFFICIAL_SOURCE_HOSTS`)
   - `verified_at`: fecha ISO en que alguien leyó las fuentes y confirmó el texto
-  - `exams` (opcional): códigos de certificación donde este conocimiento suma
+  - `exams` (opcional): códigos de certificación donde este conocimiento suma. Tienen que existir en
+    `content/exams.yaml` y ser de la misma nube que la implementación.
 - `cost`: `scales_to_zero` (`yes | no | partial`), `fixed_cost_drivers` y notas. Sin números todavía: los
   precios se calcularán en build (Fase 4) con región y fecha.
+
+## Exámenes (`content/exams.yaml`)
+
+Catálogo único de certificaciones: `code`, `provider`, `name` (oficial, sin traducir), `certification`,
+`level`, `url` (study guide o página oficial) y, si corresponde, `retires_on` (último día en que se puede
+rendir) y `replaced_by`. El estado **no se escribe a mano**: se deriva de `retires_on` contra la fecha del
+build (`vigente` → `se retira` → `retirado`). Cuando un examen pasa a retirado, los gotchas que lo
+referencian dan warning para re-etiquetarlos con el reemplazo. Google no publica códigos: usamos los
+acrónimos de uso común (ACE, PCA, PCNE…).
 
 ## Validaciones cruzadas (`pnpm validate`)
 
@@ -46,6 +58,8 @@ Con N nubes, hub-and-spoke necesita N entradas por concepto; el mapeo par a par 
 | Patrón `published` tiene las 3 implementaciones y los 3 módulos con `main.tf`, `tests/` y versión pinneada | error |
 | Gotchas únicos por nube; `verified_at` no futuro | error |
 | `verified_at` > 180 días | warning (+ issue semanal) |
+| Examen de un gotcha inexistente en el catálogo o de otra nube; `replaced_by` inexistente | error |
+| Gotcha etiquetado con un examen ya retirado | warning |
 | Falta traducción al inglés | warning |
 
 ## Textos localizados

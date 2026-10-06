@@ -1,7 +1,7 @@
-# Cloud Rosetta Stone — Plan de producto y ejecución
+# Letra Chica — Plan de producto y ejecución
 
 > Plan vivo. Se actualiza al cerrar cada fase. Base: [`ANALISIS-END-TO-END.md`](./ANALISIS-END-TO-END.md).
-> Última actualización: 2026-10-06 (cierre de Fase 0).
+> Última actualización: 2026-10-06 (cierre de Fase 1).
 
 ---
 
@@ -72,36 +72,45 @@ Decisiones registradas en [`docs/adr/`](./adr/):
 **Criterio de salida:** CI verde en `main` con 1 patrón real. → Pendiente de la primera corrida en GitHub
 (ver §7, "Pendientes de Fase 0").
 
-### Fase 1 — MVP de contenido (3–4 semanas)
+### Fase 1 — MVP de contenido ✅ (cerrada 2026-10-06)
 
 **Objetivo:** suficiente profundidad para que el lanzamiento tenga sustancia y cubra las 3 nubes.
 
-| ID | Tarea | Tamaño | Notas |
+| ID | Tarea | Estado | Resultado |
 |---|---|---|---|
-| F1-01 | Patrón **Web API privada Zero Trust** (ACA + PostgreSQL Flexible w/ Entra · ECS Fargate + RDS IAM auth · Cloud Run + Cloud SQL IAM auth) | L | Comparar PostgreSQL con PostgreSQL (no Azure SQL) |
-| F1-02 | Patrón **Worker asíncrono con escala a cero** (ACA Jobs + Service Bus · Lambda/ECS + SQS · Cloud Run + Pub/Sub) | L | Gotchas: Premium para PE, at-least-once en las 3, ECS no escala a cero nativo |
-| F1-03 | `pnpm new:pattern <slug>`: scaffolder con YAML + módulos + tests vacíos | S | Baja la barrera de contribución |
-| F1-04 | OG image por comparación (satori en build) | M | Clave para LinkedIn: cada link tiene preview propio |
-| F1-05 | Búsqueda estática (Pagefind) sobre patrones, capabilities y gotchas | S | |
-| F1-06 | Diccionario a ~30 capabilities (red, identidad, datos, cómputo, observabilidad) | M | Prioridad: las que usan F1-01/02 |
-| F1-07 | Deep links a gotchas (`#aws-sourcevpce-lockout`) con botón "copiar link" | S | Para citar en PRs/Slack |
-| F1-08 | Página "Cómo verificamos" (metodología, fuentes aceptadas, frescura) | S | Credibilidad |
-| F1-09 | Traducción EN completa de F1-01/02 | S | |
-| F1-10 | Lighthouse ≥ 95 en performance/accesibilidad en CI (budget) | S | |
+| F1-01 | Patrón **Web API privada Zero Trust** | ✅ | ACA interno + PG Flexible solo Entra · ECS Fargate + ALB interno + RDS IAM auth · Cloud Run internal + Cloud SQL IAM. 16 gotchas, 14 tests |
+| F1-02 | Patrón **Worker asíncrono con escala a cero** | ✅ | ACA Jobs + Service Bus (KEDA con identidad) · Lambda + SQS · Cloud Run + Pub/Sub push. 12 gotchas, 13 tests |
+| F1-03 | `pnpm new:pattern <slug> [capability...]` | ✅ | Genera YAML draft + 3 módulos con tests que ya validan |
+| F1-04 | OG image por comparación | ✅ | satori + resvg en build: 42 imágenes (3 patrones × 7 vistas × 2 idiomas) + home |
+| F1-05 | Búsqueda estática | ✅ | Pagefind, índice por idioma; indexa la vista de 3 nubes, diccionario y metodología (sin HCL ni badges) |
+| F1-06 | Diccionario | ✅ | 26 capabilities (antes 9), categorías nuevas `governance` y `observability` |
+| F1-07 | Deep links a gotchas | ✅ | Botón 🔗 que copia `…/#<nube>-<gotcha>` |
+| F1-08 | Página "Cómo verificamos" | ✅ | Fuentes aceptadas (desde el schema), frescura, checks de CI, limitaciones |
+| F1-09 | Traducción EN | ✅ | Todo el contenido nuevo es bilingüe (0 warnings de traducción) |
+| F1-10 | Budget de Lighthouse en CI | ✅ | ≥ 0.9 perf / ≥ 0.95 a11y; hoy 100 en las 4 categorías y 4 páginas |
 
-**Criterio de salida:** 3 patrones × 3 nubes publicados, todos los gotchas con fuente y < 90 días,
-OG images funcionando, CI verde.
+**Criterio de salida:** 3 patrones × 3 nubes publicados, todos los gotchas con fuente y < 90 días, OG images
+funcionando, CI verde. → 45 gotchas verificados el 2026-10-06; CI pendiente de la corrida del PR.
 
-### Fase 2 — Lanzamiento (1 semana)
+**Lo que encontró el pipeline en esta fase** (el valor de validar de verdad):
+- azurerm 5 cambió `azurerm_private_dns_a_record` (ahora `private_dns_zone_id`); `validate` lo detectó.
+- Lighthouse marcó contraste insuficiente en 5 colores de severidad y en los chips de AWS/GCP; se corrigió la
+  paleta clara.
+- checkov exige PostgreSQL 18 en Cloud SQL; se mantuvo 17 en las 3 nubes con el skip justificado.
 
-| ID | Tarea | Notas |
-|---|---|---|
-| F2-01 | Validar nombre: repo, dominio y handle libres (existe un "Cloud Rosetta" previo, ver análisis §2) | **Antes** del post de expectativa |
-| F2-02 | Post LinkedIn Fase 1 (dolor + tesis) con screenshot del comparador | Copy en `ANALISIS-END-TO-END.md` §11 |
-| F2-03 | Post Fase 2 (lanzamiento) + Show HN + r/AZURE, r/aws, r/googlecloud | Link en primer comentario |
-| F2-04 | Post Fase 3 (letra chica) — **con el copy corregido** (Peek-Lock ≠ exactly-once) | |
-| F2-05 | Serie semanal "Gotcha de la semana": cada post → deep link + OG image | Contenido recurrente sin costo extra |
-| F2-06 | 10 issues `good first issue` listos ("verificar gotcha X", "traducir Y", "capability Z") | Para la ola de visitas del lanzamiento |
+### Fase 2 — Lanzamiento (preparada 2026-10-06)
+
+Kit completo en [`docs/launch/`](./launch/). Lo que queda son acciones del mantenedor (publicar, configurar
+el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
+
+| ID | Tarea | Estado | Resultado |
+|---|---|---|---|
+| F2-01 | Validar nombre | ✅ | Renombrado a **Letra Chica**: "Cloud Rosetta" colisiona con dos repos de GitHub (uno con el mismo concepto) y la marca "Rosetta Stone". Dominio: a verificar por el mantenedor |
+| F2-02 | Post de expectativa | ✅ borrador | 2 variantes en `launch/linkedin.md` |
+| F2-03 | Lanzamiento: LinkedIn, Show HN, Reddit | ✅ borrador | `launch/linkedin.md`, `launch/show-hn-y-reddit.md` |
+| F2-04 | Post de letra chica con copy corregido | ✅ borrador | Peek-Lock = at-least-once; 2 variantes |
+| F2-05 | Serie "Gotcha de la semana" | ✅ | 12 semanas generadas desde el contenido con `pnpm launch:weekly` |
+| F2-06 | 10 `good first issue` | ✅ | Re-verificación, traducción y capabilities |
 
 **Criterio de salida:** primer PR externo abierto.
 
@@ -184,8 +193,8 @@ una feature chica por mes junto con el patrón mensual, en lugar de lanzar todo 
 
 | Pendiente | Quién | Cómo |
 |---|---|---|
-| Primera corrida de CI en GitHub | Mantenedor | Abrir PR de esta rama → revisar checks |
-| Versiones de plugins de tflint | CI / Renovate | Se fijaron versiones conocidas sin poder verificar la última; si `tflint --init` falla, actualizar `.tflint/*.hcl`. Renovate las mantiene después |
+| Primera corrida de CI en GitHub | Mantenedor | ✅ Verde en PR #1 |
+| Versiones de plugins de tflint | CI / Renovate | ✅ Pasaron en la primera corrida; Renovate las mantiene |
 | Habilitar GitHub Pages | Mantenedor | Settings → Pages → Source: **GitHub Actions** |
 | Instalar la GitHub App de Renovate | Mantenedor | https://github.com/apps/renovate |
 | Crear labels `freshness`, `good first issue`, `dependencies`, `terraform` | Mantenedor | El workflow de frescura usa `freshness` |

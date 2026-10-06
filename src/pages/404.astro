@@ -1,9 +1,10 @@
 ---
+import { BRAND } from '../lib/brand.ts';
 import Base from '../layouts/Base.astro';
 import { homeHref } from '../lib/paths.ts';
 ---
 
-<Base lang="es" title="404 — Cloud Rosetta Stone" description="Página no encontrada">
+<Base lang="es" title={`404 — ${BRAND.name}`} description="Página no encontrada">
   <h1 class="mb-2 text-2xl font-bold">404</h1>
   <p class="text-muted">Esta página no existe (todavía). · This page doesn't exist (yet).</p>
   <p class="mt-4"><a href={homeHref('es')}>← Inicio</a> · <a href={homeHref('en')}>← Home</a></p>

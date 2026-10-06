@@ -1,0 +1,108 @@
+provider: azure
+bindings:
+  queue:
+    service: Azure Service Bus (Standard) — queue
+    config: { es: "local_auth_enabled = false (solo Entra ID)", en: "local_auth_enabled = false (Entra ID only)" }
+  worker:
+    service: Container Apps Job (event-driven)
+    config: { es: "Scaler KEDA azure-servicebus con identidad administrada", en: "KEDA azure-servicebus scaler with managed identity" }
+  identity:
+    service: User-assigned Managed Identity
+    config: Service Bus Data Receiver + Storage Blob Data Contributor
+  results:
+    service: Storage Account + container
+    config: { es: "Shared Key deshabilitado", en: "Shared Key disabled" }
+  dead-letter:
+    service: { es: "Subcola $DeadLetterQueue", en: "$DeadLetterQueue subqueue" }
+    config: { es: "max_delivery_count en la cola", en: "max_delivery_count on the queue" }
+gotchas:
+  - id: sb-private-endpoint-premium
+    severity: cost
+    title:
+      es: Red privada en Service Bus exige Premium, que tiene costo fijo alto
+      en: Private networking on Service Bus requires Premium, which has a high fixed cost
+    body:
+      es: >-
+        Private Endpoints, reglas de VNet y CMK solo existen en Premium, que se cobra por messaging unit por hora
+        aunque no haya mensajes. Standard solo admite reglas de IP y además tiene un cargo base mensual. Este patrón
+        usa Standard con autenticación solo Entra ID: si el requisito es red privada, el piso de costo cambia de
+        orden de magnitud. En AWS, SQS admite un interface endpoint sin cambiar de tier.
+      en: >-
+        Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with
+        zero messages. Standard only supports IP rules and also has a monthly base charge. This pattern uses
+        Standard with Entra ID-only auth: if the requirement is private networking, the cost floor changes by an
+        order of magnitude. In AWS, SQS supports an interface endpoint without changing tier.
+    sources:
+      - https://learn.microsoft.com/azure/service-bus-messaging/private-link-service
+      - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
+      - https://azure.microsoft.com/pricing/details/service-bus/
+    verified_at: 2026-10-06
+    exams: [AZ-305, AZ-700, SC-500]
+  - id: peek-lock-is-at-least-once
+    severity: reliability
+    title:
+      es: Peek-lock es at-least-once, no exactly-once
+      en: Peek-lock is at-least-once, not exactly-once
+    body:
+      es: >-
+        Si el worker muere después de procesar pero antes de completar el mensaje, el lock expira y el mensaje se
+        reentrega. Es el mismo modelo que el visibility timeout de SQS. La duplicate detection de Service Bus
+        deduplica envíos repetidos, no procesamientos: el worker tiene que ser idempotente.
+      en: >-
+        If the worker dies after processing but before completing the message, the lock expires and the message is
+        redelivered. It's the same model as SQS's visibility timeout. Service Bus duplicate detection dedupes
+        repeated sends, not processing: the worker must be idempotent.
+    sources:
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-message-loss-and-duplicates
+    verified_at: 2026-10-06
+    exams: [AI-200, AZ-305]
+  - id: dlq-fills-quota
+    severity: reliability
+    title:
+      es: La dead-letter queue ocupa la cuota de la cola si nadie la vacía
+      en: The dead-letter queue uses the queue's quota if nobody drains it
+    body:
+      es: >-
+        Tras max_delivery_count entregas (10 por default) el mensaje va a la subcola $DeadLetterQueue, que cuenta
+        para el tamaño de la entidad. Si se acumula, la cola principal empieza a rechazar envíos con
+        QuotaExceeded. Necesitás alertas sobre el conteo de dead-letter y un proceso para reprocesar o descartar.
+      en: >-
+        After max_delivery_count deliveries (10 by default) the message goes to the $DeadLetterQueue subqueue, which
+        counts towards the entity size. If it piles up, the main queue starts rejecting sends with QuotaExceeded.
+        You need alerts on the dead-letter count and a process to reprocess or discard.
+    sources:
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-messaging-exceptions-latest
+    verified_at: 2026-10-06
+    exams: [AI-200]
+  - id: keda-scaler-identity
+    severity: iam
+    title:
+      es: El scaler también necesita identidad, no solo el contenedor
+      en: The scaler needs an identity too, not just the container
+    body:
+      es: >-
+        KEDA consulta el largo de la cola por su cuenta. Si el namespace tiene local auth deshabilitada, la regla de
+        escalado tiene que usar la identidad administrada (identity_id en la regla); con un connection string no
+        funciona. El portal no permite configurarlo: hacelo por IaC o CLI.
+      en: >-
+        KEDA queries the queue length on its own. If the namespace has local auth disabled, the scale rule must use
+        the managed identity (identity_id on the rule); a connection string won't work. The portal can't configure
+        it: use IaC or CLI.
+    sources:
+      - https://learn.microsoft.com/azure/container-apps/scale-app
+      - https://learn.microsoft.com/azure/container-apps/managed-identity
+    verified_at: 2026-10-06
+    exams: [AI-200]
+cost:
+  scales_to_zero: partial
+  fixed_cost_drivers:
+    - es: Service Bus Standard (cargo base mensual)
+      en: Service Bus Standard (monthly base charge)
+  notes:
+    es: >-
+      El job no consume nada sin mensajes y el storage se paga por uso. El único fijo es el base de Service Bus
+      Standard, chico comparado con Premium (ver gotcha).
+    en: >-
+      The job consumes nothing without messages and storage is pay-per-use. The only fixed cost is the Service Bus
+      Standard base charge, small compared to Premium (see gotcha).
