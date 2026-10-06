@@ -45,6 +45,9 @@ const strings = {
   next: s.next,
   reveal: s.reveal,
   knewIt: s.knewIt,
+  dueStatus: s.dueStatus(1111, 2222).replace('1111', '{due}').replace('2222', '{done}'),
+  nothingDue: s.nothingDue,
+  reviewAll: s.reviewAll,
   reviewAgain: s.reviewAgain,
   deckDone: s.deckDone,
   restart: s.restart,
@@ -72,6 +75,10 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
           <option value="">{s.allExams}</option>
           {examOptions.map((o) => <option value={o.code}>{o.label}</option>)}
         </select>
+      </label>
+      <label id="due-filter" class="flex min-h-9 items-center gap-2 text-sm text-muted" hidden>
+        <input id="due-only" type="checkbox" class="size-4" checked />
+        {s.dueOnly}
       </label>
       <span id="status" class="ml-auto text-sm text-muted" aria-live="polite"></span>
     </div>
@@ -115,6 +122,8 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
 </Base>
 
 <script>
+  import { demote, isDue, loadState, localDay, mastered, promote, saveState } from '../../lib/leitner.ts';
+
   type Card = {
     id: string; provider: string; pattern: string; severity: string; sev: string; title: string; body: string;
     maskedTitle: string; maskedBody: string; exams: string[]; source: string; href: string;
@@ -149,10 +158,18 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
   const examSelect = $<HTMLSelectElement>('exam');
   if (params.get('exam') && [...examSelect.options].some((o) => o.value === params.get('exam'))) examSelect.value = params.get('exam')!;
 
+  const STORAGE_KEY = 'letra-chica:leitner:v1';
+  let leitner = loadState(STORAGE_KEY);
+  const today = localDay();
+  const dueOnly = $<HTMLInputElement>('due-only');
+
   let deck: Card[] = [];
   let i = 0;
   let answered = false;
   let score = { ok: 0, n: 0 };
+  let poolIds: string[] = [];
+  const cardsStatus = () =>
+    fill(S.dueStatus, { due: poolIds.filter((id) => isDue(leitner, id, today)).length, done: mastered(leitner, poolIds) });
 
   function render(card: Card, revealed: boolean, masked: boolean) {
     const sev = $('sev');
@@ -197,7 +214,9 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
   function start() {
     const exam = examSelect.value;
     const pool = mode === 'cards' && exam ? data.cards.filter((c) => c.exams.includes(exam)) : data.cards;
-    deck = shuffle(pool);
+    // En flashcards, primero lo que toca hoy (Leitner); en el quiz, todo el mazo.
+    deck = shuffle(mode === 'cards' && dueOnly.checked ? pool.filter((c) => isDue(leitner, c.id, today)) : pool);
+    poolIds = pool.map((c) => c.id);
     i = 0;
     score = { ok: 0, n: 0 };
     document.querySelectorAll<HTMLButtonElement>('.mode-tab').forEach((t) => {
@@ -206,6 +225,7 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
       t.classList.toggle('bg-surface-2', active);
     });
     $('exam-filter').hidden = mode !== 'cards';
+    $('due-filter').hidden = mode !== 'cards';
     const url = new URL(location.href);
     url.searchParams.set('mode', mode);
     if (mode === 'cards' && exam) url.searchParams.set('exam', exam);
@@ -218,6 +238,22 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
     $('next-wrap').hidden = true;
     $('quiz-actions').hidden = mode !== 'quiz';
     $('cards-actions').hidden = mode !== 'cards';
+    if (mode === 'cards' && deck.length === 0) {
+      $('title').textContent = S.nothingDue;
+      $('body').hidden = true;
+      $('meta').hidden = true;
+      $('cards-actions').hidden = true;
+      $('cloud').textContent = '';
+      $('pattern').textContent = '';
+      $('sev').textContent = '';
+      $('sev').style.background = '';
+      $('status').textContent = cardsStatus();
+      setNext(S.reviewAll, () => {
+        dueOnly.checked = false;
+        start();
+      });
+      return;
+    }
     if (i >= deck.length) {
       $('title').textContent = S.deckDone;
       $('body').textContent = mode === 'quiz' ? fill(S.score, score) : '';
@@ -241,7 +277,7 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
       $('status').textContent = score.n ? fill(S.score, score) : fill(S.progress, { i: i + 1, n: deck.length });
     } else {
       render(card, false, false);
-      $('status').textContent = fill(S.progress, { i: i + 1, n: deck.length });
+      $('status').textContent = `${fill(S.progress, { i: i + 1, n: deck.length })} · ${cardsStatus()}`;
       $('cards-actions').replaceChildren(button(S.reveal, reveal, true));
     }
   }
@@ -270,10 +306,14 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
     answered = true;
     $('cards-actions').replaceChildren(
       button(S.knewIt, () => {
+        leitner = promote(leitner, deck[i].id, today);
+        saveState(STORAGE_KEY, leitner);
         i++;
         show();
       }, true),
       button(S.reviewAgain, () => {
+        leitner = demote(leitner, deck[i].id, today);
+        saveState(STORAGE_KEY, leitner);
         deck.push(deck[i]);
         i++;
         show();
@@ -290,6 +330,7 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
     }),
   );
   examSelect.addEventListener('change', start);
+  dueOnly.addEventListener('change', start);
   document.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLSelectElement || e.metaKey || e.ctrlKey || e.altKey) return;
     const n = Number(e.key);

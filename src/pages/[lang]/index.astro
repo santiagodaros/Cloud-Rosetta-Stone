@@ -2,9 +2,9 @@
 import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
-import { capabilitiesHref, patternHref } from '../../lib/paths.ts';
+import { capabilitiesHref, patternHref, practiceHref } from '../../lib/paths.ts';
 import { PROVIDERS } from '../../lib/schema.ts';
-import { DEFAULT_VIEW, publishedPatterns, site } from '../../lib/site.ts';
+import { allGotchas, DEFAULT_VIEW, publishedPatterns, site } from '../../lib/site.ts';
 
 export function getStaticPaths() {
   return LOCALES.map((lang) => ({ params: { lang } }));
@@ -12,6 +12,15 @@ export function getStaticPaths() {
 
 const lang = Astro.params.lang as Locale;
 const s = ui(lang);
+// Gotcha del día: se elige en el cliente con la fecha local (el build es semanal).
+const daily = allGotchas.map(({ pattern, provider, gotcha: g, anchor }) => ({
+  title: t(g.title, lang),
+  body: t(g.body, lang),
+  cloud: PROVIDER_META[provider].short,
+  color: PROVIDER_META[provider].color,
+  pattern: t(pattern.title, lang),
+  href: `${patternHref(lang, pattern.id, 'all')}#${anchor}`,
+}));
 const totalGotchas = publishedPatterns.reduce(
   (n, p) => n + PROVIDERS.reduce((m, pr) => m + (p.implementations[pr]?.gotchas.length ?? 0), 0),
   0,
@@ -27,6 +36,18 @@ const totalGotchas = publishedPatterns.reduce(
       <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a class="underline underline-offset-2" href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
     </div>
   </section>
+
+  <section id="daily" class="mb-10 max-w-3xl rounded-xl border border-line bg-surface p-5" hidden aria-labelledby="daily-title">
+    <p class="mb-2 flex items-center gap-2 text-xs">
+      <span id="daily-title" class="font-semibold tracking-wide text-muted uppercase">{s.dailyTitle}</span>
+      <span id="daily-cloud" class="font-bold"></span>
+      <span id="daily-pattern" class="text-muted"></span>
+    </p>
+    <p class="mb-2 text-lg leading-snug font-semibold"><a id="daily-link" class="text-fg no-underline hover:underline"></a></p>
+    <p id="daily-body" class="mb-3 text-sm leading-relaxed text-muted"></p>
+    <a class="text-sm" href={practiceHref(lang)}>🃏 {s.dailyMore} →</a>
+  </section>
+  <script is:inline type="application/json" id="daily-data" set:html={JSON.stringify(daily)} />
 
   <section>
     <h2 class="mb-4 text-sm font-semibold tracking-wide text-muted uppercase">{s.patterns}</h2>
@@ -53,3 +74,22 @@ const totalGotchas = publishedPatterns.reduce(
     </ul>
   </section>
 </Base>
+
+<script>
+  import { dailyIndex, localDay } from '../../lib/leitner.ts';
+
+  type Daily = { title: string; body: string; cloud: string; color: string; pattern: string; href: string };
+  const items: Daily[] = JSON.parse(document.getElementById('daily-data')!.textContent!);
+  if (items.length) {
+    const g = items[dailyIndex(localDay(), items.length)];
+    const link = document.getElementById('daily-link') as HTMLAnchorElement;
+    link.textContent = g.title;
+    link.href = g.href;
+    const cloud = document.getElementById('daily-cloud')!;
+    cloud.textContent = g.cloud;
+    cloud.style.color = g.color;
+    document.getElementById('daily-pattern')!.textContent = `· ${g.pattern}`;
+    document.getElementById('daily-body')!.textContent = g.body;
+    document.getElementById('daily')!.hidden = false;
+  }
+</script>
