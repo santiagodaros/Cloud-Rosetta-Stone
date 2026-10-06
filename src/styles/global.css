@@ -10,16 +10,16 @@
   --c-muted: #5b6573;
   --c-accent: #4338ca;
   --c-azure: #0a6cc2;
-  --c-aws: #c25e00;
-  --c-gcp: #1a73e8;
+  --c-aws: #a34a00;
+  --c-gcp: #137333;
   --c-ok: #1a7f37;
-  --c-warn: #9a6700;
-  --c-bad: #cf222e;
-  --c-sev-security: #cf222e;
-  --c-sev-iam: #8250df;
-  --c-sev-networking: #0969da;
-  --c-sev-cost: #9a6700;
-  --c-sev-reliability: #bf3989;
+  --c-warn: #7d4e00;
+  --c-bad: #b62324;
+  --c-sev-security: #a40e26;
+  --c-sev-iam: #6639ba;
+  --c-sev-networking: #0550ae;
+  --c-sev-cost: #7d4e00;
+  --c-sev-reliability: #99286e;
   --c-sev-operations: #57606a;
   color-scheme: light;
 }
@@ -35,7 +35,7 @@
     --c-accent: #a5b4fc;
     --c-azure: #4aa3f0;
     --c-aws: #ff9f43;
-    --c-gcp: #79a8ff;
+    --c-gcp: #6dd58c;
     --c-ok: #3fb950;
     --c-warn: #d29922;
     --c-bad: #f85149;
@@ -59,7 +59,7 @@
   --c-accent: #a5b4fc;
   --c-azure: #4aa3f0;
   --c-aws: #ff9f43;
-  --c-gcp: #79a8ff;
+  --c-gcp: #6dd58c;
   --c-ok: #3fb950;
   --c-warn: #d29922;
   --c-bad: #f85149;
@@ -101,6 +101,13 @@ body {
 
 a {
   color: var(--c-accent);
+}
+
+/* Links dentro de texto: distinguibles sin depender solo del color (WCAG 1.4.1). */
+main p a,
+main li a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Shiki dual theme: el componente <Code> emite --shiki-light/--shiki-dark. */

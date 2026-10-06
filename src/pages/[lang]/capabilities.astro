@@ -17,7 +17,7 @@ const caps = [...site.capabilities].sort((a, b) => a.category.localeCompare(b.ca
   <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
   <p class="mb-8 max-w-3xl text-muted">{s.tagline}</p>
 
-  <div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6" data-pagefind-body>
     {
       caps.map((cap) => (
         <section id={cap.id} class="scroll-mt-4 rounded-xl border border-line bg-surface">
@@ -44,7 +44,7 @@ const caps = [...site.capabilities].sort((a, b) => a.category.localeCompare(b.ca
                     <ul class="flex flex-col gap-2">
                       {entry.services.map((svc) => (
                         <li>
-                          <a class="font-medium" href={svc.docs} target="_blank" rel="noopener">{svc.service}</a>
+                          <a class="font-medium" href={svc.docs} target="_blank" rel="noopener">{t(svc.service, lang)}</a>
                           {svc.notes && <p class="text-xs text-muted">{t(svc.notes, lang)}</p>}
                         </li>
                       ))}

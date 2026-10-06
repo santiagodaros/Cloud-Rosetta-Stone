@@ -23,7 +23,7 @@ const totalGotchas = publishedPatterns.reduce(
     <p class="text-lg text-muted">{s.tagline}</p>
     <div class="mt-4 flex flex-wrap gap-2 text-sm">
       {PROVIDERS.map((p) => <span class="rounded-full border px-3 py-0.5 font-medium" style={`border-color: ${PROVIDER_META[p].color}; color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</span>)}
-      <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
+      <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a class="underline underline-offset-2" href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
     </div>
   </section>
 

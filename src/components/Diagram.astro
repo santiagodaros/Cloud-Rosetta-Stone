@@ -6,11 +6,9 @@ interface Props {
   contents: Record<string, NodeContent>;
   color: string;
   title: string;
-  /** Con 3 columnas el diagrama no entra legible: scroll horizontal en vez de achicar. */
-  dense?: boolean;
 }
 
-const { layout, contents, color, title, dense = false } = Astro.props;
+const { layout, contents, color, title } = Astro.props;
 const pad = 4;
 const markerId = `arrow-${Math.random().toString(36).slice(2, 8)}`;
 ---
@@ -20,8 +18,8 @@ const markerId = `arrow-${Math.random().toString(36).slice(2, 8)}`;
   viewBox={`${-pad} ${-pad} ${layout.width + pad * 2} ${layout.height + pad * 2}`}
   role="img"
   aria-label={title}
-  class:list={['h-auto w-full', dense ? 'min-w-[540px]' : 'min-w-[540px] md:min-w-0']}
-  style={`--node: ${color}`}
+  class="mx-auto h-auto w-full min-w-[540px] md:min-w-0"
+  style={`--node: ${color}; max-width: ${Math.round(layout.width * 1.15)}px`}
 >
   <title>{title}</title>
   <defs>

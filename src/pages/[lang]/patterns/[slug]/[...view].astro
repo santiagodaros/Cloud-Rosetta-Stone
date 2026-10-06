@@ -40,8 +40,9 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
   title={`${title} · ${providersLabel} — Cloud Rosetta Stone`}
   description={t(pattern.summary, lang)}
   altPath={`patterns/${pattern.id}/${viewId}/`}
+  ogImage={`og/${lang}/${pattern.id}/${viewId}.png`}
 >
-  <article>
+  <article data-pagefind-body={viewId === 'all' ? '' : undefined} data-pagefind-meta={`title:${title}`}>
     <header class="mb-8 max-w-4xl">
       <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
       <p class="mb-4 text-muted">{t(pattern.summary, lang)}</p>
@@ -76,7 +77,7 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
     </nav>
 
     <div class:list={['grid grid-cols-1 gap-8', gridCols]}>
-      {view.providers.map((provider) => <ImplementationColumn bundle={bundle} provider={provider} layout={layout} lang={lang} dense={view.providers.length === 3} />)}
+      {view.providers.map((provider) => <ImplementationColumn bundle={bundle} provider={provider} layout={layout} lang={lang} />)}
     </div>
   </article>
 </Base>

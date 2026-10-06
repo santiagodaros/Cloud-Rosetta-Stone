@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import { LOCALES, ui, type Locale } from '../../lib/i18n.ts';
+import { href } from '../../lib/paths.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+// El índice lo genera Pagefind después del build (`pnpm build`).
+const pagefindBase = href('pagefind/');
+---
+
+<Base lang={lang} title={`${s.search} — Cloud Rosetta Stone`} description={s.tagline} altPath="search/">
+  <link rel="stylesheet" href={`${pagefindBase}pagefind-ui.css`} />
+  <h1 class="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">{s.search}</h1>
+  <div id="search" class="max-w-3xl" data-bundle={pagefindBase} data-placeholder={s.searchPlaceholder}></div>
+  <noscript><p class="text-muted">JavaScript es necesario para la búsqueda. · Search requires JavaScript.</p></noscript>
+
+  <script>
+    const el = document.getElementById('search')!;
+    const bundle = el.dataset.bundle!;
+    const script = document.createElement('script');
+    script.src = `${bundle}pagefind-ui.js`;
+    script.onload = () => {
+      // @ts-expect-error PagefindUI lo expone el script de Pagefind.
+      new window.PagefindUI({
+        element: '#search',
+        bundlePath: bundle,
+        showSubResults: true,
+        showImages: false,
+        translations: { placeholder: el.dataset.placeholder },
+      });
+      const input = el.querySelector('input');
+      const q = new URLSearchParams(location.search).get('q');
+      if (input && q) {
+        input.value = q;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      input?.focus();
+    };
+    document.head.appendChild(script);
+  </script>
+</Base>
+
+<style is:global>
+  #search {
+    --pagefind-ui-primary: var(--c-accent);
+    --pagefind-ui-text: var(--c-text);
+    --pagefind-ui-background: var(--c-surface);
+    --pagefind-ui-border: var(--c-border);
+    --pagefind-ui-tag: var(--c-surface-2);
+    --pagefind-ui-font: inherit;
+  }
+</style>
