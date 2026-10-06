@@ -1,0 +1,118 @@
+provider: aws
+bindings:
+  inbound:
+    service: Route 53 Resolver inbound endpoint
+    config: { es: "ENIs en dos AZs; SG con UDP y TCP 53 desde on-premises", en: "ENIs in two AZs; SG with UDP and TCP 53 from on-premises" }
+  private-zone:
+    service: Route 53 private hosted zone
+    config: { es: "Asociada a la VPC del inbound endpoint", en: "Associated with the inbound endpoint's VPC" }
+  outbound:
+    service: { es: "Route 53 Resolver outbound endpoint + regla FORWARD", en: "Route 53 Resolver outbound endpoint + FORWARD rule" }
+    config: { es: "Regla asociada a cada VPC; a otras cuentas con AWS RAM", en: "Rule associated with each VPC; to other accounts via AWS RAM" }
+gotchas:
+  - id: resolver-endpoints-fixed-cost
+    severity: cost
+    title:
+      es: Cada IP de un endpoint es una ENI que se paga por hora, y el mínimo son dos por endpoint
+      en: Each endpoint IP is an ENI billed hourly, and the minimum is two per endpoint
+    body:
+      es: >-
+        Route 53 Resolver cobra por ENI por hora, además de las consultas, y cada endpoint necesita al menos dos
+        IPs en AZs distintas. Entrada más salida son cuatro ENIs facturando las 24 horas aunque no haya una sola
+        consulta. En GCP la inbound policy y las forwarding zones no tienen cargo por hora. Si tenés varias
+        cuentas, centralizá los endpoints en el hub y compartí las reglas con RAM en lugar de repetirlos.
+      en: >-
+        Route 53 Resolver charges per ENI per hour, plus queries, and each endpoint needs at least two IPs in
+        different AZs. Inbound plus outbound is four ENIs billing around the clock even with zero queries. In GCP the
+        inbound policy and forwarding zones have no hourly charge. With several accounts, centralize the endpoints
+        in the hub and share the rules with RAM instead of repeating them.
+    sources:
+      - https://aws.amazon.com/route53/pricing/
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries-values.html
+    verified_at: 2026-10-06
+    exams: [ANS-C01, SAA-C03]
+  - id: vpc-plus-two-not-from-onprem
+    severity: networking
+    title:
+      es: Reenviar desde on-premises a la IP .2 de la VPC no está soportado
+      en: Forwarding from on-premises to the VPC's .2 address isn't supported
+    body:
+      es: >-
+        El resolver de la VPC (base del CIDR + 2) contesta a los recursos de la VPC. AWS indica que reenviarle
+        consultas desde on-premises u otros DNS no está soportado y puede dar resultados inestables, aunque a veces
+        parezca funcionar. Para eso existe el inbound endpoint, igual que el de Azure o la inbound
+        policy de GCP.
+      en: >-
+        The VPC resolver (CIDR base + 2) answers resources in the VPC. AWS states that forwarding queries to it from
+        on-premises or other DNS servers isn't supported and can give unstable results, even if it sometimes seems
+        to work. That's what the inbound endpoint is for, just like Azure's or GCP's inbound
+        policy.
+    sources:
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
+    verified_at: 2026-10-06
+    exams: [ANS-C01]
+  - id: phz-must-be-associated-with-inbound-vpc
+    severity: networking
+    title:
+      es: La private hosted zone tiene que estar asociada a la VPC del inbound endpoint
+      en: The private hosted zone must be associated with the inbound endpoint's VPC
+    body:
+      es: >-
+        El inbound endpoint resuelve con lo que ve su VPC. Si la zona está asociada solo a las VPCs de aplicación,
+        on-premises recibe NXDOMAIN aunque desde las VMs todo resuelva bien. En multi-cuenta, la zona también tiene que
+        estar asociada a la VPC del hub.
+      en: >-
+        The inbound endpoint resolves with what its VPC sees. If the zone is associated only with application VPCs,
+        on-premises gets NXDOMAIN even though everything resolves fine from the VMs. In multi-account setups, the zone must also
+        be associated with the hub VPC.
+    sources:
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-choose-vpc.html
+    verified_at: 2026-10-06
+    exams: [ANS-C01, SAA-C03]
+  - id: forward-rule-beats-phz
+    severity: networking
+    title:
+      es: Una regla de forward le gana a una private hosted zone con el mismo nombre
+      en: A forward rule beats a private hosted zone with the same name
+    body:
+      es: >-
+        Si en una VPC hay una regla FORWARD para corp.example.com y también una private hosted zone
+        corp.example.com, gana la regla. Entre reglas gana la más específica, y con una regla SYSTEM excluís un
+        subdominio del reenvío. En Azure es al revés: la zona privada vinculada se consulta antes que el ruleset.
+      en: >-
+        If a VPC has a FORWARD rule for corp.example.com and also a corp.example.com private hosted zone, the rule
+        wins. Among rules the most specific wins, and a SYSTEM rule excludes a subdomain from forwarding. In Azure
+        it's the other way around: the linked private zone is checked before the ruleset.
+    sources:
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-forward-vpc-to-network-domain-name-matches.html
+    verified_at: 2026-10-06
+    exams: [ANS-C01]
+  - id: qps-per-eni-connection-tracking
+    severity: reliability
+    title:
+      es: Son 10.000 QPS por IP, pero con connection tracking pueden ser 1.500
+      en: It's 10,000 QPS per IP, but with connection tracking it can drop to 1,500
+    body:
+      es: >-
+        Cada IP de un endpoint procesa hasta 10.000 consultas UDP por segundo. Si las reglas restrictivas del
+        security group fuerzan connection tracking (o las consultas pasan por un NLB), el inbound endpoint puede
+        bajar a 1.500 QPS por IP. Este módulo limita el origen a los rangos on-premises, así que contá con el número
+        bajo: monitoreá la métrica por ENI y agregá IPs cuando pase el 50%.
+      en: >-
+        Each endpoint IP handles up to 10,000 UDP queries per second. If restrictive security group rules force
+        connection tracking (or queries go through an NLB), the inbound endpoint can drop to 1,500 QPS per IP. This
+        module restricts the source to on-premises ranges, so plan for the low number: monitor the per-ENI metric
+        and add IPs once it passes 50%.
+    sources:
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-resolver-endpoint-scaling.html
+    verified_at: 2026-10-06
+    exams: [ANS-C01]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "4 ENIs de Resolver (2 inbound + 2 outbound) por hora", en: "4 Resolver ENIs (2 inbound + 2 outbound) hourly" }
+  notes:
+    es: El costo fijo lo ponen las ENIs de los endpoints; las consultas reenviadas se cobran por millón. Las consultas que resuelve el resolver de la VPC sin pasar por un endpoint no se cobran.
+    en: The fixed cost comes from the endpoint ENIs; forwarded queries are billed per million. Queries the VPC resolver answers without going through an endpoint aren't charged.

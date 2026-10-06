@@ -1,0 +1,101 @@
+provider: gcp
+bindings:
+  inbound:
+    service: { es: "Cloud DNS inbound server policy", en: "Cloud DNS inbound server policy" }
+    config: { es: "enable_inbound_forwarding: una IP de entrada por subnet de la VPC", en: "enable_inbound_forwarding: one entry IP per subnet in the VPC" }
+  private-zone:
+    service: Cloud DNS private zone
+    config: { es: "Visible para la VPC hub", en: "Visible to the hub VPC" }
+  outbound:
+    service: { es: "Cloud DNS forwarding zone", en: "Cloud DNS forwarding zone" }
+    config: { es: "forwarding_path = private + Cloud Router anunciando 35.199.192.0/19", en: "forwarding_path = private + Cloud Router advertising 35.199.192.0/19" }
+gotchas:
+  - id: return-route-35-199-192-0-19
+    severity: networking
+    title:
+      es: Las consultas reenviadas salen desde 35.199.192.0/19, y on-premises tiene que poder contestarle
+      en: Forwarded queries come from 35.199.192.0/19, and on-premises must be able to reply to it
+    body:
+      es: >-
+        Cloud DNS no usa IPs de tu VPC para reenviar: toda consulta a un forwarding target sale desde
+        35.199.192.0/19. El firewall on-premises tiene que permitir UDP y TCP 53 desde ese rango, y on-premises
+        necesita una ruta de vuelta por los túneles VPN o attachments de Interconnect de la misma VPC y región. Con
+        BGP eso es un anuncio custom del Cloud Router. Sin la ruta, el DNS on-premises recibe la consulta y la
+        respuesta se pierde: parece un timeout.
+      en: >-
+        Cloud DNS doesn't use your VPC's IPs to forward: every query to a forwarding target comes from
+        35.199.192.0/19. The on-premises firewall must allow UDP and TCP 53 from that range, and on-premises needs a
+        return route through the VPN tunnels or Interconnect attachments in the same VPC and region. With BGP that's
+        a custom advertisement on the Cloud Router. Without the route, the on-premises DNS gets the query and the
+        reply is lost: it looks like a timeout.
+    sources:
+      - https://docs.cloud.google.com/dns/docs/zones/forwarding-zones
+      - https://docs.cloud.google.com/dns/docs/server-policies-overview
+    verified_at: 2026-10-06
+    exams: [PCNE, PCA]
+  - id: forwarding-path-private
+    severity: security
+    title:
+      es: Con routing estándar, un destino que no es RFC 1918 se consulta por internet
+      en: With standard routing, a non-RFC 1918 target is queried over the internet
+    body:
+      es: >-
+        El default de una forwarding zone decide la ruta según la IP del destino: RFC 1918 va por la VPC, cualquier
+        otra va por internet. Si tu DNS on-premises usa IPs públicas reutilizadas internamente o rangos no RFC 1918,
+        las consultas salen a internet y no llegan. forwarding_path = "private" fuerza siempre la VPC.
+      en: >-
+        A forwarding zone's default picks the path by target IP: RFC 1918 goes through the VPC, anything else goes
+        over the internet. If your on-premises DNS uses internally reused public IPs or non-RFC 1918 ranges, queries
+        go out to the internet and never arrive. forwarding_path = "private" always forces the VPC.
+    sources:
+      - https://docs.cloud.google.com/dns/docs/zones/zones-overview
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone
+    verified_at: 2026-10-06
+    exams: [PCNE]
+  - id: inbound-entry-point-per-subnet
+    severity: networking
+    title:
+      es: La inbound policy toma una IP de cada subnet, no una por región ni dos por endpoint
+      en: The inbound policy takes one IP from every subnet, not one per region or two per endpoint
+    body:
+      es: >-
+        No hay endpoints que dimensionar: la policy reserva una IP interna del rango primario de cada subnet de la
+        VPC (menos las de propósito especial), así que una VPC con muchas subnets tiene muchas IPs de entrada. Lo
+        que cuenta para la respuesta es la región del túnel o attachment por donde llegó la consulta, no la de la
+        subnet de la IP. Poné la policy en la VPC que tiene la VPN o el Interconnect.
+      en: >-
+        There are no endpoints to size: the policy reserves one internal IP from the primary range of every subnet
+        in the VPC (except special-purpose ones), so a VPC with many subnets has many entry IPs. What matters for the
+        response is the region of the tunnel or attachment the query arrived on, not the subnet's region. Put the
+        policy on the VPC that has the VPN or Interconnect.
+    sources:
+      - https://docs.cloud.google.com/dns/docs/server-policies-overview
+    verified_at: 2026-10-06
+    exams: [PCNE, ACE]
+  - id: dns-not-shared-over-peering
+    severity: networking
+    title:
+      es: VPC Network Peering no comparte las zonas privadas; hacen falta peering zones
+      en: VPC Network Peering doesn't share private zones; you need peering zones
+    body:
+      es: >-
+        Una VPC peereada no ve las zonas privadas ni las forwarding zones autorizadas solo para la VPC hub. En
+        hub-and-spoke, cada spoke necesita una DNS peering zone hacia el hub, y el DNS peering transitivo llega a
+        un solo salto. Es la diferencia con Azure, donde un ruleset se linkea a VNets que ni siquiera están
+        peereadas.
+      en: >-
+        A peered VPC doesn't see private zones or forwarding zones authorized only for the hub VPC. In hub-and-spoke,
+        each spoke needs a DNS peering zone to the hub, and transitive DNS peering only goes one hop. That's the
+        difference from Azure, where a ruleset links to VNets that aren't even peered.
+    sources:
+      - https://docs.cloud.google.com/dns/docs/zones/peering-zones
+      - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
+    verified_at: 2026-10-06
+    exams: [PCNE, PCA]
+cost:
+  scales_to_zero: partial
+  fixed_cost_drivers:
+    - { es: "Zonas administradas (privada y de forwarding), por mes", en: "Managed zones (private and forwarding), monthly" }
+  notes:
+    es: No hay cargo por hora de endpoints. Pagás cada zona por mes, se use o no, y las consultas por millón. El Cloud Router y la VPN se pagan aparte y suelen existir ya por la conectividad.
+    en: There's no hourly endpoint charge. You pay each zone monthly, used or not, and queries per million. The Cloud Router and VPN are billed separately and usually already exist for connectivity.
