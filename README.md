@@ -30,7 +30,8 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
 - **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").
-- **Datos abiertos:** `/api/v1/patterns.json`, `/api/v1/capabilities.json` y `/api/v1/exams.json`.
+- **Datos abiertos y para asistentes:** dataset JSON versionado (`/api/v1/`), `llms.txt` y un MCP server de
+  solo lectura para que Claude o Copilot citen gotchas con su fuente. Ver [docs/DATASET.md](docs/DATASET.md).
 - **Para compartir:** cada comparación tiene su imagen OG y cada gotcha un deep link.
 - **Búsqueda** estática (Pagefind) en español e inglés.
 - **Español primero**, inglés incluido. Sin cuentas, sin credenciales, sin trackers, $0.
