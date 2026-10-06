@@ -4,7 +4,7 @@ import Base from '../../../../layouts/Base.astro';
 import ImplementationColumn from '../../../../components/ImplementationColumn.astro';
 import { layoutPattern } from '../../../../lib/diagram.ts';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../../lib/i18n.ts';
-import { patternHref } from '../../../../lib/paths.ts';
+import { adrHref, migrateHref, patternHref } from '../../../../lib/paths.ts';
 import { PROVIDERS } from '../../../../lib/schema.ts';
 import { DEFAULT_VIEW, publishedPatterns, VIEWS } from '../../../../lib/site.ts';
 import { comparisonMarkdown } from '../../../../lib/share.ts';
@@ -85,6 +85,14 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
         data-md={comparisonMd}
         data-done={s.copiedMarkdown}
         data-pagefind-ignore>⧉ {s.copyComparison}</button>
+      <a
+        class="inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs text-muted no-underline hover:bg-surface-2 hover:text-fg"
+        href={migrateHref(lang, view.providers.length === 2 ? { from: view.providers[0], to: view.providers[1], p: pattern.id } : { p: pattern.id })}
+        data-pagefind-ignore>☑ {s.migrateThis}</a>
+      <a
+        class="inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs text-muted no-underline hover:bg-surface-2 hover:text-fg"
+        href={adrHref(lang, { p: pattern.id })}
+        data-pagefind-ignore>✎ {s.adrThis}</a>
     </nav>
 
     <RoleExplorer bundle={bundle} providers={view.providers} lang={lang} />

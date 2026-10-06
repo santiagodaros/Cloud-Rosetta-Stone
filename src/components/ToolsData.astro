@@ -1,0 +1,17 @@
+---
+/** JSON localizado que consumen las herramientas (checklist de migración y ADR). */
+import { site, publishedPatterns } from '../lib/site.ts';
+import { patternHref } from '../lib/paths.ts';
+import { toolStrings, toolsData } from '../lib/tools.ts';
+import type { Locale } from '../lib/i18n.ts';
+
+interface Props {
+  lang: Locale;
+  extra?: Record<string, unknown>;
+}
+const { lang, extra = {} } = Astro.props;
+const urlFor = (id: string, anchor?: string) => new URL(`${patternHref(lang, id, 'all')}${anchor ? `#${anchor}` : ''}`, Astro.site).href;
+const payload = { data: toolsData(publishedPatterns, site.terraformMap, lang, urlFor), S: toolStrings(lang), ...extra };
+---
+
+<script is:inline type="application/json" id="tools-data" set:html={JSON.stringify(payload).replace(/</g, '\\u003c')} />

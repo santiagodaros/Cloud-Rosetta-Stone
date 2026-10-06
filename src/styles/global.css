@@ -178,3 +178,19 @@ main li a {
 :root[data-origin='gcp'] .from-note[data-from='gcp'] {
   display: block;
 }
+
+/* Checklist de migración (F4-13): "Imprimir / PDF" deja solo el contenido. */
+@media print {
+  body > header,
+  body > footer,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  main {
+    padding: 0;
+  }
+}

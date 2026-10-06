@@ -11,7 +11,9 @@
         "http://localhost/en/terraform/",
         "http://localhost/es/changes/",
         "http://localhost/es/practice/",
-        "http://localhost/en/exams/az-104/"
+        "http://localhost/en/exams/az-104/",
+        "http://localhost/es/migrate/",
+        "http://localhost/en/adr/"
       ],
       "numberOfRuns": 1,
       "settings": {

@@ -135,6 +135,12 @@ gotcha del día.
 recursos Terraform (29 entradas, 130 referencias validadas en CI contra el schema de azurerm, aws y google). El
 MCP server suma `explain_concept` y `terraform_equivalent`.
 
+**Cuarta entrega (✅):** F4-13 checklist de migración (`/migrate/`: origen → destino → patrones; mapeo de
+roles, notas "venís de", letra chica del destino con fuente, recursos Terraform y costo; tildes en
+`localStorage`, export a Markdown y PDF por impresión) · F4-14 generador de ADR (`/adr/`: MADR 4 con las tres
+implementaciones como opciones, pros y contras derivados del contenido y la letra chica citada). Ambas 100%
+client-side, sin contenido nuevo.
+
 **Segunda entrega (✅):** F4-22 isla interactiva del diagrama · F4-09 "Mi nube". Schema nuevo: `roles` por
 gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por patrón. F4-09 usa solo
 `localStorage`: no agrega medición, así que F4-21 sigue abierta como decisión independiente.
@@ -143,8 +149,7 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 
 1. ~~**F4-22** + **F4-09**~~ (hechos).
 2. ~~**F4-16** + **F4-15**~~ (hechos).
-3. **F4-13** checklist de migración y **F4-14** generador de ADR: reutilizan lo que ya hay, sin contenido
-   nuevo.
+3. ~~**F4-13** + **F4-14**~~ (hechos).
 4. **F4-03 / F4-05** pricing + matriz de decisión.
 5. **F4-18** widgets, **F4-19** PWA.
 
@@ -171,8 +176,8 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 | F4-10 ✅ | **"Qué cambió"**: changelog de gotchas creados, corregidos o re-verificados, con diff de texto, + feed RSS/Atom | Build time desde el historial de git y `verified_at`; es la excusa honesta para volver cada semana |
 | F4-11 ✅ | **"Copiar como Markdown"** en cada gotcha y comparación (texto + fuente + `verified_at` + link) | Para pegar en PRs, ADRs y tickets; cada pegada es un link entrante (métrica §5) |
 | F4-12 ✅ | **"Reportar desactualizado"** en cada gotcha → abre `stale-gotcha.yml` con `location` precargado | Los issue forms aceptan precarga por query param (`?template=…&location=…`); baja la fricción para contribuir |
-| F4-13 | **Checklist de migración**: origen → destino → patrón = lista de gotchas a validar, exportable a Markdown/PDF | Uso directo en preventa y kick-off de migraciones; reutiliza los gotchas, sin contenido nuevo |
-| F4-14 | **Generador de ADR** desde la comparación: decisión, alternativas descartadas, gotchas citados con fuente | Plantilla MADR; 100% client-side |
+| F4-13 ✅ | **Checklist de migración**: origen → destino → patrón = lista de gotchas a validar, exportable a Markdown/PDF | Uso directo en preventa y kick-off de migraciones; reutiliza los gotchas, sin contenido nuevo |
+| F4-14 ✅ | **Generador de ADR** desde la comparación: decisión, alternativas descartadas, gotchas citados con fuente | Plantilla MADR; 100% client-side |
 | F4-15 ✅ | **Mapa de recursos Terraform** `azurerm_*` ↔ `aws_*` ↔ `google_*`, curado, con marca "no es 1:1" | Nuevo tipo de contenido con schema y fuente obligatoria; es la alternativa verificada a F4-07 |
 | F4-16 ✅ | **Diccionario de conceptos** (no servicios): jerarquía de recursos (tenant/MG/subscription/RG · org/OU/account · org/folder/project), regiones y zonas, modelo de identidad | Donde más se confunde quien salta de nube; mismo formato hub-and-spoke que capabilities |
 | F4-17 ✅ | **Repetición espaciada** (Leitner) + "gotcha del día" sobre las flashcards de F3-02 | Progreso en `localStorage`; genera hábito diario sin login |

@@ -16,3 +16,7 @@ export const examsHref = (lang: Locale, code?: string) => href(`${lang}/exams/${
 export const practiceHref = (lang: Locale, exam?: string) => href(`${lang}/practice/${exam ? `?exam=${exam}` : ''}`);
 
 export const pairView = (a: Provider, b: Provider) => `${a}-vs-${b}`;
+export const migrateHref = (lang: Locale, q?: { from?: Provider; to?: Provider; p?: string }) =>
+  href(`${lang}/migrate/${q ? `?${new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])}` : ''}`);
+export const adrHref = (lang: Locale, q?: { p?: string; cloud?: Provider }) =>
+  href(`${lang}/adr/${q ? `?${new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])}` : ''}`);

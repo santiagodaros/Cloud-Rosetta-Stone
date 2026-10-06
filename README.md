@@ -33,6 +33,11 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 - **Qué cambió:** cada gotcha nuevo, corregido o re-verificado, con diff y feed Atom.
 - **Para el día a día:** cada gotcha y cada comparación se copian como Markdown (con fuente y atribución)
   para pegar en un PR o un ADR; "Reportar desactualizado" abre el issue ya completo.
+- **Checklist de migración:** origen → destino → patrones, y sale la lista de qué validar (mapeo de roles,
+  qué cambia viniendo de tu nube, letra chica del destino con fuente, recursos Terraform, costo fijo), con
+  tildes guardadas en el navegador y export a Markdown o PDF.
+- **Generador de ADR:** un Architecture Decision Record en formato MADR a partir de un patrón, con las tres
+  nubes como opciones y la letra chica de la elegida citada. Todo corre en el navegador.
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
 - **Diccionario** en tres partes: servicios (con huecos explícitos), **conceptos** (jerarquía, alcance de la

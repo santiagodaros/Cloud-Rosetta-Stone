@@ -3,7 +3,7 @@ import { BRAND } from '../lib/brand.ts';
 import '../styles/global.css';
 import { ui, LOCALES, PROVIDER_META, type Locale } from '../lib/i18n.ts';
 import { PROVIDERS } from '../lib/schema.ts';
-import { capabilitiesHref, examsHref, homeHref, href, practiceHref } from '../lib/paths.ts';
+import { adrHref, capabilitiesHref, examsHref, homeHref, href, migrateHref, practiceHref } from '../lib/paths.ts';
 
 interface Props {
   lang: Locale;
@@ -96,6 +96,8 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
       <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-muted sm:flex-row sm:justify-between">
         <p class="max-w-2xl">{s.disclaimer}</p>
         <p class="flex flex-wrap gap-4">
+          <a href={migrateHref(lang)}>{s.migrateNav}</a>
+          <a href={adrHref(lang)}>{s.adrNav}</a>
           <a href={href(`${lang}/changes/`)}>{s.changesNav}</a>
           <a href={href('api/v1/index.json')}>{s.openData}</a>
           <a href={repo}>GitHub</a>
