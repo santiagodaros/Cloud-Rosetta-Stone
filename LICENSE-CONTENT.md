@@ -11,7 +11,7 @@ textos), la documentación de `docs/` y el dataset publicado en `/api/v1/` — s
 - Texto legal: https://creativecommons.org/licenses/by-sa/4.0/legalcode.es
 - Resumen: https://creativecommons.org/licenses/by-sa/4.0/deed.es
 
-**Atribución sugerida:** «Cloud Rosetta Stone — https://github.com/santiagodaros/Cloud-Rosetta-Stone — CC BY-SA 4.0».
+**Atribución sugerida:** «Letra Chica — https://github.com/santiagodaros/Cloud-Rosetta-Stone — CC BY-SA 4.0».
 
 ¿Por qué CC BY-SA para el contenido? Para que cualquiera pueda reutilizarlo (incluso comercialmente) y que
 las versiones derivadas sigan siendo abiertas. Es la misma licencia que usa Wikipedia.

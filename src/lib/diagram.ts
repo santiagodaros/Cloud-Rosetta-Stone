@@ -56,7 +56,7 @@ export function nodeContents(pattern: Pattern, impl: Implementation | undefined,
     const isGap = !b || 'gap' in b;
     out[role.id] = {
       role: t(role.label, lang),
-      lines: isGap ? [gapLabel] : wrap(b.service),
+      lines: isGap ? [gapLabel] : wrap(t(b.service, lang)),
       gap: isGap,
       actor: false,
     };

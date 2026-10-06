@@ -1,5 +1,5 @@
 /**
- * Schema canónico del contenido de Cloud Rosetta Stone.
+ * Schema canónico del contenido de Letra Chica.
  *
  * Es la única fuente de verdad: lo usan el sitio (build), el validador de CI
  * (`pnpm validate`) y el dataset abierto (`/api/v1/*.json`). Si cambiás algo acá,
@@ -20,6 +20,13 @@ export const Localized = z.strictObject({
   en: z.string().min(1).optional(),
 });
 export type Localized = z.infer<typeof Localized>;
+
+/**
+ * Nombre de producto o configuración: string si es igual en todos los idiomas
+ * ("Amazon S3", "ipv4_enabled = false"), o Localized si contiene texto traducible.
+ */
+export const Text = z.union([z.string().min(1), Localized]);
+export type Text = z.infer<typeof Text>;
 
 const slug = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'debe ser kebab-case');
 
@@ -47,7 +54,7 @@ export const SourceUrl = z.url({ protocol: /^https$/ }).refine(
   { message: `la fuente debe ser documentación oficial (${OFFICIAL_SOURCE_HOSTS.join(', ')})` },
 );
 
-export const CATEGORIES = ['compute-web', 'async-event', 'storage-data', 'networking', 'identity'] as const;
+export const CATEGORIES = ['compute-web', 'async-event', 'storage-data', 'networking', 'identity', 'governance', 'observability'] as const;
 export const Category = z.enum(CATEGORIES);
 
 // ---------------------------------------------------------------------------
@@ -55,7 +62,7 @@ export const Category = z.enum(CATEGORIES);
 // ---------------------------------------------------------------------------
 
 export const CapabilityImplementation = z.strictObject({
-  service: z.string().min(1),
+  service: Text,
   docs: SourceUrl,
   notes: Localized.optional(),
 });
@@ -116,9 +123,9 @@ export type Pattern = z.infer<typeof Pattern>;
 
 export const Binding = z.union([
   z.strictObject({
-    service: z.string().min(1),
+    service: Text,
     /** SKU/tier/config que hace que el patrón funcione (ej. "Premium", "Gateway endpoint"). */
-    config: z.string().min(1).optional(),
+    config: Text.optional(),
     notes: Localized.optional(),
   }),
   z.strictObject({ gap: Localized }),

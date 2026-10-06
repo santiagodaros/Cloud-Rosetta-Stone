@@ -1,0 +1,26 @@
+id: api-management
+category: compute-web
+name:
+  es: "Gestión de APIs"
+  en: "API management"
+description:
+  es: "Gateway de APIs con autenticación, cuotas, transformación y portal de desarrolladores."
+  en: "API gateway with authentication, quotas, transformation and developer portal."
+providers:
+  azure:
+    services:
+      - service: "Azure API Management"
+        docs: https://learn.microsoft.com/azure/api-management/api-management-key-concepts
+  aws:
+    services:
+      - service: "Amazon API Gateway"
+        docs: https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html
+  gcp:
+    services:
+      - service: "API Gateway"
+        docs: https://docs.cloud.google.com/api-gateway/docs/about-api-gateway
+      - service: "Apigee"
+        docs: https://docs.cloud.google.com/apigee/docs/api-platform/get-started/what-apigee
+caveats:
+  - es: "API Management y Apigee son plataformas completas (portal, monetización, políticas); Amazon API Gateway y Google API Gateway son gateways más livianos. Comparar APIM con API Gateway de AWS solo por precio es comparar productos de categorías distintas."
+    en: "API Management and Apigee are full platforms (portal, monetization, policies); Amazon API Gateway and Google API Gateway are lighter gateways. Comparing APIM with AWS API Gateway on price alone compares products in different categories."

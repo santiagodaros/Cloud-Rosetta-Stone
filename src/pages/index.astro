@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand.ts';
 // Raíz → español (idioma primario). Meta refresh porque el sitio es 100% estático.
 import { homeHref } from '../lib/paths.ts';
 const target = homeHref('es');
@@ -9,12 +10,12 @@ const target = homeHref('es');
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cloud Rosetta Stone</title>
+    <title>{BRAND.name}</title>
     <meta http-equiv="refresh" content={`0; url=${target}`} />
     <link rel="canonical" href={target} />
     <style>body { background: #f7f8fa; font-family: system-ui, sans-serif; } @media (prefers-color-scheme: dark) { body { background: #0d1117; color: #e6edf3; } }</style>
   </head>
   <body>
-    <p><a href={target}>Cloud Rosetta Stone →</a></p>
+    <p><a href={target}>{BRAND.name} →</a></p>
   </body>
 </html>

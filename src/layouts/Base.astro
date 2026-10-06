@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand.ts';
 import '../styles/global.css';
 import { ui, LOCALES, type Locale } from '../lib/i18n.ts';
 import { capabilitiesHref, homeHref, href } from '../lib/paths.ts';
@@ -9,12 +10,15 @@ interface Props {
   description: string;
   /** Path equivalente en el otro idioma, sin el prefijo de idioma (ej. "patterns/x/"). */
   altPath?: string;
+  /** Path de la imagen OG relativo al sitio (ej. "og/es/home.png"). */
+  ogImage?: string;
 }
 
-const { lang, title, description, altPath = '' } = Astro.props;
+const { lang, title, description, altPath = '', ogImage = `og/${lang}/home.png` } = Astro.props;
 const s = ui(lang);
-const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
+const repo = BRAND.repo;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImageUrl = new URL(href(ogImage), Astro.site).href;
 ---
 
 <!doctype html>
@@ -30,7 +34,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical.href} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={lang === 'es' ? 'es_AR' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImageUrl} />
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
   </head>
   <body class="min-h-screen antialiased">
@@ -38,11 +47,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <nav class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
         <a href={homeHref(lang)} class="flex flex-1 items-center gap-2 font-semibold text-fg no-underline sm:flex-none">
           <img src={href('favicon.svg')} alt="" width="22" height="22" />
-          Cloud Rosetta Stone
+          {BRAND.name}
         </a>
         <div class="order-last flex w-full flex-wrap items-center gap-x-5 gap-y-1 text-sm sm:order-none sm:w-auto sm:flex-1">
           <a class="text-muted hover:text-fg" href={homeHref(lang)}>{s.patterns}</a>
           <a class="text-muted hover:text-fg" href={capabilitiesHref(lang)}>{s.dictionary}</a>
+          <a class="text-muted hover:text-fg" href={href(`${lang}/methodology/`)}>{s.methodology}</a>
+          <a class="text-muted hover:text-fg" href={href(`${lang}/search/`)}>{s.search}</a>
           <a class="text-muted hover:text-fg" href={`${repo}/blob/main/CONTRIBUTING.md`}>{s.contribute}</a>
         </div>
         <div class="flex items-center gap-1 text-sm" aria-label="Idioma / Language">

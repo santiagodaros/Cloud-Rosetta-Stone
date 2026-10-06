@@ -9,7 +9,7 @@ description:
 providers:
   azure:
     services:
-      - service: Managed Identity (system o user-assigned)
+      - service: { es: "Managed Identity (system o user-assigned)", en: "Managed Identity (system- or user-assigned)" }
         docs: https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview
   aws:
     services:

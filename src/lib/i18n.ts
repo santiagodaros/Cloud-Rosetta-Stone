@@ -1,14 +1,16 @@
-import type { Localized, Locale, Provider, Severity } from './schema.ts';
+import type { Locale, Provider, Severity, Text } from './schema.ts';
 import { LOCALES } from './schema.ts';
 
 export { LOCALES };
 export type { Locale };
 
 /** Texto localizado con fallback a español (idioma primario del contenido). */
-export const t = (text: Localized | undefined, lang: Locale): string => (text ? (text[lang] ?? text.es) : '');
+export const t = (text: Text | undefined, lang: Locale): string =>
+  text === undefined ? '' : typeof text === 'string' ? text : (text[lang] ?? text.es);
 
 /** true si el texto se está mostrando en fallback (para marcarlo en la UI). */
-export const isFallback = (text: Localized | undefined, lang: Locale) => !!text && lang !== 'es' && !text[lang];
+export const isFallback = (text: Text | undefined, lang: Locale) =>
+  !!text && typeof text !== 'string' && lang !== 'es' && !text[lang];
 
 export const PROVIDER_META: Record<Provider, { name: string; short: string; color: string }> = {
   azure: { name: 'Microsoft Azure', short: 'Azure', color: 'var(--c-azure)' },
@@ -18,7 +20,7 @@ export const PROVIDER_META: Record<Provider, { name: string; short: string; colo
 
 const UI = {
   es: {
-    tagline: 'Traducí arquitecturas entre Azure, AWS y GCP: dónde se rompe la analogía, con Terraform verificado.',
+    tagline: 'La letra chica del multicloud: dónde se rompe la analogía entre Azure, AWS y GCP, con fuentes oficiales y Terraform verificado.',
     patterns: 'Patrones',
     dictionary: 'Diccionario',
     contribute: 'Contribuir',
@@ -61,10 +63,17 @@ const UI = {
     } satisfies Record<Severity, string>,
     gotchaCount: (n: number) => `${n} gotcha${n === 1 ? '' : 's'}`,
     patternCount: (n: number) => `${n} patrón${n === 1 ? '' : 'es'}`,
+    ogKicker: 'Comparación de arquitectura',
+    ogFooter: (n: number) => `${n} gotchas con fuente oficial · Terraform testeado`,
+    search: 'Buscar',
+    searchPlaceholder: 'Buscá un servicio, un gotcha o un examen…',
+    methodology: 'Cómo verificamos',
+    copyLink: 'Copiar link a este gotcha',
+    linkCopied: 'Link copiado',
     capabilityCount: (n: number) => `${n} capabilities`,
   },
   en: {
-    tagline: 'Translate architectures across Azure, AWS and GCP: where the analogy breaks, with verified Terraform.',
+    tagline: 'The fine print of multicloud: where the analogy breaks across Azure, AWS and GCP, with official sources and verified Terraform.',
     patterns: 'Patterns',
     dictionary: 'Dictionary',
     contribute: 'Contribute',
@@ -107,6 +116,13 @@ const UI = {
     } satisfies Record<Severity, string>,
     gotchaCount: (n: number) => `${n} gotcha${n === 1 ? '' : 's'}`,
     patternCount: (n: number) => `${n} pattern${n === 1 ? '' : 's'}`,
+    ogKicker: 'Architecture comparison',
+    ogFooter: (n: number) => `${n} gotchas with official sources · Tested Terraform`,
+    search: 'Search',
+    searchPlaceholder: 'Search a service, a gotcha or an exam…',
+    methodology: 'How we verify',
+    copyLink: 'Copy link to this gotcha',
+    linkCopied: 'Link copied',
     capabilityCount: (n: number) => `${n} capabilities`,
   },
 } as const;

@@ -1,0 +1,21 @@
+id: in-memory-cache
+category: storage-data
+name:
+  es: "Cache en memoria (Redis)"
+  en: "In-memory cache (Redis)"
+description:
+  es: "Redis/Valkey gestionado para cache, sesiones y colas livianas."
+  en: "Managed Redis/Valkey for caching, sessions and lightweight queues."
+providers:
+  azure:
+    services:
+      - service: "Azure Managed Redis"
+        docs: https://learn.microsoft.com/azure/redis/overview
+  aws:
+    services:
+      - service: "Amazon ElastiCache"
+        docs: https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/WhatIs.html
+  gcp:
+    services:
+      - service: "Memorystore for Redis"
+        docs: https://docs.cloud.google.com/memorystore/docs/redis/memorystore-for-redis-overview

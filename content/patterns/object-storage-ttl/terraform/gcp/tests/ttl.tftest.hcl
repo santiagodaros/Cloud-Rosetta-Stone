@@ -3,7 +3,7 @@
 mock_provider "google" {}
 
 variables {
-  project_id  = "rosetta-test"
+  project_id  = "letra-chica-test"
   name        = "ingest-test"
   bucket_name = "ingest-test-bucket-001"
 }

@@ -1,0 +1,102 @@
+provider: gcp
+bindings:
+  queue:
+    service: Pub/Sub topic + push subscription
+    config: { es: "Push autenticado con OIDC", en: "OIDC-authenticated push" }
+  worker:
+    service: Cloud Run (service)
+    config: { es: "Ingress interno, invocado por Pub/Sub", en: "Internal ingress, invoked by Pub/Sub" }
+  identity:
+    service: { es: "Service Accounts (worker + invoker de push)", en: "Service Accounts (worker + push invoker)" }
+    config: { es: "roles/run.invoker para la SA de push", en: "roles/run.invoker for the push SA" }
+  results:
+    service: Cloud Storage bucket
+    config: UBLA + public access prevention
+  dead-letter:
+    service: { es: "Dead-letter topic + suscripción pull", en: "Dead-letter topic + pull subscription" }
+    config: { es: "max_delivery_attempts + permisos del service agent", en: "max_delivery_attempts + service agent permissions" }
+gotchas:
+  - id: dlq-needs-service-agent-roles
+    severity: iam
+    title:
+      es: El dead-letter no funciona sin permisos para el service agent de Pub/Sub
+      en: Dead-lettering doesn't work without permissions for the Pub/Sub service agent
+    body:
+      es: >-
+        Quien reenvía al dead-letter topic es service-<número>@gcp-sa-pubsub.iam.gserviceaccount.com, y necesita
+        publisher en el dead-letter topic y subscriber en la suscripción de origen. Sin esos roles la política está
+        configurada pero los mensajes nunca se mueven. El módulo otorga ambos.
+      en: >-
+        The forwarder to the dead-letter topic is service-<number>@gcp-sa-pubsub.iam.gserviceaccount.com, and it
+        needs publisher on the dead-letter topic and subscriber on the source subscription. Without those roles the
+        policy is configured but messages never move. The module grants both.
+    sources:
+      - https://docs.cloud.google.com/pubsub/docs/handling-failures
+    verified_at: 2026-10-06
+    exams: [PCD, PDE]
+  - id: dead-letter-topic-needs-subscription
+    severity: reliability
+    title:
+      es: Un dead-letter topic sin suscripción descarta los mensajes
+      en: A dead-letter topic without a subscription drops messages
+    body:
+      es: >-
+        En Pub/Sub un topic no guarda mensajes por sí mismo: se retienen por suscripción. Si el dead-letter topic no
+        tiene una suscripción creada antes de que lleguen los mensajes, se pierden. El mínimo de intentos antes de
+        reenviar es 5 (máximo 100).
+      en: >-
+        In Pub/Sub a topic doesn't store messages by itself: they're retained per subscription. If the dead-letter
+        topic has no subscription created before messages arrive, they're lost. The minimum delivery attempts
+        before forwarding is 5 (maximum 100).
+    sources:
+      - https://docs.cloud.google.com/pubsub/docs/handling-failures
+      - https://docs.cloud.google.com/pubsub/docs/dead-letter-topics
+    verified_at: 2026-10-06
+    exams: [PDE, PCD]
+  - id: push-ack-deadline
+    severity: reliability
+    title:
+      es: En push, el ack es la respuesta HTTP y tiene que llegar dentro del ack deadline
+      en: With push, the ack is the HTTP response and must arrive within the ack deadline
+    body:
+      es: >-
+        Pub/Sub considera procesado el mensaje cuando el endpoint responde 2xx. Si el worker tarda más que el ack
+        deadline (máximo 600 s), Pub/Sub lo reentrega mientras sigue corriendo. Alineá ack_deadline_seconds con el
+        timeout del servicio de Cloud Run y, para trabajos largos, usá pull o Cloud Run Jobs.
+      en: >-
+        Pub/Sub considers the message processed when the endpoint responds 2xx. If the worker takes longer than the
+        ack deadline (max 600 s), Pub/Sub redelivers it while it's still running. Align ack_deadline_seconds with the
+        Cloud Run service timeout and, for long jobs, use pull or Cloud Run Jobs.
+    sources:
+      - https://docs.cloud.google.com/pubsub/docs/push
+      - https://docs.cloud.google.com/pubsub/docs/lease-management
+    verified_at: 2026-10-06
+    exams: [PCD, PDE]
+  - id: exactly-once-pull-only
+    severity: reliability
+    title:
+      es: Pub/Sub ofrece exactly-once delivery, pero solo en suscripciones pull
+      en: Pub/Sub offers exactly-once delivery, but only on pull subscriptions
+    body:
+      es: >-
+        Es el único de los tres servicios del patrón con exactly-once delivery nativo, pero push (lo que dispara a
+        Cloud Run) no lo soporta. Con push, igual que en Service Bus y SQS Standard, el worker tiene que ser
+        idempotente.
+      en: >-
+        It's the only one of the pattern's three services with native exactly-once delivery, but push (what
+        triggers Cloud Run) doesn't support it. With push, as with Service Bus and SQS Standard, the worker must be
+        idempotent.
+    sources:
+      - https://docs.cloud.google.com/pubsub/docs/exactly-once-delivery
+    verified_at: 2026-10-06
+    exams: [PDE, PCD]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: >-
+      Cero costo fijo: Pub/Sub se cobra por volumen, Cloud Run escala a cero y Cloud Storage por uso. Push además
+      evita el polling: no hay requests facturables con la cola vacía.
+    en: >-
+      Zero fixed cost: Pub/Sub is billed by volume, Cloud Run scales to zero and Cloud Storage is pay-per-use. Push
+      also avoids polling: there are no billable requests while the queue is empty.

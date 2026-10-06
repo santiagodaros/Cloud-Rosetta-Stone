@@ -1,0 +1,154 @@
+provider: azure
+bindings:
+  ingress:
+    service: { es: "Container Apps environment interno", en: "Internal Container Apps environment" }
+    config: { es: "internal_load_balancer_enabled + zona DNS privada del default domain", en: "internal_load_balancer_enabled + private DNS zone for the default domain" }
+  app:
+    service: Azure Container Apps
+    config: { es: "Workload profiles (Consumption), ingress limitado a la VNet", en: "Workload profiles (Consumption), ingress limited to the VNet" }
+  identity:
+    service: User-assigned Managed Identity
+    config: { es: "Rol en PostgreSQL creado con pgaadauth_create_principal", en: "PostgreSQL role created with pgaadauth_create_principal" }
+  db-access:
+    service: Private Endpoint (subresource postgresqlServer)
+    config: { es: "+ zona privatelink.postgres.database.azure.com", en: "+ privatelink.postgres.database.azure.com zone" }
+  database:
+    service: Azure Database for PostgreSQL – Flexible Server
+    config: { es: "Solo Entra ID (password_auth_enabled = false)", en: "Entra ID only (password_auth_enabled = false)" }
+gotchas:
+  - id: aca-subnet-sizing
+    severity: networking
+    title:
+      es: La subnet de ACA no se puede agrandar y su tamaño mínimo depende del tipo de environment
+      en: The ACA subnet can't be resized and its minimum size depends on the environment type
+    body:
+      es: >-
+        Un environment con workload profiles (el default) necesita una subnet dedicada de al menos /27 delegada a
+        Microsoft.App/environments; uno Consumption-only (legacy) necesita /23 y NO puede estar delegada. El
+        tamaño no se puede cambiar después de crear el environment, y en despliegues single-revision el consumo de
+        IPs se duplica temporalmente. Dimensioná pensando en el pico de réplicas, no en el día uno.
+      en: >-
+        A workload profiles environment (the default) needs a dedicated subnet of at least /27 delegated to
+        Microsoft.App/environments; a Consumption-only (legacy) one needs /23 and must NOT be delegated. The size
+        can't be changed after the environment is created, and single-revision deployments temporarily double IP
+        usage. Size for peak replicas, not day one.
+    sources:
+      - https://learn.microsoft.com/azure/container-apps/custom-virtual-networks
+      - https://learn.microsoft.com/azure/container-apps/networking
+    verified_at: 2026-10-06
+    exams: [AZ-104, AZ-700]
+  - id: aca-internal-needs-private-dns
+    severity: networking
+    title:
+      es: Un environment interno no resuelve su propio dominio desde la VNet
+      en: An internal environment doesn't resolve its own domain from the VNet
+    body:
+      es: >-
+        Con el ILB, las apps quedan en <app>.<default_domain> pero nadie resuelve ese nombre hasta que creás una
+        zona DNS privada con el nombre del default domain, registros A "*" y "@" al static IP del environment, y
+        la vinculás a las VNets cliente. Sin eso, la API "no existe" aunque esté corriendo.
+      en: >-
+        With the ILB, apps live at <app>.<default_domain> but nobody resolves that name until you create a private
+        DNS zone named after the default domain, "*" and "@" A records pointing to the environment's static IP, and
+        link it to the client VNets. Without it, the API "doesn't exist" even though it's running.
+    sources:
+      - https://learn.microsoft.com/azure/container-apps/private-endpoints-with-dns
+      - https://learn.microsoft.com/azure/container-apps/waf-app-gateway
+    verified_at: 2026-10-06
+    exams: [AZ-700]
+  - id: pg-network-mode-is-permanent
+    severity: networking
+    title:
+      es: En PostgreSQL Flexible, VNet integration vs. Private Endpoint se elige una sola vez
+      en: In PostgreSQL Flexible, VNet integration vs. Private Endpoint is a one-time choice
+    body:
+      es: >-
+        El modo de conectividad se define al crear el servidor y no se puede cambiar. Un servidor con VNet
+        integration no admite Private Endpoints y no se puede mover a otra subnet o VNet. Este módulo usa modo
+        "acceso público" con public_network_access_enabled = false + Private Endpoint, que es lo que permite
+        consumirlo desde hub-and-spoke, peerings y on-premises con el mismo modelo que el resto de los PaaS.
+      en: >-
+        The connectivity mode is set at server creation and can't be changed. A VNet-integrated server doesn't
+        support Private Endpoints and can't be moved to another subnet or VNet. This module uses "public access"
+        mode with public_network_access_enabled = false + Private Endpoint, which lets it be consumed from
+        hub-and-spoke, peerings and on-premises with the same model as other PaaS services.
+    sources:
+      - https://learn.microsoft.com/azure/postgresql/network/concepts-networking-private-link
+      - https://learn.microsoft.com/azure/postgresql/network/concepts-networking-private
+    verified_at: 2026-10-06
+    exams: [AZ-305, AZ-700]
+  - id: pg-entra-app-role-needs-sql
+    severity: iam
+    title:
+      es: Por ARM solo podés crear administradores Entra; el rol de la app se crea con SQL
+      en: ARM can only create Entra admins; the app's role is created with SQL
+    body:
+      es: >-
+        Terraform/ARM agrega principals Entra como administradores (azure_pg_admin, CREATEROLE, CREATEDB). Para
+        que la identidad de la app tenga permisos mínimos, un admin Entra tiene que ejecutar
+        pgaadauth_create_principal('<nombre>', false, false) y después los GRANT. Para identidades administradas y
+        service principals el nombre es el display name. El módulo deja el SQL exacto como output.
+      en: >-
+        Terraform/ARM adds Entra principals as administrators (azure_pg_admin, CREATEROLE, CREATEDB). For the app
+        identity to have least privilege, an Entra admin must run pgaadauth_create_principal('<name>', false,
+        false) and then the GRANTs. For managed identities and service principals the name is the display name.
+        The module outputs the exact SQL.
+    sources:
+      - https://learn.microsoft.com/azure/postgresql/security/security-manage-entra-users
+    verified_at: 2026-10-06
+    exams: [AZ-305, SC-300]
+  - id: pg-entra-token-resource
+    severity: iam
+    title:
+      es: El token de Entra para PostgreSQL no se pide para el FQDN del servidor
+      en: The Entra token for PostgreSQL isn't requested for the server FQDN
+    body:
+      es: >-
+        La contraseña es un access token cuyo resource es https://ossrdbms-aad.database.windows.net (en nube
+        pública), no la URL del servidor. Es el error más común al migrar desde RDS, donde el "token" es una firma
+        generada localmente con las credenciales IAM. Las librerías de Azure Identity lo resuelven si pedís el
+        scope correcto.
+      en: >-
+        The password is an access token whose resource is https://ossrdbms-aad.database.windows.net (public
+        cloud), not the server URL. It's the most common mistake when migrating from RDS, where the "token" is a
+        signature generated locally with IAM credentials. Azure Identity libraries handle it if you request the
+        right scope.
+    sources:
+      - https://learn.microsoft.com/azure/postgresql/security/security-entra-configure
+    verified_at: 2026-10-06
+    exams: [SC-300]
+  - id: pg-stop-auto-restarts
+    severity: cost
+    title:
+      es: La base no escala a cero, y si la detenés arranca sola a los 7 días
+      en: The database doesn't scale to zero, and if you stop it, it restarts after 7 days
+    body:
+      es: >-
+        ACA puede bajar a cero réplicas, pero PostgreSQL Flexible factura cómputo mientras está encendido. Detenerlo
+        corta el cobro de cómputo (no el de storage), pero el servicio lo vuelve a arrancar automáticamente a los 7
+        días. Para entornos de desarrollo, automatizá el stop en vez de confiar en un stop manual.
+      en: >-
+        ACA can go down to zero replicas, but PostgreSQL Flexible bills compute while it's on. Stopping it stops
+        compute billing (not storage), but the service automatically restarts it after 7 days. For dev
+        environments, automate the stop instead of relying on a manual one.
+    sources:
+      - https://learn.microsoft.com/azure/postgresql/configure-maintain/concepts-limits
+      - https://learn.microsoft.com/azure/postgresql/overview
+    verified_at: 2026-10-06
+    exams: [AZ-104]
+cost:
+  scales_to_zero: partial
+  fixed_cost_drivers:
+    - es: PostgreSQL Flexible Server (cómputo + storage)
+      en: PostgreSQL Flexible Server (compute + storage)
+    - es: Private Endpoint de la base (cargo por hora + GB)
+      en: Database Private Endpoint (hourly + GB)
+    - es: Zonas DNS privadas
+      en: Private DNS zones
+  notes:
+    es: >-
+      Container Apps (perfil Consumption) escala a cero y no tiene costo de ingress aparte: el ILB del environment
+      está incluido. El piso lo pone la base de datos.
+    en: >-
+      Container Apps (Consumption profile) scales to zero with no separate ingress cost: the environment's ILB is
+      included. The floor is the database.

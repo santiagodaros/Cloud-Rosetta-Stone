@@ -1,0 +1,33 @@
+id: dead-letter-queue
+category: async-event
+name:
+  es: Cola de mensajes fallidos (dead-letter)
+  en: Dead-letter queue
+description:
+  es: Destino de los mensajes que no se pudieron procesar tras N intentos, para inspeccionarlos y reprocesarlos sin bloquear la cola principal.
+  en: Destination for messages that couldn't be processed after N attempts, to inspect and reprocess them without blocking the main queue.
+providers:
+  azure:
+    services:
+      - service: Service Bus dead-letter subqueue ($DeadLetterQueue)
+        docs: https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues
+        notes:
+          es: Es una subcola automática de cada cola; no se crea aparte.
+          en: It's an automatic subqueue of every queue; not created separately.
+  aws:
+    services:
+      - service: SQS dead-letter queue (redrive policy)
+        docs: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+        notes:
+          es: Es otra cola SQS, vinculada con redrive_policy.
+          en: It's another SQS queue, linked via redrive_policy.
+  gcp:
+    services:
+      - service: Pub/Sub dead-letter topic
+        docs: https://docs.cloud.google.com/pubsub/docs/handling-failures
+        notes:
+          es: Es otro topic, y necesita su propia suscripción para no perder los mensajes.
+          en: It's another topic, and it needs its own subscription so messages aren't lost.
+caveats:
+  - es: "Los tres mueven el mensaje tras N entregas fallidas, pero el 'contenedor' cambia: subcola implícita (Azure), cola separada (AWS) o topic separado que necesita suscripción (GCP). En GCP un dead-letter topic sin suscripción descarta los mensajes."
+    en: "All three move the message after N failed deliveries, but the 'container' differs: implicit subqueue (Azure), separate queue (AWS) or separate topic that needs a subscription (GCP). In GCP a dead-letter topic without a subscription drops the messages."

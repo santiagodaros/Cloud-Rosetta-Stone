@@ -1,0 +1,24 @@
+id: managed-kubernetes
+category: compute-web
+name:
+  es: "Kubernetes gestionado"
+  en: "Managed Kubernetes"
+description:
+  es: "Control plane de Kubernetes operado por el proveedor."
+  en: "Provider-operated Kubernetes control plane."
+providers:
+  azure:
+    services:
+      - service: "Azure Kubernetes Service (AKS)"
+        docs: https://learn.microsoft.com/azure/aks/what-is-aks
+  aws:
+    services:
+      - service: "Amazon EKS"
+        docs: https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html
+  gcp:
+    services:
+      - service: "Google Kubernetes Engine (GKE)"
+        docs: https://docs.cloud.google.com/kubernetes-engine/docs/concepts/kubernetes-engine-overview
+caveats:
+  - es: "La identidad de los pods es donde más difieren: AKS usa Microsoft Entra Workload ID (federación OIDC), EKS usa Pod Identity o IRSA, y GKE usa Workload Identity Federation for GKE. El concepto es el mismo (token del service account de Kubernetes → identidad de nube), la configuración no."
+    en: "Pod identity is where they differ most: AKS uses Microsoft Entra Workload ID (OIDC federation), EKS uses Pod Identity or IRSA, and GKE uses Workload Identity Federation for GKE. The concept is the same (Kubernetes service account token → cloud identity), the configuration isn't."

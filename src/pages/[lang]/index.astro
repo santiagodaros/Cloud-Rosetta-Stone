@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
 import { capabilitiesHref, patternHref } from '../../lib/paths.ts';
@@ -17,13 +18,13 @@ const totalGotchas = publishedPatterns.reduce(
 );
 ---
 
-<Base lang={lang} title={`Cloud Rosetta Stone — ${s.patterns}`} description={s.tagline}>
+<Base lang={lang} title={`${BRAND.name} — ${s.patterns}`} description={s.tagline}>
   <section class="mb-10 max-w-3xl">
-    <h1 class="mb-3 text-3xl font-bold tracking-tight sm:text-4xl">Cloud Rosetta Stone</h1>
+    <h1 class="mb-3 text-3xl font-bold tracking-tight sm:text-4xl">{BRAND.name}</h1>
     <p class="text-lg text-muted">{s.tagline}</p>
     <div class="mt-4 flex flex-wrap gap-2 text-sm">
       {PROVIDERS.map((p) => <span class="rounded-full border px-3 py-0.5 font-medium" style={`border-color: ${PROVIDER_META[p].color}; color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</span>)}
-      <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
+      <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a class="underline underline-offset-2" href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
     </div>
   </section>
 

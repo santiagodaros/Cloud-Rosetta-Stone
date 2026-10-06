@@ -1,0 +1,49 @@
+id: async-worker
+status: published
+category: async-event
+title:
+  es: Worker asíncrono con escala a cero y dead-letter
+  en: Scale-to-zero async worker with dead-letter
+summary:
+  es: Un worker procesa mensajes de una cola, escala según el largo de la cola (hasta cero), guarda resultados en object storage y aparta los mensajes que fallan.
+  en: A worker processes messages from a queue, scales on queue length (down to zero), stores results in object storage and sets aside failing messages.
+problem:
+  es: >-
+    Tenés trabajo en background con carga irregular (procesamiento de archivos, envíos, integraciones). Querés
+    pagar cerca de cero cuando no hay mensajes, escalar solo cuando la cola crece, no perder mensajes que fallan
+    y no usar claves ni connection strings: el worker se autentica con su identidad contra la cola y el storage.
+  en: >-
+    You have background work with irregular load (file processing, notifications, integrations). You want to pay
+    close to zero when there are no messages, scale only when the queue grows, not lose failing messages and use
+    no keys or connection strings: the worker authenticates with its identity against the queue and storage.
+roles:
+  - id: producer
+    kind: actor
+    label: { es: Productor, en: Producer }
+  - id: queue
+    kind: capability
+    capability: message-queue
+    label: { es: Cola, en: Queue }
+  - id: worker
+    kind: capability
+    capability: event-driven-compute
+    label: { es: Worker, en: Worker }
+  - id: identity
+    kind: capability
+    capability: workload-identity
+    label: { es: Identidad sin secretos, en: Secretless identity }
+  - id: results
+    kind: capability
+    capability: object-storage
+    label: { es: Resultados, en: Results }
+  - id: dead-letter
+    kind: capability
+    capability: dead-letter-queue
+    label: { es: Mensajes fallidos, en: Failed messages }
+edges:
+  - { from: producer, to: queue, label: { es: envía, en: sends } }
+  - { from: queue, to: worker, label: { es: dispara / escala, en: triggers / scales } }
+  - { from: worker, to: identity, label: { es: token, en: token } }
+  - { from: worker, to: results, label: { es: escribe, en: writes } }
+  - { from: queue, to: dead-letter, label: { es: tras N intentos, en: after N attempts } }
+tags: [messaging, serverless, scale-to-zero, passwordless]

@@ -14,10 +14,9 @@ interface Props {
   provider: Provider;
   layout: DiagramLayout;
   lang: Locale;
-  dense?: boolean;
 }
 
-const { bundle, provider, layout, lang, dense = false } = Astro.props;
+const { bundle, provider, layout, lang } = Astro.props;
 const s = ui(lang);
 const meta = PROVIDER_META[provider];
 const impl = bundle.implementations[provider];
@@ -33,8 +32,8 @@ const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.sev
     <h2 id={`col-${provider}`} class="text-lg font-bold" style={`color: ${meta.color}`}>{meta.name}</h2>
   </header>
 
-  <div class="rounded-lg border border-line bg-surface p-3">
-    <Diagram layout={layout} contents={contents} color={meta.color} dense={dense} title={`${t(pattern.title, lang)} — ${meta.short}`} />
+  <div class="rounded-lg border border-line bg-surface p-3" data-pagefind-ignore>
+    <Diagram layout={layout} contents={contents} color={meta.color} title={`${t(pattern.title, lang)} — ${meta.short}`} />
   </div>
 
   <div>
@@ -54,8 +53,8 @@ const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.sev
                   </span>
                 ) : (
                   <>
-                    <span class="font-medium">{b.service}</span>
-                    {b.config && <span class="block text-xs text-muted">{b.config}</span>}
+                    <span class="font-medium">{t(b.service, lang)}</span>
+                    {b.config && <span class="block text-xs text-muted">{t(b.config, lang)}</span>}
                     {b.notes && <span class="block text-xs text-muted italic">{t(b.notes, lang)}</span>}
                   </>
                 )}

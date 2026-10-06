@@ -1,0 +1,26 @@
+id: governance-guardrails
+category: governance
+name:
+  es: "Guardrails de gobernanza"
+  en: "Governance guardrails"
+description:
+  es: "Políticas a escala de organización que restringen o auditan cómo se configuran los recursos."
+  en: "Organization-scale policies that restrict or audit how resources are configured."
+providers:
+  azure:
+    services:
+      - service: "Azure Policy"
+        docs: https://learn.microsoft.com/azure/governance/policy/overview
+  aws:
+    services:
+      - service: "Service control policies (AWS Organizations)"
+        docs: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+      - service: "AWS Config rules"
+        docs: https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config.html
+  gcp:
+    services:
+      - service: "Organization Policy Service"
+        docs: https://docs.cloud.google.com/resource-manager/docs/organization-policy/overview
+caveats:
+  - es: "Azure Policy evalúa la configuración del recurso y puede auditar, denegar o remediar (modify, deployIfNotExists). Las SCPs de AWS no miran la configuración: limitan qué acciones de API pueden usar los principals, y el cumplimiento de configuración va por AWS Config. Las organization policies de GCP restringen configuraciones con constraints predefinidos o custom, sin remediación automática."
+    en: "Azure Policy evaluates resource configuration and can audit, deny or remediate (modify, deployIfNotExists). AWS SCPs don't look at configuration: they limit which API actions principals can use, and configuration compliance goes through AWS Config. GCP organization policies restrict configuration with predefined or custom constraints, without automatic remediation."

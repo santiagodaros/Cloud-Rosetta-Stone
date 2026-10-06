@@ -2,13 +2,13 @@ provider: azure
 bindings:
   identity:
     service: User-assigned Managed Identity
-    config: Storage Blob Data Contributor sobre el contenedor
+    config: { es: "Storage Blob Data Contributor sobre el contenedor", en: "Storage Blob Data Contributor on the container" }
   private-access:
     service: Private Endpoint (subresource blob)
-    config: + zona privatelink.blob.core.windows.net
+    config: { es: "+ zona privatelink.blob.core.windows.net", en: "+ privatelink.blob.core.windows.net zone" }
   bucket:
     service: Storage Account (StorageV2) + container
-    config: Shared Key deshabilitado, acceso público de red deshabilitado
+    config: { es: "Shared Key deshabilitado, acceso público de red deshabilitado", en: "Shared Key disabled, public network access disabled" }
   lifecycle:
     service: Lifecycle management policy
     config: delete_after_days_since_creation_greater_than

@@ -1,0 +1,92 @@
+---
+import { BRAND } from '../../lib/brand.ts';
+import Base from '../../layouts/Base.astro';
+import { LOCALES, ui, type Locale } from '../../lib/i18n.ts';
+import { STALE_AFTER_DAYS } from '../../lib/content.ts';
+import { OFFICIAL_SOURCE_HOSTS } from '../../lib/schema.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const repo = BRAND.repo;
+const es = lang === 'es';
+
+const checks = [
+  ['terraform fmt -check', es ? 'Formato canónico.' : 'Canonical formatting.'],
+  ['terraform validate', es ? 'Contra el schema real del provider pinneado (detecta atributos renombrados entre versiones).' : 'Against the pinned provider’s real schema (catches attributes renamed across versions).'],
+  ['terraform test', es ? 'Con mock_provider: aserciones sobre lo que el patrón promete, sin credenciales ni recursos reales.' : 'With mock_provider: assertions on what the pattern promises, without credentials or real resources.'],
+  ['tflint', es ? 'Ruleset de cada nube (SKUs, regiones, argumentos).' : 'Per-cloud ruleset (SKUs, regions, arguments).'],
+  ['checkov', es ? 'Cero fallas. Cada excepción va en el código con su motivo y se ve en el snippet publicado.' : 'Zero failures. Every exception lives in the code with its reason and shows in the published snippet.'],
+  ['lychee', es ? 'Todas las fuentes oficiales siguen respondiendo.' : 'Every official source still responds.'],
+];
+---
+
+<Base lang={lang} title={`${s.methodology} — ${BRAND.name}`} description={s.tagline} altPath="methodology/">
+  <article class="max-w-3xl" data-pagefind-body>
+    <h1 class="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">{s.methodology}</h1>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-lg font-semibold">{es ? 'Qué es un gotcha' : 'What a gotcha is'}</h2>
+      <p class="text-muted">
+        {es
+          ? 'Un hecho verificable sobre una nube, su consecuencia práctica y qué hacer al respecto. No es una opinión ni un ranking: si algo es más simple o barato en una nube, el texto dice qué se paga en otro lado.'
+          : 'A verifiable fact about a cloud, its practical consequence and what to do about it. It is not an opinion or a ranking: if something is simpler or cheaper on one cloud, the text says what you pay for elsewhere.'}
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-lg font-semibold">{es ? 'Fuentes aceptadas' : 'Accepted sources'}</h2>
+      <p class="mb-3 text-muted">
+        {es
+          ? 'Cada gotcha necesita al menos una fuente de documentación oficial. El build falla si una fuente no pertenece a estos dominios:'
+          : 'Every gotcha needs at least one official documentation source. The build fails if a source is outside these domains:'}
+      </p>
+      <ul class="flex flex-wrap gap-2">
+        {OFFICIAL_SOURCE_HOSTS.map((h) => <li class="rounded border border-line bg-surface px-2 py-0.5 font-mono text-xs">{h}</li>)}
+      </ul>
+      <p class="mt-3 text-sm text-muted">
+        {es ? 'Blogs, foros y videos sirven para descubrir un problema, no para respaldarlo.' : 'Blogs, forums and videos help discover a problem, not back it up.'}
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-lg font-semibold">{es ? 'Frescura' : 'Freshness'}</h2>
+      <p class="text-muted">
+        {es
+          ? `Cada gotcha tiene la fecha en que alguien leyó sus fuentes y confirmó el texto (verified_at). A los ${STALE_AFTER_DAYS} días se marca "re-verificar" y un workflow semanal mantiene un issue con la lista. Re-verificar un gotcha es la contribución más valiosa del proyecto.`
+          : `Every gotcha carries the date someone read its sources and confirmed the text (verified_at). After ${STALE_AFTER_DAYS} days it's marked "re-verify" and a weekly workflow keeps an issue with the list. Re-verifying a gotcha is the most valuable contribution to the project.`}
+      </p>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="mb-2 text-lg font-semibold">{es ? 'Qué se chequea en cada PR' : 'What every PR is checked for'}</h2>
+      <dl class="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface text-sm">
+        {
+          checks.map(([tool, what]) => (
+            <div class="grid gap-1 px-4 py-2 sm:grid-cols-[12rem_1fr]">
+              <dt class="font-mono text-xs">{tool}</dt>
+              <dd class="text-muted">{what}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <p class="mt-3 text-sm text-muted">
+        {es
+          ? 'Limitación: los tests con mock providers no detectan errores que solo aparecen al aplicar contra la API real (cuotas, nombres tomados, disponibilidad regional). Usá los módulos como punto de partida revisado, no como un despliegue certificado.'
+          : 'Limitation: tests with mock providers don’t catch errors that only show up when applying against the real API (quotas, taken names, regional availability). Use the modules as a reviewed starting point, not as a certified deployment.'}
+      </p>
+    </section>
+
+    <section>
+      <h2 class="mb-2 text-lg font-semibold">{es ? 'Encontraste un error' : 'Found a mistake'}</h2>
+      <p class="text-muted">
+        {es ? 'Abrí un issue con el template ' : 'Open an issue with the '}
+        <a href={`${repo}/issues/new?template=stale-gotcha.yml`}>{es ? '"Gotcha desactualizado"' : '"Stale gotcha" template'}</a>
+        {es ? ' con la fuente oficial que lo respalda. Si es un problema de seguridad en un módulo, usá el reporte privado de vulnerabilidades.' : ' with the official source that backs it. If it’s a security issue in a module, use private vulnerability reporting.'}
+      </p>
+    </section>
+  </article>
+</Base>

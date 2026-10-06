@@ -1,5 +1,7 @@
 # Cloud Rosetta Stone — Análisis end-to-end
 
+> **Nota (2026-10-06):** el proyecto se renombró a **Letra Chica** en la Fase 2 por colisión de nombre con otros proyectos "Cloud Rosetta" y por la marca "Rosetta Stone". Este documento se conserva como registro del análisis original.
+
 > Revisión crítica del spec original, landscape competitivo y propuesta para que el proyecto sea
 > una herramienta open source de referencia para democratizar el conocimiento multicloud.
 > Fecha de análisis: 2026-10-06.

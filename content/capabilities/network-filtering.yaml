@@ -1,0 +1,26 @@
+id: network-filtering
+category: networking
+name:
+  es: "Filtrado de tráfico L3/L4"
+  en: "L3/L4 traffic filtering"
+description:
+  es: "Reglas stateful/stateless que permiten o niegan tráfico entre recursos de la red."
+  en: "Stateful/stateless rules that allow or deny traffic between network resources."
+providers:
+  azure:
+    services:
+      - service: "Network Security Groups"
+        docs: https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview
+  aws:
+    services:
+      - service: "Security Groups"
+        docs: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html
+      - service: "Network ACLs"
+        docs: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html
+  gcp:
+    services:
+      - service: "VPC firewall rules"
+        docs: https://docs.cloud.google.com/firewall/docs/firewalls
+caveats:
+  - es: "Los Security Groups de AWS solo tienen reglas allow (stateful) y se asocian a interfaces; para deny explícito están las NACLs (stateless, por subnet). Los NSG de Azure tienen allow y deny con prioridad y se asocian a subnet o NIC. En GCP las reglas son de la VPC y apuntan a instancias por network tags o service accounts."
+    en: "AWS Security Groups only have allow rules (stateful) and attach to interfaces; explicit deny lives in NACLs (stateless, per subnet). Azure NSGs have prioritized allow and deny rules attached to a subnet or NIC. In GCP rules belong to the VPC and target instances by network tags or service accounts."
