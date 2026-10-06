@@ -26,7 +26,7 @@ Letra Chica ("the fine print" in Spanish) compares full patterns instead of indi
 
 How it's built: the content is YAML in the repo, validated with a Zod schema that only accepts sources from official documentation domains. The site is static (Astro), diagrams are laid out at build time with ELK so the three clouds share the same layout. Every Terraform module runs fmt, validate, terraform test with mock providers (no credentials), tflint and checkov in CI. Renovate bumps providers, so when a provider renames an attribute, CI goes red on that snippet. That already happened twice with azurerm 5.
 
-Limitations: mock-provider tests don't catch apply-time errors (quotas, regional availability), and it's 3 patterns today. Spanish is the primary language, English is complete.
+Limitations: mock-provider tests don't catch apply-time errors (quotas, regional availability), and it's 5 patterns today. Spanish is the primary language, English is complete.
 
 Code is MIT, content CC BY-SA, and there's a JSON dataset. I'd love feedback on which patterns to add next and on any fine print I got wrong.
 ```
@@ -80,7 +80,7 @@ azurerm 5 que atrapó `validate`. Link al repo al final.
 
 ### r/devops · r/sysadmin
 
-Solo si el sub lo permite. Ángulo: "45 diferencias entre nubes que no están en las tablas de equivalencias",
+Solo si el sub lo permite. Ángulo: "74 diferencias entre nubes que no están en las tablas de equivalencias",
 con 3 ejemplos de nubes distintas.
 
 ### Comunidades en español (r/devsarg, grupos de AWS UG / Azure / GDG LATAM)

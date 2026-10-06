@@ -37,7 +37,7 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 
 ## Estado
 
-Fase 1 cerrada: 3 patrones en las 3 nubes, 45 gotchas con fuente oficial, 26 capabilities. Ver el
+Fase 3 en curso: 5 patrones en las 3 nubes, 74 gotchas con fuente oficial, 28 capabilities, modo práctica y páginas por examen. Ver el
 [plan](docs/PLAN.md) y el [análisis que lo originó](docs/ANALISIS-END-TO-END.md).
 
 | Patrón | Azure | AWS | GCP |

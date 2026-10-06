@@ -13,6 +13,8 @@ están para proteger eso.
 5. **Proponer o escribir un patrón nuevo** (abrí primero un issue con el template "Proponer patrón").
 6. **Traducir** textos `es` → `en`.
 
+¿Venís por Hacktoberfest? Mirá la [guía corta](docs/HACKTOBERFEST.md).
+
 ## Reglas editoriales
 
 - **Un gotcha = hecho verificable + consecuencia + qué hacer.** Sin adjetivos ("increíble", "terrible").

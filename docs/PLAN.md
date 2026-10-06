@@ -114,16 +114,16 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 
 **Criterio de salida:** primer PR externo abierto.
 
-### Fase 3 — Comunidad y aprendizaje (continuo, desde el lanzamiento)
+### Fase 3 — Comunidad y aprendizaje (en curso, desde 2026-10-06)
 
-| ID | Tarea | Tamaño |
-|---|---|---|
-| F3-01 | **Modo quiz** ("¿qué nube es esta arquitectura?" — el *blind mode* de isbetter.ai): oculta logos y nombres, el usuario adivina | M |
-| F3-02 | Flashcards de gotchas filtradas por examen (AZ-104/305/700, SAA-C03, ACE/PCA) | M |
-| F3-03 | Página por examen: "lo que tenés que saber de la otra nube si rendís X" | S |
-| F3-04 | 5 patrones nuevos (≥ 2 de contribuidores): hub-and-spoke, OIDC CI/CD → nube, DNS privado híbrido, secretos, egress/NAT | L c/u |
-| F3-05 | Reclutar CODEOWNERS de AWS y GCP (comunidades LATAM: AWS UG, GDG) | — |
-| F3-06 | Hacktoberfest: etiquetar issues y publicar guía corta | S |
+| ID | Tarea | Estado | Resultado |
+|---|---|---|---|
+| F3-01 | **Modo quiz** a ciegas | ✅ | `/practice/`: el gotcha con nombres de producto tapados en build time (`src/lib/mask.ts`), el usuario adivina la nube; test que garantiza que ningún gotcha deja ver la marca |
+| F3-02 | Flashcards por examen | ✅ | Mismo `/practice/`, filtro por examen (`?exam=AZ-104`), "la sabía / repasar" |
+| F3-03 | Página por examen | ✅ | `content/exams.yaml` con estado derivado de `retires_on` (vigente → se retira → retirado). Re-etiquetado: AZ-500 → SC-500, AZ-204 → AI-200, SCS-C02 → SCS-C03. `/exams/`, `/exams/<código>/` y `/api/v1/exams.json` |
+| F3-04 | 5 patrones nuevos | 🟡 2 de 5 | ✅ **OIDC CI/CD → nube** (15 gotchas) · ✅ **DNS privado híbrido** (14 gotchas) · abiertos para contribuidores: hub-and-spoke (#15), secretos (#16), egress/NAT (#17) |
+| F3-05 | Reviewers de AWS y GCP | 🟡 | Convocatoria en #18; falta difundirla en AWS UG y GDG LATAM |
+| F3-06 | Hacktoberfest | ✅ | 13 issues con `hacktoberfest` + [guía](HACKTOBERFEST.md). Falta el topic del repo (acción del maintainer) |
 
 ### Fase 4 — Plataforma (trimestre siguiente)
 
