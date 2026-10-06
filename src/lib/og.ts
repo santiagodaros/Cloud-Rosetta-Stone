@@ -7,6 +7,7 @@ import { createRequire } from 'node:module';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import type { Provider } from './schema.ts';
+import { BRAND } from './brand.ts';
 
 const require = createRequire(import.meta.url);
 const font = (weight: 400 | 700) =>
@@ -47,7 +48,7 @@ export async function renderOgPng({ title, kicker, providers, footer }: OgInput)
       ]),
       h('div', { display: 'flex', alignItems: 'center' }, chips),
       h('div', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: C.muted, fontSize: 24 }, [
-        h('div', { display: 'flex', color: C.text, fontWeight: 700 }, 'Cloud Rosetta Stone'),
+        h('div', { display: 'flex', color: C.text, fontWeight: 700 }, BRAND.name),
         h('div', { display: 'flex' }, footer),
       ]),
     ],

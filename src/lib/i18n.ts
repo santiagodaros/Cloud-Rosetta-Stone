@@ -20,7 +20,7 @@ export const PROVIDER_META: Record<Provider, { name: string; short: string; colo
 
 const UI = {
   es: {
-    tagline: 'Traducí arquitecturas entre Azure, AWS y GCP: dónde se rompe la analogía, con Terraform verificado.',
+    tagline: 'La letra chica del multicloud: dónde se rompe la analogía entre Azure, AWS y GCP, con fuentes oficiales y Terraform verificado.',
     patterns: 'Patrones',
     dictionary: 'Diccionario',
     contribute: 'Contribuir',
@@ -73,7 +73,7 @@ const UI = {
     capabilityCount: (n: number) => `${n} capabilities`,
   },
   en: {
-    tagline: 'Translate architectures across Azure, AWS and GCP: where the analogy breaks, with verified Terraform.',
+    tagline: 'The fine print of multicloud: where the analogy breaks across Azure, AWS and GCP, with official sources and verified Terraform.',
     patterns: 'Patterns',
     dictionary: 'Dictionary',
     contribute: 'Contribute',

@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
 import { LOCALES, ui, type Locale } from '../../lib/i18n.ts';
 import { href } from '../../lib/paths.ts';
@@ -13,7 +14,7 @@ const s = ui(lang);
 const pagefindBase = href('pagefind/');
 ---
 
-<Base lang={lang} title={`${s.search} — Cloud Rosetta Stone`} description={s.tagline} altPath="search/">
+<Base lang={lang} title={`${s.search} — ${BRAND.name}`} description={s.tagline} altPath="search/">
   <link rel="stylesheet" href={`${pagefindBase}pagefind-ui.css`} />
   <h1 class="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">{s.search}</h1>
   <div id="search" class="max-w-3xl" data-bundle={pagefindBase} data-placeholder={s.searchPlaceholder}></div>

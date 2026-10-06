@@ -1,10 +1,12 @@
-# Cloud Rosetta Stone
+# Letra Chica
 
-**Traducí arquitecturas entre Azure, AWS y GCP: dónde se rompe la analogía, con Terraform verificado.**
+**La letra chica del multicloud: dónde se rompe la analogía entre Azure, AWS y GCP, con fuentes oficiales y Terraform verificado.**
+
+_The fine print of multicloud — Spanish first, English included._
 
 Las tablas de equivalencias dicen que S3 "es" Blob Storage. No te dicen que en Azure el prefijo de lifecycle
 incluye el nombre del contenedor, que en GCP soft delete viene activo y te cobra 7 días extra por cada archivo
-efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucket. Cloud Rosetta Stone compara
+efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucket. Letra Chica compara
 **patrones completos**, no servicios sueltos, y cada diferencia viene con su **fuente oficial y fecha de verificación**.
 
 ![Comparador: Ingesta privada de objetos con TTL, AWS vs Azure](docs/assets/comparador.png)

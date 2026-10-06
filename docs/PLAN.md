@@ -1,4 +1,4 @@
-# Cloud Rosetta Stone — Plan de producto y ejecución
+# Letra Chica — Plan de producto y ejecución
 
 > Plan vivo. Se actualiza al cerrar cada fase. Base: [`ANALISIS-END-TO-END.md`](./ANALISIS-END-TO-END.md).
 > Última actualización: 2026-10-06 (cierre de Fase 1).

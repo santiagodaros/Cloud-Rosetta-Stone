@@ -1,5 +1,5 @@
 /**
- * Schema canónico del contenido de Cloud Rosetta Stone.
+ * Schema canónico del contenido de Letra Chica.
  *
  * Es la única fuente de verdad: lo usan el sitio (build), el validador de CI
  * (`pnpm validate`) y el dataset abierto (`/api/v1/*.json`). Si cambiás algo acá,

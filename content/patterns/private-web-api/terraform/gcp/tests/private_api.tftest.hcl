@@ -3,9 +3,9 @@
 mock_provider "google" {}
 
 variables {
-  project_id      = "rosetta-test"
+  project_id      = "letra-chica-test"
   name            = "api-test"
-  container_image = "us-docker.pkg.dev/rosetta-test/api/api:1.0.0"
+  container_image = "us-docker.pkg.dev/letra-chica-test/api/api:1.0.0"
 }
 
 run "nothing_is_public" {

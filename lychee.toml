@@ -4,7 +4,7 @@ retry_wait_time = 5
 timeout = 30
 max_concurrency = 8
 accept = ["200..=299", "429"]
-user_agent = "Mozilla/5.0 (compatible; cloud-rosetta-stone-linkcheck; +https://github.com/santiagodaros/Cloud-Rosetta-Stone)"
+user_agent = "Mozilla/5.0 (compatible; letra-chica-linkcheck; +https://github.com/santiagodaros/Cloud-Rosetta-Stone)"
 exclude = [
   # Links propios del sitio (se generan en build).
   "^https://github.com/santiagodaros/Cloud-Rosetta-Stone",

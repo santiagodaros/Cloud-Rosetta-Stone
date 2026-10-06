@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
 import { PROVIDERS } from '../../lib/schema.ts';
@@ -13,7 +14,7 @@ const s = ui(lang);
 const caps = [...site.capabilities].sort((a, b) => a.category.localeCompare(b.category) || t(a.name, lang).localeCompare(t(b.name, lang)));
 ---
 
-<Base lang={lang} title={`${s.dictionary} — Cloud Rosetta Stone`} description={s.tagline} altPath="capabilities/">
+<Base lang={lang} title={`${s.dictionary} — ${BRAND.name}`} description={s.tagline} altPath="capabilities/">
   <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
   <p class="mb-8 max-w-3xl text-muted">{s.tagline}</p>
 

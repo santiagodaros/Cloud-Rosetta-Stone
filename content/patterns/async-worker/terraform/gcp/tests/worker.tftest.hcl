@@ -7,10 +7,10 @@ mock_provider "google" {
 }
 
 variables {
-  project_id          = "rosetta-test"
+  project_id          = "letra-chica-test"
   name                = "worker-test"
   results_bucket_name = "worker-test-results-001"
-  container_image     = "us-docker.pkg.dev/rosetta-test/worker/worker:1.0.0"
+  container_image     = "us-docker.pkg.dev/letra-chica-test/worker/worker:1.0.0"
 }
 
 run "push_is_authenticated_and_internal" {

@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand.ts';
 import '../styles/global.css';
 import { ui, LOCALES, type Locale } from '../lib/i18n.ts';
 import { capabilitiesHref, homeHref, href } from '../lib/paths.ts';
@@ -15,7 +16,7 @@ interface Props {
 
 const { lang, title, description, altPath = '', ogImage = `og/${lang}/home.png` } = Astro.props;
 const s = ui(lang);
-const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
+const repo = BRAND.repo;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL(href(ogImage), Astro.site).href;
 ---
@@ -46,7 +47,7 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
       <nav class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
         <a href={homeHref(lang)} class="flex flex-1 items-center gap-2 font-semibold text-fg no-underline sm:flex-none">
           <img src={href('favicon.svg')} alt="" width="22" height="22" />
-          Cloud Rosetta Stone
+          {BRAND.name}
         </a>
         <div class="order-last flex w-full flex-wrap items-center gap-x-5 gap-y-1 text-sm sm:order-none sm:w-auto sm:flex-1">
           <a class="text-muted hover:text-fg" href={homeHref(lang)}>{s.patterns}</a>

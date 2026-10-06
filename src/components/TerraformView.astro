@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand.ts';
 import { Code } from 'astro:components';
 import type { TerraformModule } from '../lib/content.ts';
 import { ui, type Locale } from '../lib/i18n.ts';
@@ -11,7 +12,7 @@ interface Props {
 
 const { tf, lang, repoPath } = Astro.props;
 const s = ui(lang);
-const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
+const repo = BRAND.repo;
 ---
 
 <div class="flex flex-col gap-2" data-pagefind-ignore>

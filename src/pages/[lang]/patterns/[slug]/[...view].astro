@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../../../../lib/brand.ts';
 import Base from '../../../../layouts/Base.astro';
 import ImplementationColumn from '../../../../components/ImplementationColumn.astro';
 import { layoutPattern } from '../../../../lib/diagram.ts';
@@ -37,7 +38,7 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
 
 <Base
   lang={lang}
-  title={`${title} · ${providersLabel} — Cloud Rosetta Stone`}
+  title={`${title} · ${providersLabel} — ${BRAND.name}`}
   description={t(pattern.summary, lang)}
   altPath={`patterns/${pattern.id}/${viewId}/`}
   ogImage={`og/${lang}/${pattern.id}/${viewId}.png`}

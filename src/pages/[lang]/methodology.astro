@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
 import { LOCALES, ui, type Locale } from '../../lib/i18n.ts';
 import { STALE_AFTER_DAYS } from '../../lib/content.ts';
@@ -10,7 +11,7 @@ export function getStaticPaths() {
 
 const lang = Astro.params.lang as Locale;
 const s = ui(lang);
-const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
+const repo = BRAND.repo;
 const es = lang === 'es';
 
 const checks = [
@@ -23,7 +24,7 @@ const checks = [
 ];
 ---
 
-<Base lang={lang} title={`${s.methodology} — Cloud Rosetta Stone`} description={s.tagline} altPath="methodology/">
+<Base lang={lang} title={`${s.methodology} — ${BRAND.name}`} description={s.tagline} altPath="methodology/">
   <article class="max-w-3xl" data-pagefind-body>
     <h1 class="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">{s.methodology}</h1>
 
