@@ -1,0 +1,10 @@
+# Reviewers por defecto
+* @santiagodaros
+
+# Reviewers por nube (sumar a medida que se incorporen; ver docs/PLAN.md §6)
+# content/patterns/**/azure.yaml        @santiagodaros
+# content/patterns/**/terraform/azure/  @santiagodaros
+# content/patterns/**/aws.yaml          @<reviewer-aws>
+# content/patterns/**/terraform/aws/    @<reviewer-aws>
+# content/patterns/**/gcp.yaml          @<reviewer-gcp>
+# content/patterns/**/terraform/gcp/    @<reviewer-gcp>

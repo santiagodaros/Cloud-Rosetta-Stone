@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: 1.16.5
+  CHECKOV_VERSION: 3.3.25
+  CHECKPOINT_DISABLE: '1'
+
+jobs:
+  content:
+    name: Contenido + sitio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validar contenido (schema + referencias)
+        run: pnpm validate
+      - name: Typecheck
+        run: pnpm check
+      - name: Tests unitarios
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+
+  terraform-matrix:
+    name: Descubrir módulos de Terraform
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: m
+        run: echo "matrix=$(pnpm -s tf:matrix)" >> "$GITHUB_OUTPUT"
+
+  terraform:
+    name: TF ${{ matrix.module.provider }} · ${{ matrix.module.dir }}
+    needs: terraform-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.terraform-matrix.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.module.dir }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff
+      - name: terraform init
+        run: terraform init -backend=false -input=false
+      - name: terraform validate
+        run: terraform validate
+      - name: terraform test (mock providers, sin credenciales)
+        run: terraform test
+      - uses: terraform-linters/setup-tflint@v4
+      - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          tflint --init --config "$GITHUB_WORKSPACE/.tflint/${{ matrix.module.provider }}.hcl"
+          tflint --config "$GITHUB_WORKSPACE/.tflint/${{ matrix.module.provider }}.hcl" --format compact
+
+  checkov:
+    name: Checkov (seguridad IaC)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "checkov==${CHECKOV_VERSION}"
+      - name: checkov
+        # Cada skip tiene que estar en el código con justificación (#checkov:skip=ID:motivo).
+        run: checkov -d content/patterns --framework terraform --compact --quiet --skip-path '.*/tests/.*'
+
+  links:
+    name: Fuentes oficiales vivas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          # Solo las fuentes del contenido: son las que respaldan cada gotcha.
+          args: --config lychee.toml 'content/**/*.yaml'
+          fail: true

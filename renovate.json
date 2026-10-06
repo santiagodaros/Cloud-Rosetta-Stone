@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommitTypeAll(chore)"],
+  "schedule": ["before 9am on monday"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Providers de Terraform de los patrones: un PR por nube. CI (validate + test + tflint + checkov) decide si el snippet sigue vigente.",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["required_provider"],
+      "groupName": "terraform provider {{depName}}",
+      "labels": ["dependencies", "terraform"]
+    },
+    {
+      "matchManagers": ["tflint-plugin"],
+      "groupName": "tflint rulesets"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm minor/patch"
+    }
+  ]
+}

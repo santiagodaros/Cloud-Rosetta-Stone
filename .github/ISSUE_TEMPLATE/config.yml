@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Pregunta o discusión
+    url: https://github.com/santiagodaros/Cloud-Rosetta-Stone/discussions
+    about: Ideas, dudas y debates de arquitectura.
