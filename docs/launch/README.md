@@ -15,8 +15,8 @@ Todo lo necesario para lanzar Letra Chica. Los textos se pegan tal cual; los lin
 | # | Tarea | Dónde | Estado |
 |---|---|---|---|
 | 1 | Mergear el PR de Fase 1 + 2 | GitHub | ☐ |
-| 2 | Renombrar el repo a `letra-chica` | Settings → General → Repository name | ☐ |
-| 3 | Actualizar `BRAND.repo` y `BRAND.site` y correr `pnpm launch:weekly` | `src/lib/brand.ts` | ☐ |
+| 2 | (Diferido) Renombrar el repo. Hoy no es necesario: todo usa la URL actual. Si se renombra, actualizar `BRAND.repo` y `BRAND.site` y correr `pnpm launch:weekly` | Settings → General / `src/lib/brand.ts` | — |
+| 3 | Confirmar que `pnpm launch:weekly` apunta a la URL publicada | `docs/launch/gotcha-de-la-semana.md` | ☐ |
 | 4 | Habilitar GitHub Pages (Source: GitHub Actions) y correr **Deploy** | Settings → Pages / Actions | ☐ |
 | 5 | Verificar que los links levantan la OG image | [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) | ☐ |
 | 6 | Descripción, website y topics del repo (`multicloud`, `azure`, `aws`, `gcp`, `terraform`, `cloud-architecture`, `spanish`) | Repo → About | ☐ |
@@ -25,6 +25,10 @@ Todo lo necesario para lanzar Letra Chica. Los textos se pegan tal cual; los lin
 | 9 | (Opcional) Dominio propio: verificar disponibilidad de `letrachica.dev` / `letrachica.cloud`, configurar custom domain en Pages y actualizar `BRAND.site` | Registrar + Settings → Pages | ☐ |
 | 10 | Revisar que los 10 `good first issue` sigan vigentes | Issues | ☐ |
 
+> El repo mantiene el nombre `Cloud-Rosetta-Stone` por ahora, así que la URL del sitio lo muestra
+> (`…github.io/Cloud-Rosetta-Stone/`). Si eso molesta en los posts, un dominio propio (paso 9) lo resuelve sin
+> renombrar el repo.
+>
 > El nombre: se descartó "Cloud Rosetta Stone" por colisión con
 > [lensabillion/cloud-rosetta](https://github.com/lensabillion/cloud-rosetta) (mismo concepto, orientado a
 > certificaciones), [gordonmurray/cloud-rosetta](https://github.com/gordonmurray/cloud-rosetta) (costos de
