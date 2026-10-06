@@ -1,0 +1,29 @@
+id: container-platform
+category: compute-web
+name:
+  es: Plataforma de contenedores serverless
+  en: Serverless container platform
+description:
+  es: Correr contenedores HTTP sin administrar nodos ni clusters, con escalado gestionado.
+  en: Run HTTP containers without managing nodes or clusters, with managed scaling.
+providers:
+  azure:
+    services:
+      - service: Azure Container Apps
+        docs: https://learn.microsoft.com/azure/container-apps/overview
+        notes:
+          es: Corre dentro de un environment, que es la frontera de red y de logs.
+          en: Runs inside an environment, which is the network and logging boundary.
+  aws:
+    services:
+      - service: Amazon ECS on AWS Fargate
+        docs: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+      - service: AWS App Runner
+        docs: https://docs.aws.amazon.com/apprunner/latest/dg/what-is-apprunner.html
+  gcp:
+    services:
+      - service: Cloud Run (services)
+        docs: https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run
+caveats:
+  - es: "ACA y Cloud Run incluyen ingress HTTP y escala a cero. ECS Fargate no: el ingress es un ALB aparte (con costo fijo) y el escalado lo da Application Auto Scaling."
+    en: "ACA and Cloud Run include HTTP ingress and scale to zero. ECS Fargate doesn't: ingress is a separate ALB (with fixed cost) and scaling comes from Application Auto Scaling."

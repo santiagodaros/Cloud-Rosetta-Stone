@@ -1,0 +1,21 @@
+id: centralized-logging
+category: observability
+name:
+  es: "Logs centralizados"
+  en: "Centralized logging"
+description:
+  es: "Recolección, consulta y retención de logs de plataforma y aplicaciones."
+  en: "Collection, querying and retention of platform and application logs."
+providers:
+  azure:
+    services:
+      - service: "Azure Monitor Logs (Log Analytics)"
+        docs: https://learn.microsoft.com/azure/azure-monitor/logs/data-platform-logs
+  aws:
+    services:
+      - service: "Amazon CloudWatch Logs"
+        docs: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html
+  gcp:
+    services:
+      - service: "Cloud Logging"
+        docs: https://docs.cloud.google.com/logging/docs/overview

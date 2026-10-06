@@ -1,0 +1,23 @@
+id: workflow-orchestration
+category: async-event
+name:
+  es: "Orquestación de workflows"
+  en: "Workflow orchestration"
+description:
+  es: "Coordinación de pasos con estado, reintentos y ramas sin servidor propio."
+  en: "Coordinating stateful steps with retries and branching without your own server."
+providers:
+  azure:
+    services:
+      - service: "Azure Logic Apps"
+        docs: https://learn.microsoft.com/azure/logic-apps/logic-apps-overview
+      - service: "Durable Functions"
+        docs: https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview
+  aws:
+    services:
+      - service: "AWS Step Functions"
+        docs: https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
+  gcp:
+    services:
+      - service: "Workflows"
+        docs: https://docs.cloud.google.com/workflows/docs/overview

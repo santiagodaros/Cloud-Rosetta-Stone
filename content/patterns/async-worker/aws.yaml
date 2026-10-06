@@ -1,0 +1,102 @@
+provider: aws
+bindings:
+  queue:
+    service: Amazon SQS (Standard)
+    config: { es: "SSE administrado por SQS", en: "SQS-managed SSE" }
+  worker:
+    service: AWS Lambda
+    config: { es: "Event source mapping con ReportBatchItemFailures", en: "Event source mapping with ReportBatchItemFailures" }
+  identity:
+    service: { es: "IAM Role (execution role de Lambda)", en: "IAM Role (Lambda execution role)" }
+    config: { es: "sqs:ReceiveMessage/DeleteMessage + s3:PutObject acotado", en: "sqs:ReceiveMessage/DeleteMessage + scoped s3:PutObject" }
+  results:
+    service: S3 bucket
+    config: Block Public Access + BucketOwnerEnforced
+  dead-letter:
+    service: { es: "Cola SQS separada", en: "Separate SQS queue" }
+    config: { es: "redrive_policy con maxReceiveCount", en: "redrive_policy with maxReceiveCount" }
+gotchas:
+  - id: visibility-timeout-6x
+    severity: reliability
+    title:
+      es: El visibility timeout de la cola tiene que ser al menos 6 veces el timeout de la Lambda
+      en: The queue's visibility timeout must be at least 6 times the Lambda timeout
+    body:
+      es: >-
+        Si la función tarda más que el visibility timeout, el mensaje vuelve a ser visible y otra invocación lo
+        toma mientras el primero sigue procesando: duplicados garantizados. AWS recomienda visibility timeout ≥ 6×
+        el timeout de la función. El módulo lo calcula y lo valida.
+      en: >-
+        If the function takes longer than the visibility timeout, the message becomes visible again and another
+        invocation picks it up while the first is still processing: guaranteed duplicates. AWS recommends a
+        visibility timeout ≥ 6× the function timeout. The module computes and validates it.
+    sources:
+      - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html
+      - https://docs.aws.amazon.com/lambda/latest/operatorguide/sqs-retries.html
+    verified_at: 2026-10-06
+    exams: [DVA-C02, SAA-C03]
+  - id: partial-batch-failures
+    severity: reliability
+    title:
+      es: Sin ReportBatchItemFailures, un mensaje fallido reintenta todo el lote
+      en: Without ReportBatchItemFailures, one failed message retries the whole batch
+    body:
+      es: >-
+        Por default, si la función falla, todo el lote vuelve a la cola, incluidos los mensajes ya procesados. Con
+        function_response_types = ["ReportBatchItemFailures"] la función devuelve solo los IDs que fallaron. En Azure
+        y GCP el ack es por mensaje, así que este problema no existe de la misma forma.
+      en: >-
+        By default, if the function fails the whole batch goes back to the queue, including already processed
+        messages. With function_response_types = ["ReportBatchItemFailures"] the function returns only the failed
+        IDs. In Azure and GCP acks are per message, so this problem doesn't exist in the same way.
+    sources:
+      - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html
+    verified_at: 2026-10-06
+    exams: [DVA-C02]
+  - id: dlq-retention-original-timestamp
+    severity: reliability
+    title:
+      es: En colas Standard, el mensaje expira en la DLQ según cuándo entró a la cola original
+      en: In Standard queues, the message expires in the DLQ based on when it entered the original queue
+    body:
+      es: >-
+        Al mover un mensaje a la DLQ, SQS conserva el timestamp de encolado original (en FIFO se resetea). Si la DLQ
+        tiene la misma retención que la cola de origen, los mensajes pueden desaparecer de la DLQ casi enseguida.
+        Configurá la retención de la DLQ más larga que la de origen (el módulo usa el máximo, 14 días).
+      en: >-
+        When moving a message to the DLQ, SQS keeps the original enqueue timestamp (in FIFO it resets). If the DLQ
+        has the same retention as the source queue, messages can vanish from the DLQ almost immediately. Set the
+        DLQ retention longer than the source (the module uses the maximum, 14 days).
+    sources:
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/setting-up-dead-letter-queue-retention.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, DVA-C02]
+  - id: max-concurrency-protects-downstream
+    severity: operations
+    title:
+      es: Limitá la concurrencia del event source mapping, no solo la de la función
+      en: Limit the event source mapping's concurrency, not just the function's
+    body:
+      es: >-
+        Ante un pico de mensajes Lambda escala rápido y puede saturar la base o la API de destino. scaling_config
+        .maximum_concurrency limita cuántas invocaciones concurrentes dispara la cola, sin los efectos colaterales
+        del reserved concurrency de la función (que además puede provocar throttling y reintentos).
+      en: >-
+        On a message spike Lambda scales fast and can overwhelm the downstream database or API.
+        scaling_config.maximum_concurrency limits how many concurrent invocations the queue triggers, without the
+        side effects of the function's reserved concurrency (which can also cause throttling and retries).
+    sources:
+      - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html
+    verified_at: 2026-10-06
+    exams: [DVA-C02, SAA-C03]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: >-
+      Cero costo fijo: SQS, Lambda y S3 se cobran por uso. Ojo con el long polling del event source mapping: las
+      requests de polling a SQS se cobran aunque la cola esté vacía (son pocas, pero no son cero).
+    en: >-
+      Zero fixed cost: SQS, Lambda and S3 are pay-per-use. Note the event source mapping's long polling: SQS polling
+      requests are billed even when the queue is empty (few, but not zero).

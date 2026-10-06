@@ -1,0 +1,51 @@
+id: private-web-api
+status: published
+category: compute-web
+title:
+  es: Web API privada Zero Trust con PostgreSQL sin contraseñas
+  en: Zero Trust private web API with passwordless PostgreSQL
+summary:
+  es: Un contenedor HTTP alcanzable solo desde la red privada, que se conecta a PostgreSQL con su identidad de workload en vez de usuario y contraseña.
+  en: An HTTP container reachable only from the private network, connecting to PostgreSQL with its workload identity instead of a username and password.
+problem:
+  es: >-
+    Necesitás publicar una API interna (consumida por otras apps o por usuarios en la red corporativa) con
+    una base relacional detrás. Requisitos: sin IP pública en ningún componente, base de datos sin acceso
+    público, sin contraseñas de aplicación guardadas en ningún lado (ni en variables, ni en secretos, ni en el
+    estado de Terraform) y permisos mínimos para la identidad de la app.
+  en: >-
+    You need to expose an internal API (consumed by other apps or by users on the corporate network) with a
+    relational database behind it. Requirements: no public IP on any component, no public access to the
+    database, no application passwords stored anywhere (not in variables, secrets or Terraform state) and
+    least privilege for the app's identity.
+roles:
+  - id: client
+    kind: actor
+    label: { es: Cliente en la red privada, en: Client on the private network }
+  - id: ingress
+    kind: capability
+    capability: internal-http-ingress
+    label: { es: Ingress interno, en: Internal ingress }
+  - id: app
+    kind: capability
+    capability: container-platform
+    label: { es: API en contenedor, en: Containerized API }
+  - id: identity
+    kind: capability
+    capability: workload-identity
+    label: { es: Identidad sin secretos, en: Secretless identity }
+  - id: db-access
+    kind: capability
+    capability: private-service-access
+    label: { es: Acceso privado a la base, en: Private database access }
+  - id: database
+    kind: capability
+    capability: managed-postgres
+    label: { es: PostgreSQL gestionado, en: Managed PostgreSQL }
+edges:
+  - { from: client, to: ingress, label: { es: HTTPS, en: HTTPS } }
+  - { from: ingress, to: app }
+  - { from: app, to: identity, label: { es: token, en: token } }
+  - { from: app, to: db-access, label: { es: PostgreSQL + TLS, en: PostgreSQL + TLS } }
+  - { from: db-access, to: database }
+tags: [containers, postgres, zero-trust, passwordless, private-networking]

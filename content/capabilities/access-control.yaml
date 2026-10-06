@@ -1,0 +1,24 @@
+id: access-control
+category: identity
+name:
+  es: "Control de acceso a recursos"
+  en: "Resource access control"
+description:
+  es: "Modelo de permisos sobre recursos de nube: quién puede hacer qué y en qué alcance."
+  en: "Permission model over cloud resources: who can do what, at which scope."
+providers:
+  azure:
+    services:
+      - service: "Azure RBAC"
+        docs: https://learn.microsoft.com/azure/role-based-access-control/overview
+  aws:
+    services:
+      - service: "IAM policies"
+        docs: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
+  gcp:
+    services:
+      - service: "IAM"
+        docs: https://docs.cloud.google.com/iam/docs/overview
+caveats:
+  - es: "Azure y GCP asignan roles en un alcance que se hereda hacia abajo (management group/suscripción/RG en Azure; organización/carpeta/proyecto en GCP). AWS evalúa policies de identidad y de recurso por request, con deny explícito que siempre gana, y la frontera fuerte es la cuenta."
+    en: "Azure and GCP assign roles at a scope that's inherited downward (management group/subscription/RG in Azure; organization/folder/project in GCP). AWS evaluates identity and resource policies per request, with explicit deny always winning, and the hard boundary is the account."

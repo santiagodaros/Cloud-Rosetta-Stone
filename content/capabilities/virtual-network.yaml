@@ -1,0 +1,24 @@
+id: virtual-network
+category: networking
+name:
+  es: "Red virtual"
+  en: "Virtual network"
+description:
+  es: "Red privada aislada donde viven los recursos, con subnets y ruteo propios."
+  en: "Isolated private network where resources live, with their own subnets and routing."
+providers:
+  azure:
+    services:
+      - service: "Azure Virtual Network"
+        docs: https://learn.microsoft.com/azure/virtual-network/virtual-networks-overview
+  aws:
+    services:
+      - service: "Amazon VPC"
+        docs: https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html
+  gcp:
+    services:
+      - service: "VPC network"
+        docs: https://docs.cloud.google.com/vpc/docs/vpc
+caveats:
+  - es: "La VPC de GCP es global y sus subnets son regionales; la VNet de Azure y la VPC de AWS son regionales. En AWS cada subnet vive en una sola AZ; en Azure una subnet abarca todas las zonas de la región."
+    en: "GCP's VPC is global with regional subnets; Azure's VNet and AWS's VPC are regional. In AWS each subnet lives in a single AZ; in Azure a subnet spans every zone in the region."

@@ -1,0 +1,24 @@
+id: nosql-document
+category: storage-data
+name:
+  es: "Base NoSQL de documentos / clave-valor"
+  en: "NoSQL document / key-value database"
+description:
+  es: "Base serverless o provisionada para documentos JSON o acceso por clave con latencia baja."
+  en: "Serverless or provisioned database for JSON documents or low-latency key access."
+providers:
+  azure:
+    services:
+      - service: "Azure Cosmos DB"
+        docs: https://learn.microsoft.com/azure/cosmos-db/introduction
+  aws:
+    services:
+      - service: "Amazon DynamoDB"
+        docs: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
+  gcp:
+    services:
+      - service: "Firestore"
+        docs: https://docs.cloud.google.com/firestore/docs/overview
+caveats:
+  - es: "El modelo de costo es lo primero que se rompe al traducir: Cosmos DB cobra por Request Units (provisionadas o serverless), DynamoDB por capacidad de lectura/escritura (on-demand o provisionada) y Firestore por operación. Un diseño de particiones que es barato en uno puede ser caro en otro."
+    en: "The cost model is the first thing that breaks when translating: Cosmos DB bills Request Units (provisioned or serverless), DynamoDB read/write capacity (on-demand or provisioned) and Firestore per operation. A partitioning design that's cheap in one can be expensive in another."

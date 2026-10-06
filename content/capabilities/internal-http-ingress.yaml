@@ -1,0 +1,28 @@
+id: internal-http-ingress
+category: networking
+name:
+  es: Ingress HTTP interno
+  en: Internal HTTP ingress
+description:
+  es: Punto de entrada HTTP(S) alcanzable solo desde la red privada (o redes conectadas), sin IP pública.
+  en: HTTP(S) entry point reachable only from the private network (or connected networks), without a public IP.
+providers:
+  azure:
+    services:
+      - service: { es: "Container Apps environment interno (ILB)", en: "Internal Container Apps environment (ILB)" }
+        docs: https://learn.microsoft.com/azure/container-apps/networking
+      - service: { es: "Application Gateway (frontend privado)", en: "Application Gateway (private frontend)" }
+        docs: https://learn.microsoft.com/azure/application-gateway/overview
+  aws:
+    services:
+      - service: { es: "Application Load Balancer interno", en: "Internal Application Load Balancer" }
+        docs: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
+  gcp:
+    services:
+      - service: Cloud Run ingress "internal"
+        docs: https://docs.cloud.google.com/run/docs/securing/ingress
+      - service: Internal Application Load Balancer
+        docs: https://docs.cloud.google.com/load-balancing/docs/l7-internal
+caveats:
+  - es: "En ACA y en el ALB interno, la red es la frontera de acceso. En Cloud Run, 'internal' restringe el origen de red, pero por default además exige IAM (roles/run.invoker) en cada request: son dos controles, no uno."
+    en: "In ACA and the internal ALB, the network is the access boundary. In Cloud Run, 'internal' restricts the network origin, but by default IAM (roles/run.invoker) is also required on every request: two controls, not one."

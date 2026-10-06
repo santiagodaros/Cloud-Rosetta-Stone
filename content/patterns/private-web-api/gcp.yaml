@@ -1,0 +1,127 @@
+provider: gcp
+bindings:
+  ingress:
+    service: Cloud Run ingress "internal"
+    config: INGRESS_TRAFFIC_INTERNAL_ONLY + roles/run.invoker
+  app:
+    service: Cloud Run (service)
+    config: { es: "Direct VPC egress hacia rangos privados", en: "Direct VPC egress to private ranges" }
+  identity:
+    service: { es: "Service Account del servicio", en: "The service's Service Account" }
+    config: roles/cloudsql.client + roles/cloudsql.instanceUser
+  db-access:
+    service: Private services access (VPC peering)
+    config: ipv4_enabled = false
+  database:
+    service: Cloud SQL for PostgreSQL
+    config: { es: "cloudsql.iam_authentication = on + connector obligatorio", en: "cloudsql.iam_authentication = on + connector required" }
+gotchas:
+  - id: iam-sa-username-trim
+    severity: iam
+    title:
+      es: En Postgres, el usuario IAM de una Service Account va sin ".gserviceaccount.com"
+      en: In Postgres, a Service Account's IAM user drops ".gserviceaccount.com"
+    body:
+      es: >-
+        El nombre del usuario de base es el email de la SA sin el sufijo .gserviceaccount.com (ej.
+        api@proyecto.iam), por el límite de largo de nombres de PostgreSQL. Si lo creás con el email completo, el
+        login falla con un error que parece de permisos.
+      en: >-
+        The database user name is the SA email without the .gserviceaccount.com suffix (e.g.
+        api@project.iam), due to PostgreSQL's name length limit. If you create it with the full email, login fails
+        with an error that looks like a permissions problem.
+    sources:
+      - https://docs.cloud.google.com/sql/docs/postgres/add-manage-iam-users
+      - https://docs.cloud.google.com/sql/docs/postgres/iam-logins
+    verified_at: 2026-10-06
+    exams: [ACE, PCA]
+  - id: iam-user-created-by-api
+    severity: iam
+    title:
+      es: A diferencia de Azure y AWS, el login IAM se crea por API, sin SQL
+      en: Unlike Azure and AWS, the IAM login is created via API, without SQL
+    body:
+      es: >-
+        google_sql_user con type CLOUD_IAM_SERVICE_ACCOUNT crea el usuario desde Terraform, y además necesitás
+        roles/cloudsql.client y roles/cloudsql.instanceUser en la SA. Lo que sigue siendo SQL son los permisos
+        sobre tablas (GRANT), igual que en las otras nubes.
+      en: >-
+        google_sql_user with type CLOUD_IAM_SERVICE_ACCOUNT creates the user from Terraform, and you also need
+        roles/cloudsql.client and roles/cloudsql.instanceUser on the SA. What remains SQL are table permissions
+        (GRANT), same as on the other clouds.
+    sources:
+      - https://docs.cloud.google.com/sql/docs/postgres/add-manage-iam-users
+      - https://docs.cloud.google.com/sql/docs/postgres/iam-overview
+    verified_at: 2026-10-06
+    exams: [ACE, PCSE]
+  - id: psa-peering-not-transitive
+    severity: networking
+    title:
+      es: La IP privada de Cloud SQL viaja por un VPC peering que no es transitivo
+      en: Cloud SQL's private IP goes over a VPC peering that isn't transitive
+    body:
+      es: >-
+        Private services access se implementa con VPC Network Peering hacia la red de Google. Otra VPC peereada
+        con la tuya no llega a la base, y para on-premises tenés que exportar custom routes en el peering. Si tu
+        topología es hub-and-spoke, evaluá Private Service Connect en lugar de PSA.
+      en: >-
+        Private services access is implemented with VPC Network Peering to Google's network. Another VPC peered
+        with yours can't reach the database, and for on-premises you must export custom routes on the peering. If
+        your topology is hub-and-spoke, consider Private Service Connect instead of PSA.
+    sources:
+      - https://docs.cloud.google.com/sql/docs/postgres/private-ip
+      - https://docs.cloud.google.com/vpc/docs/vpc-peering
+    verified_at: 2026-10-06
+    exams: [PCNE, PCA]
+  - id: run-internal-is-not-auth
+    severity: iam
+    title:
+      es: '"Internal" es un control de red; la autenticación es IAM aparte'
+      en: '"Internal" is a network control; authentication is separate IAM'
+    body:
+      es: >-
+        Con ingress internal, Cloud Run rechaza requests que no vengan de VPCs del mismo proyecto (o perímetro de
+        VPC SC) o de otros servicios de Google, aun usando la URL run.app. Pero además, por default exige
+        run.routes.invoke: el cliente tiene que mandar un ID token de una identidad con roles/run.invoker. En ACA y
+        en el ALB interno la red es el único control salvo que agregues auth en la app.
+      en: >-
+        With internal ingress, Cloud Run rejects requests not coming from VPCs in the same project (or VPC SC
+        perimeter) or from other Google services, even via the run.app URL. On top of that, by default it requires
+        run.routes.invoke: the client must send an ID token from an identity with roles/run.invoker. In ACA and the
+        internal ALB the network is the only control unless you add auth in the app.
+    sources:
+      - https://docs.cloud.google.com/run/docs/securing/ingress
+      - https://docs.cloud.google.com/run/docs/securing/managing-access
+    verified_at: 2026-10-06
+    exams: [PCSE, PCA]
+  - id: connector-enforcement
+    severity: security
+    title:
+      es: Forzá el uso de connectors para que nadie se conecte "por fuera"
+      en: Enforce connectors so nobody connects "around" them
+    body:
+      es: >-
+        La autenticación IAM automática (sin manejar tokens a mano) la hacen Cloud SQL Auth Proxy o los Cloud SQL
+        Language Connectors. connector_enforcement = REQUIRED rechaza toda conexión directa a la IP, así el único
+        camino es con identidad y TLS gestionados.
+      en: >-
+        Automatic IAM authentication (without handling tokens manually) is done by Cloud SQL Auth Proxy or the
+        Cloud SQL Language Connectors. connector_enforcement = REQUIRED rejects every direct connection to the IP, so
+        the only path is with managed identity and TLS.
+    sources:
+      - https://docs.cloud.google.com/sql/docs/postgres/iam-logins
+      - https://docs.cloud.google.com/sql/docs/postgres/connect-connectors
+    verified_at: 2026-10-06
+    exams: [PCSE]
+cost:
+  scales_to_zero: partial
+  fixed_cost_drivers:
+    - es: Instancia de Cloud SQL (cómputo + storage)
+      en: Cloud SQL instance (compute + storage)
+  notes:
+    es: >-
+      Cloud Run escala a cero y Direct VPC egress no tiene cargo propio (sí el tráfico). El piso es Cloud SQL, que
+      factura mientras la instancia está activa.
+    en: >-
+      Cloud Run scales to zero and Direct VPC egress has no charge of its own (traffic does). The floor is Cloud SQL,
+      which bills while the instance is active.

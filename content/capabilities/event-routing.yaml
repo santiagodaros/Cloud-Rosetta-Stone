@@ -1,0 +1,21 @@
+id: event-routing
+category: async-event
+name:
+  es: "Ruteo de eventos"
+  en: "Event routing"
+description:
+  es: "Bus de eventos que filtra y enruta eventos de servicios y aplicaciones hacia destinos."
+  en: "Event bus that filters and routes events from services and applications to targets."
+providers:
+  azure:
+    services:
+      - service: "Azure Event Grid"
+        docs: https://learn.microsoft.com/azure/event-grid/overview
+  aws:
+    services:
+      - service: "Amazon EventBridge"
+        docs: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html
+  gcp:
+    services:
+      - service: "Eventarc"
+        docs: https://docs.cloud.google.com/eventarc/docs/overview

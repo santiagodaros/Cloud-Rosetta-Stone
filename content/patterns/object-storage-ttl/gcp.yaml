@@ -1,19 +1,19 @@
 provider: gcp
 bindings:
   identity:
-    service: Service Account adjunta al workload
-    config: roles/storage.objectCreator con IAM Condition por prefijo
+    service: { es: "Service Account adjunta al workload", en: "Service Account attached to the workload" }
+    config: { es: "roles/storage.objectCreator con IAM Condition por prefijo", en: "roles/storage.objectCreator with a prefix IAM Condition" }
   private-access:
     service: Private Google Access
-    config: flag en la subnet
+    config: { es: "flag en la subnet", en: "subnet flag" }
   bucket:
     service: Cloud Storage bucket
     config: Uniform bucket-level access + Public access prevention enforced
   lifecycle:
     service: Object Lifecycle Management
-    config: Delete por age + AbortIncompleteMultipartUpload
+    config: { es: "Delete por age + AbortIncompleteMultipartUpload", en: "Delete by age + AbortIncompleteMultipartUpload" }
   perimeter:
-    service: Bucket IP filtering (opcional)
+    service: { es: "Bucket IP filtering (opcional)", en: "Bucket IP filtering (optional)" }
     notes:
       es: El perímetro completo es VPC Service Controls, que se configura a nivel organización.
       en: The full perimeter is VPC Service Controls, configured at organization level.
