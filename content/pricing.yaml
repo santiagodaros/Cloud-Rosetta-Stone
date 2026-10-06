@@ -18,7 +18,7 @@ meters:
     provider: azure
     label: { es: 'Service Bus Standard (cargo base)', en: 'Service Bus Standard (base charge)' }
     unit: hour
-    azure: { service: Service Bus, match: { skuName: Standard, meterName: Standard Base Unit } }
+    azure: { service: Service Bus, match: { skuName: Standard, meterName: Standard Base Unit, unitOfMeasure: 1/Hour } }
     docs: https://azure.microsoft.com/pricing/details/service-bus/
   - id: azure-servicebus-premium-mu
     provider: azure
@@ -62,17 +62,17 @@ meters:
     unit: hour
     azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute, meterName: B1MS } }
     docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
-  - id: azure-pg-ddsv5-vcore
+  - id: azure-pg-d2ds-v5
     provider: azure
-    label: { es: 'PostgreSQL Flexible Server General Purpose Ddsv5 (por vCore)', en: 'PostgreSQL Flexible Server General Purpose Ddsv5 (per vCore)' }
+    label: { es: 'PostgreSQL Flexible Server D2ds_v5 (General Purpose, 2 vCores)', en: 'PostgreSQL Flexible Server D2ds_v5 (General Purpose, 2 vCores)' }
     unit: hour
-    azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flexible Server General Purpose Ddsv5 Series Compute, meterName: vCore } }
+    azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flexible Server General Purpose Ddsv5 Series Compute, skuName: 2 vCore } }
     docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
   - id: azure-pg-storage
     provider: azure
     label: { es: 'Storage de PostgreSQL Flexible Server (GB)', en: 'PostgreSQL Flexible Server storage (GB)' }
     unit: gb-month
-    azure: { service: Azure Database for PostgreSQL, match: { productName: Az DB for PostgreSQL Flexible Server Storage, meterName: Storage Data Stored } }
+    azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flex Server Storage, meterName: Storage Data Stored } }
     docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
 
   # --- AWS (Price List bulk API: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html)

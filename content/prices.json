@@ -51,6 +51,34 @@
       "as_of": "2026-10-06",
       "ref": "AmazonVPC EN2N5TATXE673A3B: $0.01 per VPC Endpoint Hour"
     },
+    "azure-pg-b1ms": {
+      "unit_price": 0.017,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute / B1MS / B1MS (1 Hour)"
+    },
+    "azure-pg-storage": {
+      "unit_price": 0.115,
+      "unit": "gb-month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure Database for PostgreSQL Flex Server Storage / Storage / Storage Data Stored (1 GB/Month)"
+    },
+    "azure-servicebus-premium-mu": {
+      "unit_price": 0.9275,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Service Bus / Premium / Premium Messaging Unit (1/Hour)"
+    },
+    "azure-servicebus-standard-base": {
+      "unit_price": 0.013441,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Service Bus / Standard / Standard Base Unit (1/Hour)"
+    },
     "gcp-cloudsql-ram": {
       "unit_price": 0.007,
       "unit": "hour",

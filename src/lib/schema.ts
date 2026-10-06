@@ -296,7 +296,8 @@ export const PriceMeter = z.strictObject({
   label: Localized,
   unit: PriceUnit,
   /** Cómo encontrarlo en la API de precios de su nube. Debe resolver a exactamente un precio. */
-  azure: z.strictObject({ service: z.string().min(1), match: MatchFields }).optional(),
+  /** `region`: armRegionName si no es la región del patrón (ej. "Global" para servicios no regionales). */
+  azure: z.strictObject({ service: z.string().min(1), region: z.string().optional(), match: MatchFields }).optional(),
   aws: z.strictObject({ offer: z.string().min(1), match: MatchFields }).optional(),
   gcp: z.strictObject({ service: z.string().min(1), description: z.string().min(1) }).optional(),
   /**

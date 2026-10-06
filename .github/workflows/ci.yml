@@ -162,7 +162,7 @@ jobs:
       # Cada meter de content/pricing.yaml tiene que resolver a exactamente un precio. Sin
       # GCP_BILLING_API_KEY (los PR de forks no tienen secrets) GCP usa el precio manual.
       - name: Resolver meters
-        run: pnpm prices:fetch --check --list "Service Bus"
+        run: pnpm prices:fetch --check --list "Virtual Network|Azure DNS|Azure Private Link|Azure Database for PostgreSQL"
 
   checkov:
     name: Checkov (seguridad IaC)

@@ -66,7 +66,7 @@ options:
       es: Con HA en v5 se factura primario y standby (cómputo por 2); el piso también duplica el storage.
       en: With HA on v5 both primary and standby are billed (compute times 2); the floor also doubles storage.
     floor:
-      - { meter: azure-pg-ddsv5-vcore, count: 4 }
+      - { meter: azure-pg-d2ds-v5, count: 2 }
       - { meter: azure-pg-storage, count: 64 }
     sources:
       - https://learn.microsoft.com/azure/postgresql/high-availability/concepts-high-availability

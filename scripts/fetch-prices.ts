@@ -61,16 +61,19 @@ const AzureItem = z.looseObject({
   tierMinimumUnits: z.number(),
   type: z.string(),
   armSkuName: z.string().optional(),
+  armRegionName: z.string(),
 });
 type AzureItem = z.infer<typeof AzureItem>;
 const azureCache = new Map<string, Promise<AzureItem[]>>();
 
-function azureItems(service: string): Promise<AzureItem[]> {
-  if (!azureCache.has(service)) {
+/** `region` null = todas las regiones (solo para --list). */
+function azureItems(service: string, region: string | null = pricing.regions.azure): Promise<AzureItem[]> {
+  const key = `${service}@${region}`;
+  if (!azureCache.has(key)) {
     azureCache.set(
-      service,
+      key,
       (async () => {
-        const filter = `serviceName eq '${service}' and armRegionName eq '${pricing.regions.azure}' and priceType eq 'Consumption'`;
+        const filter = `serviceName eq '${service}'${region === null ? '' : ` and armRegionName eq '${region}'`} and priceType eq 'Consumption'`;
         let url: string | null = `https://prices.azure.com/api/retail/prices?api-version=2023-01-01-preview&$filter=${encodeURIComponent(filter)}`;
         const items: AzureItem[] = [];
         while (url) {
@@ -82,12 +85,12 @@ function azureItems(service: string): Promise<AzureItem[]> {
       })(),
     );
   }
-  return azureCache.get(service)!;
+  return azureCache.get(key)!;
 }
 
 async function resolveAzure(m: PriceMeter): Promise<Resolved> {
   const sel = m.azure!;
-  const all = await azureItems(sel.service);
+  const all = await azureItems(sel.service, sel.region ?? pricing.regions.azure);
   let hits = all.filter((i) => Object.entries(sel.match).every(([k, v]) => String((i as Record<string, unknown>)[k]) === v));
   // Escalonados (ej. zonas DNS: 0-25, 25+): el piso usa el primer escalón.
   if (hits.length > 1) hits = hits.filter((i) => i.tierMinimumUnits === 0);
@@ -221,9 +224,18 @@ for (const m of pricing.meters) {
     if (previous?.prices[m.id]) out[m.id] = previous.prices[m.id];
   }
 }
+// --list "Servicio A|Servicio B": meters de esos servicios en la región del patrón y en las no regionales.
 if (list && only.includes('azure')) {
-  const rows = new Set((await azureItems(list)).map((i) => `  ${i.productName} | ${i.skuName} | ${i.meterName} | ${i.unitOfMeasure} | ${i.retailPrice}`));
-  console.log(`\nMeters de "${list}" en ${pricing.regions.azure}:\n${[...rows].sort().join('\n')}`);
+  const regions = new Set([pricing.regions.azure, '', 'Global', 'Zone 1', 'US Zone 1']);
+  for (const svc of list.split('|')) {
+    try {
+      const items = (await azureItems(svc, null)).filter((i) => regions.has(i.armRegionName));
+      const rows = new Set(items.map((i) => `  [${i.armRegionName || '-'}] ${i.productName} | ${i.skuName} | ${i.meterName} | ${i.unitOfMeasure} | ${i.retailPrice}`));
+      console.log(`\nMeters de "${svc}" (${items.length}):\n${[...rows].sort().slice(0, 400).join('\n')}`);
+    } catch (e) {
+      console.log(`\n--list "${svc}": ${(e as Error).message}`);
+    }
+  }
 }
 // En CI el log es la única salida: el JSON resuelto queda ahí para auditar (y copiar si hace falta).
 if (check) console.log(`\nRESOLVED ${JSON.stringify(out)}`);
