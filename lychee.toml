@@ -9,4 +9,6 @@ exclude = [
   # Links propios del sitio (se generan en build).
   "^https://github.com/santiagodaros/Cloud-Rosetta-Stone",
   "^http://localhost",
+  # Identificadores de audience/resource citados en el texto de gotchas: no son páginas.
+  "^https://ossrdbms-aad\\.database\\.windows\\.net",
 ]
