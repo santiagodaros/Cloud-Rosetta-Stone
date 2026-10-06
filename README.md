@@ -23,10 +23,14 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
   rol, modelo de costo, "letra chica" y Terraform.
 - **Gotchas verificables:** severidad, fuente oficial obligatoria, `verified_at` y examen de certificación
   donde suma (AZ-104, AZ-700, SAA-C03, ACE…).
+- **Por examen:** cada certificación tiene su página con los gotchas que aplican y su estado (vigente, se
+  retira, retirado → reemplazo), derivado de la fecha de retiro oficial.
+- **Práctica:** modo a ciegas ("¿de qué nube es este gotcha?", con los nombres de producto tapados) y
+  flashcards filtrables por examen.
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
 - **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").
-- **Datos abiertos:** `/api/v1/patterns.json` y `/api/v1/capabilities.json`.
+- **Datos abiertos:** `/api/v1/patterns.json`, `/api/v1/capabilities.json` y `/api/v1/exams.json`.
 - **Para compartir:** cada comparación tiene su imagen OG y cada gotcha un deep link.
 - **Búsqueda** estática (Pagefind) en español e inglés.
 - **Español primero**, inglés incluido. Sin cuentas, sin credenciales, sin trackers, $0.

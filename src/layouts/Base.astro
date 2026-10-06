@@ -2,7 +2,7 @@
 import { BRAND } from '../lib/brand.ts';
 import '../styles/global.css';
 import { ui, LOCALES, type Locale } from '../lib/i18n.ts';
-import { capabilitiesHref, homeHref, href } from '../lib/paths.ts';
+import { capabilitiesHref, examsHref, homeHref, href, practiceHref } from '../lib/paths.ts';
 
 interface Props {
   lang: Locale;
@@ -52,6 +52,8 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
         <div class="order-last flex w-full flex-wrap items-center gap-x-5 gap-y-1 text-sm sm:order-none sm:w-auto sm:flex-1">
           <a class="text-muted hover:text-fg" href={homeHref(lang)}>{s.patterns}</a>
           <a class="text-muted hover:text-fg" href={capabilitiesHref(lang)}>{s.dictionary}</a>
+          <a class="text-muted hover:text-fg" href={examsHref(lang)}>{s.examsNav}</a>
+          <a class="text-muted hover:text-fg" href={practiceHref(lang)}>{s.practice}</a>
           <a class="text-muted hover:text-fg" href={href(`${lang}/methodology/`)}>{s.methodology}</a>
           <a class="text-muted hover:text-fg" href={href(`${lang}/search/`)}>{s.search}</a>
           <a class="text-muted hover:text-fg" href={`${repo}/blob/main/CONTRIBUTING.md`}>{s.contribute}</a>

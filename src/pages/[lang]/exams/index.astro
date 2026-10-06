@@ -1,0 +1,60 @@
+---
+import { BRAND } from '../../../lib/brand.ts';
+import Base from '../../../layouts/Base.astro';
+import ExamStatus from '../../../components/ExamStatus.astro';
+import { LOCALES, PROVIDER_META, ui, type Locale } from '../../../lib/i18n.ts';
+import { examsHref, practiceHref } from '../../../lib/paths.ts';
+import { EXAM_LEVELS, PROVIDERS } from '../../../lib/schema.ts';
+import { examStatus } from '../../../lib/content.ts';
+import { gotchasForExam, site } from '../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const STATUS_ORDER = { active: 0, retiring: 1, retired: 2 } as const;
+const byProvider = PROVIDERS.map((p) => ({
+  provider: p,
+  exams: site.exams
+    .filter((e) => e.provider === p)
+    .sort(
+      (a, b) =>
+        STATUS_ORDER[examStatus(a)] - STATUS_ORDER[examStatus(b)] ||
+        EXAM_LEVELS.indexOf(a.level) - EXAM_LEVELS.indexOf(b.level) ||
+        a.code.localeCompare(b.code),
+    ),
+}));
+---
+
+<Base lang={lang} title={`${s.examsTitle} — ${BRAND.name}`} description={s.examsIntro} altPath="exams/">
+  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.examsTitle}</h1>
+  <p class="mb-4 max-w-3xl text-muted">{s.examsIntro}</p>
+  <div class="mb-8"><a class="inline-flex min-h-6 items-center rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium no-underline hover:bg-surface-2" href={practiceHref(lang)}>🃏 {s.practice}</a></div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    {
+      byProvider.map(({ provider, exams }) => (
+        <section>
+          <h2 class="mb-3 text-sm font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[provider].color}`}>{PROVIDER_META[provider].name}</h2>
+          <ul class="flex flex-col gap-2">
+            {exams.map((exam) => {
+              const n = gotchasForExam(exam.code).length;
+              return (
+                <li class="rounded-lg border border-line bg-surface p-3">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <a class="font-mono font-semibold" href={examsHref(lang, exam.code)}>{exam.code}</a>
+                    <ExamStatus exam={exam} lang={lang} />
+                    <span class="ml-auto text-xs text-muted">{s.gotchaCount(n)}</span>
+                  </div>
+                  <p class="mt-1 text-sm text-muted">{exam.name}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</Base>
