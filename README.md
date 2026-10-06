@@ -4,6 +4,12 @@
 
 _The fine print of multicloud — Spanish first, English included._
 
+[![CI](https://github.com/santiagodaros/Cloud-Rosetta-Stone/actions/workflows/ci.yml/badge.svg)](https://github.com/santiagodaros/Cloud-Rosetta-Stone/actions/workflows/ci.yml)
+[![Código: MIT](https://img.shields.io/badge/c%C3%B3digo-MIT-blue)](LICENSE)
+[![Contenido: CC BY-SA 4.0](https://img.shields.io/badge/contenido-CC%20BY--SA%204.0-lightgrey)](LICENSE-CONTENT.md)
+
+**Sitio:** https://santiagodaros.github.io/Cloud-Rosetta-Stone/ · **Datos abiertos:** [`/api/v1/patterns.json`](https://santiagodaros.github.io/Cloud-Rosetta-Stone/api/v1/patterns.json)
+
 Las tablas de equivalencias dicen que S3 "es" Blob Storage. No te dicen que en Azure el prefijo de lifecycle
 incluye el nombre del contenedor, que en GCP soft delete viene activo y te cobra 7 días extra por cada archivo
 efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucket. Letra Chica compara
@@ -66,12 +72,14 @@ src/lib/diagram.ts  ← layout ELK en build time → SVG
 src/pages/          ← sitio Astro (es/en)
 scripts/            ← validate, freshness report, matriz de Terraform para CI
 docs/               ← plan, modelo de contenido, ADRs
+docs/launch/        ← kit de lanzamiento (posts, Show HN, calendario)
 ```
 
 ## Contribuir
 
 La contribución más valiosa no es un patrón nuevo: es **re-verificar un gotcha** y actualizar su
-`verified_at`. Ver [CONTRIBUTING.md](CONTRIBUTING.md).
+`verified_at`. Ver [CONTRIBUTING.md](CONTRIBUTING.md) y los issues
+[`good first issue`](https://github.com/santiagodaros/Cloud-Rosetta-Stone/issues?q=is%3Aopen+label%3A%22good+first+issue%22).
 
 ## Licencia
 

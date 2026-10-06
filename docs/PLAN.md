@@ -98,16 +98,19 @@ funcionando, CI verde. → 45 gotchas verificados el 2026-10-06; CI pendiente de
   paleta clara.
 - checkov exige PostgreSQL 18 en Cloud SQL; se mantuvo 17 en las 3 nubes con el skip justificado.
 
-### Fase 2 — Lanzamiento (1 semana)
+### Fase 2 — Lanzamiento (preparada 2026-10-06)
 
-| ID | Tarea | Notas |
-|---|---|---|
-| F2-01 | Validar nombre: repo, dominio y handle libres (existe un "Cloud Rosetta" previo, ver análisis §2) | **Antes** del post de expectativa |
-| F2-02 | Post LinkedIn Fase 1 (dolor + tesis) con screenshot del comparador | Copy en `ANALISIS-END-TO-END.md` §11 |
-| F2-03 | Post Fase 2 (lanzamiento) + Show HN + r/AZURE, r/aws, r/googlecloud | Link en primer comentario |
-| F2-04 | Post Fase 3 (letra chica) — **con el copy corregido** (Peek-Lock ≠ exactly-once) | |
-| F2-05 | Serie semanal "Gotcha de la semana": cada post → deep link + OG image | Contenido recurrente sin costo extra |
-| F2-06 | 10 issues `good first issue` listos ("verificar gotcha X", "traducir Y", "capability Z") | Para la ola de visitas del lanzamiento |
+Kit completo en [`docs/launch/`](./launch/). Lo que queda son acciones del mantenedor (publicar, configurar
+el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
+
+| ID | Tarea | Estado | Resultado |
+|---|---|---|---|
+| F2-01 | Validar nombre | ✅ | Renombrado a **Letra Chica**: "Cloud Rosetta" colisiona con dos repos de GitHub (uno con el mismo concepto) y la marca "Rosetta Stone". Dominio: a verificar por el mantenedor |
+| F2-02 | Post de expectativa | ✅ borrador | 2 variantes en `launch/linkedin.md` |
+| F2-03 | Lanzamiento: LinkedIn, Show HN, Reddit | ✅ borrador | `launch/linkedin.md`, `launch/show-hn-y-reddit.md` |
+| F2-04 | Post de letra chica con copy corregido | ✅ borrador | Peek-Lock = at-least-once; 2 variantes |
+| F2-05 | Serie "Gotcha de la semana" | ✅ | 12 semanas generadas desde el contenido con `pnpm launch:weekly` |
+| F2-06 | 10 `good first issue` | ✅ | Re-verificación, traducción y capabilities |
 
 **Criterio de salida:** primer PR externo abierto.
 
