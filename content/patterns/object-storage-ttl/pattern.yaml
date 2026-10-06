@@ -1,0 +1,49 @@
+id: object-storage-ttl
+status: published
+category: storage-data
+title:
+  es: Ingesta privada de objetos con expiración (TTL)
+  en: Private object ingestion with expiration (TTL)
+summary:
+  es: Un workload sube archivos a un bucket privado, sin claves, por red privada, y los archivos se borran solos a los N días.
+  en: A workload uploads files to a private bucket, keyless, over a private network, and files delete themselves after N days.
+problem:
+  es: >-
+    Necesitás recibir archivos temporales (exports, uploads de usuarios, staging de ETL) que no deben quedar
+    expuestos ni acumularse. Los requisitos son: cero acceso público, cero claves estáticas, tráfico por red
+    privada, permisos acotados al prefijo de ingesta y borrado automático tras N días.
+  en: >-
+    You need to receive temporary files (exports, user uploads, ETL staging) that must not be exposed or pile up.
+    Requirements: zero public access, zero static keys, private-network traffic, permissions scoped to the
+    ingestion prefix, and automatic deletion after N days.
+roles:
+  - id: producer
+    kind: actor
+    label: { es: Workload productor, en: Producer workload }
+  - id: identity
+    kind: capability
+    capability: workload-identity
+    label: { es: Identidad sin secretos, en: Secretless identity }
+  - id: private-access
+    kind: capability
+    capability: private-service-access
+    label: { es: Acceso privado, en: Private access }
+  - id: bucket
+    kind: capability
+    capability: object-storage
+    label: { es: Almacenamiento de objetos, en: Object storage }
+  - id: lifecycle
+    kind: capability
+    capability: object-lifecycle
+    label: { es: Política de expiración, en: Expiration policy }
+  - id: perimeter
+    kind: capability
+    capability: data-perimeter
+    label: { es: Perímetro de datos, en: Data perimeter }
+edges:
+  - { from: producer, to: identity, label: { es: obtiene token, en: gets token } }
+  - { from: producer, to: private-access, label: { es: PUT objeto, en: PUT object } }
+  - { from: private-access, to: bucket }
+  - { from: lifecycle, to: bucket, label: { es: borra a los N días, en: deletes after N days } }
+  - { from: perimeter, to: bucket, label: { es: restringe origen, en: restricts origin } }
+tags: [storage, lifecycle, zero-trust, private-networking]

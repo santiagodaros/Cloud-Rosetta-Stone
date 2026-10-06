@@ -1,0 +1,218 @@
+/**
+ * Carga y validación del contenido (`content/`).
+ *
+ * Dos niveles de validación:
+ *  1. Estructural (Zod, por archivo) → `schema.ts`.
+ *  2. Referencial (entre archivos) → `crossValidate`: roles, capabilities, bindings,
+ *     Terraform presente, gotchas únicos, fechas.
+ *
+ * El sitio y el validador de CI usan exactamente esta función, así que lo que pasa
+ * CI es lo que se publica.
+ */
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { parse as parseYaml } from 'yaml';
+import { z } from 'zod';
+import {
+  Capability,
+  Implementation,
+  Pattern,
+  PROVIDERS,
+  type Provider,
+} from './schema.ts';
+
+export type Issue = { level: 'error' | 'warning'; file: string; message: string };
+
+export type TerraformFile = { name: string; code: string };
+export type TerraformModule = {
+  dir: string;
+  files: TerraformFile[];
+  /** `name → constraint` leído de `required_providers`. */
+  providers: Record<string, string>;
+  hasTests: boolean;
+};
+
+export type PatternBundle = {
+  pattern: Pattern;
+  implementations: Partial<Record<Provider, Implementation>>;
+  terraform: Partial<Record<Provider, TerraformModule>>;
+};
+
+export type ContentData = {
+  capabilities: Capability[];
+  patterns: PatternBundle[];
+};
+
+export type LoadResult = ContentData & { issues: Issue[] };
+
+/** Días a partir de los cuales un gotcha se considera "a re-verificar". */
+export const STALE_AFTER_DAYS = 180;
+
+const TF_DISPLAY_ORDER = ['main.tf', 'variables.tf', 'outputs.tf', 'versions.tf'];
+
+function readYaml<T>(file: string, schema: z.ZodType<T>, root: string, issues: Issue[]): T | undefined {
+  let raw: unknown;
+  try {
+    raw = parseYaml(readFileSync(file, 'utf8'));
+  } catch (e) {
+    issues.push({ level: 'error', file: relative(root, file), message: `YAML inválido: ${(e as Error).message}` });
+    return undefined;
+  }
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) {
+    issues.push({ level: 'error', file: relative(root, file), message: z.prettifyError(parsed.error) });
+    return undefined;
+  }
+  return parsed.data;
+}
+
+const listDirs = (dir: string) =>
+  existsSync(dir) ? readdirSync(dir).filter((d) => statSync(join(dir, d)).isDirectory()).sort() : [];
+
+const listFiles = (dir: string, ext: string) =>
+  existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(ext)).sort() : [];
+
+/** Extrae `required_providers` sin parsear HCL completo (alcanza para mostrar versiones). */
+export function parseRequiredProviders(hcl: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const start = hcl.search(/required_providers\s*\{/);
+  if (start === -1) return out;
+  // Las entradas (`aws = { source = ..., version = ... }`) no tienen llaves anidadas.
+  const entry = /(\w+)\s*=\s*\{[^{}]*?version\s*=\s*"([^"]+)"[^{}]*\}/g;
+  for (const m of hcl.slice(start).matchAll(entry)) out[m[1]] = m[2];
+  return out;
+}
+
+function loadTerraform(dir: string): TerraformModule | undefined {
+  if (!existsSync(dir)) return undefined;
+  const names = listFiles(dir, '.tf').sort(
+    (a, b) => (TF_DISPLAY_ORDER.indexOf(a) + 1 || 99) - (TF_DISPLAY_ORDER.indexOf(b) + 1 || 99),
+  );
+  const files = names.map((name) => ({ name, code: readFileSync(join(dir, name), 'utf8') }));
+  const providers = Object.assign({}, ...files.map((f) => parseRequiredProviders(f.code)));
+  return { dir, files, providers, hasTests: listFiles(join(dir, 'tests'), '.tftest.hcl').length > 0 };
+}
+
+export function loadContent(root = process.cwd()): LoadResult {
+  const issues: Issue[] = [];
+  const contentDir = join(root, 'content');
+
+  const capabilities = listFiles(join(contentDir, 'capabilities'), '.yaml')
+    .map((f) => readYaml(join(contentDir, 'capabilities', f), Capability, root, issues))
+    .filter((c): c is Capability => c !== undefined);
+
+  const patterns: PatternBundle[] = [];
+  for (const slug of listDirs(join(contentDir, 'patterns'))) {
+    const dir = join(contentDir, 'patterns', slug);
+    const patternFile = join(dir, 'pattern.yaml');
+    if (!existsSync(patternFile)) {
+      issues.push({ level: 'error', file: relative(root, dir), message: 'falta pattern.yaml' });
+      continue;
+    }
+    const pattern = readYaml(patternFile, Pattern, root, issues);
+    if (!pattern) continue;
+    if (pattern.id !== slug) {
+      issues.push({ level: 'error', file: relative(root, patternFile), message: `id "${pattern.id}" debe coincidir con la carpeta "${slug}"` });
+    }
+    const bundle: PatternBundle = { pattern, implementations: {}, terraform: {} };
+    for (const provider of PROVIDERS) {
+      const implFile = join(dir, `${provider}.yaml`);
+      if (existsSync(implFile)) {
+        const impl = readYaml(implFile, Implementation, root, issues);
+        if (impl) bundle.implementations[provider] = impl;
+      }
+      const tf = loadTerraform(join(dir, 'terraform', provider));
+      if (tf) bundle.terraform[provider] = tf;
+    }
+    patterns.push(bundle);
+  }
+
+  const data = { capabilities, patterns };
+  issues.push(...crossValidate(data));
+  return { ...data, issues };
+}
+
+/** Validaciones entre archivos. Pura (sin I/O) para poder testearla. */
+export function crossValidate(data: ContentData, today = new Date()): Issue[] {
+  const issues: Issue[] = [];
+  const capIds = new Set<string>();
+  for (const c of data.capabilities) {
+    if (capIds.has(c.id)) issues.push({ level: 'error', file: `content/capabilities/${c.id}.yaml`, message: `capability duplicada: ${c.id}` });
+    capIds.add(c.id);
+  }
+
+  for (const { pattern, implementations, terraform } of data.patterns) {
+    const base = `content/patterns/${pattern.id}`;
+    const err = (file: string, message: string) => issues.push({ level: 'error', file: `${base}/${file}`, message });
+    const warn = (file: string, message: string) => issues.push({ level: 'warning', file: `${base}/${file}`, message });
+
+    const roleIds = new Set<string>();
+    for (const role of pattern.roles) {
+      if (roleIds.has(role.id)) err('pattern.yaml', `rol duplicado: ${role.id}`);
+      roleIds.add(role.id);
+      if (role.kind === 'capability' && !capIds.has(role.capability)) {
+        err('pattern.yaml', `el rol "${role.id}" referencia la capability inexistente "${role.capability}" (creá content/capabilities/${role.capability}.yaml)`);
+      }
+    }
+    for (const e of pattern.edges) {
+      for (const end of [e.from, e.to]) if (!roleIds.has(end)) err('pattern.yaml', `edge ${e.from}→${e.to}: rol inexistente "${end}"`);
+    }
+    if (!pattern.title.en) warn('pattern.yaml', 'falta traducción al inglés del título');
+
+    const capabilityRoles = pattern.roles.filter((r) => r.kind === 'capability').map((r) => r.id);
+
+    for (const provider of PROVIDERS) {
+      const impl = implementations[provider];
+      const file = `${provider}.yaml`;
+      if (!impl) {
+        (pattern.status === 'published' ? err : warn)(file, `falta la implementación de ${provider}`);
+        continue;
+      }
+      if (impl.provider !== provider) err(file, `provider "${impl.provider}" no coincide con el nombre del archivo`);
+
+      for (const roleId of capabilityRoles) {
+        if (!(roleId in impl.bindings)) err(file, `falta binding para el rol "${roleId}" (usá { gap: ... } si no hay equivalente)`);
+      }
+      for (const roleId of Object.keys(impl.bindings)) {
+        if (!roleIds.has(roleId)) err(file, `binding para rol inexistente "${roleId}"`);
+        else if (!capabilityRoles.includes(roleId)) err(file, `el rol "${roleId}" es un actor: no lleva binding`);
+      }
+
+      const gotchaIds = new Set<string>();
+      for (const g of impl.gotchas) {
+        if (gotchaIds.has(g.id)) err(file, `gotcha duplicado: ${g.id}`);
+        gotchaIds.add(g.id);
+        const age = daysSince(g.verified_at, today);
+        if (age < 0) err(file, `gotcha "${g.id}": verified_at está en el futuro`);
+        else if (age > STALE_AFTER_DAYS) warn(file, `gotcha "${g.id}" verificado hace ${age} días (> ${STALE_AFTER_DAYS}): re-verificar`);
+        if (!g.title.en || !g.body.en) warn(file, `gotcha "${g.id}": falta traducción al inglés`);
+      }
+
+      const tf = terraform[provider];
+      if (!tf) {
+        (pattern.status === 'published' ? err : warn)(`terraform/${provider}`, 'falta el módulo de Terraform');
+      } else {
+        if (!tf.files.some((f) => f.name === 'main.tf')) err(`terraform/${provider}`, 'falta main.tf');
+        if (!tf.hasTests) err(`terraform/${provider}`, 'falta tests/*.tftest.hcl (al menos un test con mock_provider)');
+        if (Object.keys(tf.providers).length === 0) err(`terraform/${provider}`, 'required_providers sin versión pinneada');
+      }
+    }
+  }
+  return issues;
+}
+
+export function daysSince(isoDate: string, today = new Date()): number {
+  const d = new Date(`${isoDate}T00:00:00Z`).getTime();
+  const t = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  return Math.floor((t - d) / 86_400_000);
+}
+
+/** Para el sitio: falla el build si hay errores, así nunca se publica contenido inválido. */
+export function loadContentOrThrow(root = process.cwd()): ContentData {
+  const { issues, ...data } = loadContent(root);
+  const errors = issues.filter((i) => i.level === 'error');
+  if (errors.length) {
+    throw new Error(`Contenido inválido (corré \`pnpm validate\`):\n${errors.map((e) => `  ${e.file}: ${e.message}`).join('\n')}`);
+  }
+  return data;
+}

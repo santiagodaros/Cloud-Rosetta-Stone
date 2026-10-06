@@ -1,0 +1,24 @@
+id: workload-identity
+category: identity
+name:
+  es: Identidad de workload (sin secretos)
+  en: Workload identity (secretless)
+description:
+  es: Identidad que la plataforma le asigna a un workload para obtener tokens de corta duración, sin claves almacenadas.
+  en: Platform-assigned identity a workload uses to obtain short-lived tokens, with no stored keys.
+providers:
+  azure:
+    services:
+      - service: Managed Identity (system o user-assigned)
+        docs: https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview
+  aws:
+    services:
+      - service: IAM Role (task role, instance profile, IRSA / Pod Identity)
+        docs: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html
+  gcp:
+    services:
+      - service: Service Account (attached / Workload Identity Federation)
+        docs: https://docs.cloud.google.com/iam/docs/service-account-overview
+caveats:
+  - es: "aws_iam_role no tiene un recurso equivalente 1:1 en Azure. En AWS el rol junta identidad + trust policy + permisos (policies adjuntas). En Azure la identidad (Managed Identity) y el permiso (role assignment sobre un scope) son objetos separados. En GCP la Service Account es la identidad y el permiso es un binding IAM sobre el recurso."
+    en: "aws_iam_role has no 1:1 Azure resource. In AWS the role bundles identity + trust policy + permissions (attached policies). In Azure the identity (Managed Identity) and the permission (role assignment on a scope) are separate objects. In GCP the Service Account is the identity and the permission is an IAM binding on the resource."

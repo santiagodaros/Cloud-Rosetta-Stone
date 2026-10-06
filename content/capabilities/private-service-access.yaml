@@ -1,0 +1,45 @@
+id: private-service-access
+category: networking
+name:
+  es: Acceso privado a servicios PaaS
+  en: Private access to PaaS services
+description:
+  es: Consumir un servicio gestionado (storage, colas, bases) desde la red privada sin pasar por internet.
+  en: Consume a managed service (storage, queues, databases) from the private network without traversing the internet.
+providers:
+  azure:
+    services:
+      - service: Private Endpoint (Private Link)
+        docs: https://learn.microsoft.com/azure/private-link/private-endpoint-overview
+        notes:
+          es: IP privada en tu VNet por recurso. Pago por hora + GB. Requiere zona DNS privada.
+          en: Private IP in your VNet per resource. Billed per hour + GB. Requires a private DNS zone.
+      - service: Service Endpoints
+        docs: https://learn.microsoft.com/azure/virtual-network/virtual-network-service-endpoints-overview
+        notes:
+          es: Sin costo; el servicio sigue usando IP pública pero filtra por subnet de origen.
+          en: Free; the service keeps its public IP but filters by source subnet.
+  aws:
+    services:
+      - service: Gateway VPC Endpoint (S3, DynamoDB)
+        docs: https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html
+        notes:
+          es: Sin costo; entrada en la route table. Solo S3 y DynamoDB.
+          en: Free; a route table entry. S3 and DynamoDB only.
+      - service: Interface VPC Endpoint (PrivateLink)
+        docs: https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html
+        notes:
+          es: ENI con IP privada, pago por hora por AZ + GB. Es el equivalente conceptual de Private Endpoint.
+          en: ENI with a private IP, billed per hour per AZ + GB. Conceptual equivalent of Private Endpoint.
+  gcp:
+    services:
+      - service: Private Google Access
+        docs: https://docs.cloud.google.com/vpc/docs/private-google-access
+        notes:
+          es: Flag por subnet, sin costo. VMs sin IP pública llegan a las APIs de Google.
+          en: Per-subnet flag, free. VMs without public IPs reach Google APIs.
+      - service: Private Service Connect (Google APIs)
+        docs: https://docs.cloud.google.com/vpc/docs/private-service-connect
+caveats:
+  - es: "'Private Endpoint' (Azure), 'Interface Endpoint' (AWS) y 'Private Service Connect' (GCP) son conceptualmente lo mismo. 'Service Endpoint' (Azure), 'Gateway Endpoint' (AWS) y 'Private Google Access' (GCP) se parecen en que son gratis, pero NO hacen lo mismo: ninguno le da al servicio una IP privada en tu red."
+    en: "'Private Endpoint' (Azure), 'Interface Endpoint' (AWS) and 'Private Service Connect' (GCP) are conceptually the same. 'Service Endpoint' (Azure), 'Gateway Endpoint' (AWS) and 'Private Google Access' (GCP) are similar in being free, but do NOT do the same thing: none gives the service a private IP in your network."

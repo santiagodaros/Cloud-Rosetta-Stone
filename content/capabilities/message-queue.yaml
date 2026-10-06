@@ -1,0 +1,29 @@
+id: message-queue
+category: async-event
+name:
+  es: Cola de mensajes
+  en: Message queue
+description:
+  es: Desacople productor/consumidor con entrega garantizada y reintentos.
+  en: Producer/consumer decoupling with guaranteed delivery and retries.
+providers:
+  azure:
+    services:
+      - service: Azure Service Bus (queues)
+        docs: https://learn.microsoft.com/azure/service-bus-messaging/service-bus-messaging-overview
+      - service: Azure Queue Storage
+        docs: https://learn.microsoft.com/azure/storage/queues/storage-queues-introduction
+  aws:
+    services:
+      - service: Amazon SQS (Standard / FIFO)
+        docs: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html
+  gcp:
+    services:
+      - service: Pub/Sub (pull subscription)
+        docs: https://docs.cloud.google.com/pubsub/docs/overview
+        notes:
+          es: Es pub/sub; una suscripción pull se comporta como cola competitiva.
+          en: It is pub/sub; a pull subscription behaves as a competing-consumer queue.
+caveats:
+  - es: "Peek-lock (Service Bus), visibility timeout (SQS) y ack deadline (Pub/Sub) son el mismo mecanismo: entrega at-least-once. Ninguno te exime de consumidores idempotentes."
+    en: "Peek-lock (Service Bus), visibility timeout (SQS) and ack deadline (Pub/Sub) are the same mechanism: at-least-once delivery. None of them frees you from idempotent consumers."

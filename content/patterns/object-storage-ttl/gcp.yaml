@@ -1,0 +1,123 @@
+provider: gcp
+bindings:
+  identity:
+    service: Service Account adjunta al workload
+    config: roles/storage.objectCreator con IAM Condition por prefijo
+  private-access:
+    service: Private Google Access
+    config: flag en la subnet
+  bucket:
+    service: Cloud Storage bucket
+    config: Uniform bucket-level access + Public access prevention enforced
+  lifecycle:
+    service: Object Lifecycle Management
+    config: Delete por age + AbortIncompleteMultipartUpload
+  perimeter:
+    service: Bucket IP filtering (opcional)
+    notes:
+      es: El perímetro completo es VPC Service Controls, que se configura a nivel organización.
+      en: The full perimeter is VPC Service Controls, configured at organization level.
+gotchas:
+  - id: soft-delete-default-7-days
+    severity: cost
+    title:
+      es: Soft delete viene activo por default (7 días) y encarece los datos efímeros
+      en: Soft delete is on by default (7 days) and makes ephemeral data more expensive
+    body:
+      es: >-
+        Todos los buckets tienen soft delete con 7 días de retención salvo que lo cambies. Un objeto que vive una
+        hora se cobra esa hora más 7 días de soft delete. En un bucket de ingesta con TTL eso puede multiplicar el
+        costo. El módulo lo pone en 0 por default (deshabilitado) y lo deja como variable explícita.
+      en: >-
+        Every bucket has soft delete with 7-day retention unless you change it. An object that lives one hour is
+        billed for that hour plus 7 days of soft delete. In a TTL ingestion bucket that can multiply cost. The
+        module sets it to 0 (disabled) by default and exposes it as an explicit variable.
+    sources:
+      - https://docs.cloud.google.com/storage/docs/soft-delete
+    verified_at: 2026-10-06
+    exams: [ACE, PCA]
+  - id: lifecycle-up-to-24h
+    severity: reliability
+    title:
+      es: Los cambios de lifecycle pueden tardar hasta 24 h y la acción es asincrónica
+      en: Lifecycle changes can take up to 24 h and actions are asynchronous
+    body:
+      es: >-
+        Igual que en Azure y S3, no es un TTL exacto: un objeto que cumple la condición puede seguir existiendo
+        un tiempo. Si necesitás garantía de borrado, hacelo desde la aplicación.
+      en: >-
+        Same as Azure and S3, it isn't an exact TTL: an object meeting the condition may still exist for a while.
+        If you need a deletion guarantee, do it from the application.
+    sources:
+      - https://docs.cloud.google.com/storage/docs/lifecycle
+    verified_at: 2026-10-06
+    exams: [ACE]
+  - id: objectcreator-cannot-overwrite
+    severity: iam
+    title:
+      es: roles/storage.objectCreator no alcanza para sobrescribir
+      en: roles/storage.objectCreator is not enough to overwrite
+    body:
+      es: >-
+        Sobrescribir un objeto existente requiere storage.objects.delete, que objectCreator no tiene. Para
+        ingesta es una ventaja (un productor comprometido no puede pisar archivos), pero rompe clientes que
+        reintentan con el mismo nombre. En S3, s3:PutObject sí sobrescribe.
+      en: >-
+        Overwriting an existing object requires storage.objects.delete, which objectCreator lacks. For ingestion
+        that's a feature (a compromised producer can't clobber files), but it breaks clients that retry with the
+        same name. In S3, s3:PutObject does overwrite.
+    sources:
+      - https://docs.cloud.google.com/storage/docs/access-control/iam-roles
+      - https://docs.cloud.google.com/storage/docs/access-control/iam-permissions
+    verified_at: 2026-10-06
+    exams: [ACE, PCSE]
+  - id: pga-is-not-a-perimeter
+    severity: networking
+    title:
+      es: Private Google Access no restringe quién accede al bucket
+      en: Private Google Access doesn't restrict who reaches the bucket
+    body:
+      es: >-
+        Private Google Access solo permite que VMs sin IP pública lleguen a las APIs de Google. El bucket sigue
+        aceptando requests autenticadas desde internet. Para restringir el origen necesitás bucket IP filtering
+        o VPC Service Controls; este último es a nivel organización y suele no estar al alcance de un equipo de
+        aplicación.
+      en: >-
+        Private Google Access only lets VMs without public IPs reach Google APIs. The bucket still accepts
+        authenticated requests from the internet. To restrict origin you need bucket IP filtering or VPC Service
+        Controls; the latter is organization-level and often out of reach for an application team.
+    sources:
+      - https://docs.cloud.google.com/vpc/docs/private-google-access
+      - https://docs.cloud.google.com/storage/docs/ip-filtering-overview
+      - https://docs.cloud.google.com/vpc-service-controls/docs/overview
+    verified_at: 2026-10-06
+    exams: [PCNE, PCA]
+  - id: ubla-and-pap
+    severity: security
+    title:
+      es: Uniform bucket-level access + public access prevention son el par a declarar
+      en: Uniform bucket-level access + public access prevention is the pair to declare
+    body:
+      es: >-
+        UBLA deshabilita las ACLs por objeto (equivalente a BucketOwnerEnforced en S3) y es requisito para usar
+        IAM Conditions. Public access prevention "enforced" bloquea allUsers/allAuthenticatedUsers (equivalente a
+        Block Public Access).
+      en: >-
+        UBLA disables per-object ACLs (equivalent to BucketOwnerEnforced in S3) and is required for IAM
+        Conditions. Public access prevention "enforced" blocks allUsers/allAuthenticatedUsers (equivalent to
+        Block Public Access).
+    sources:
+      - https://docs.cloud.google.com/storage/docs/uniform-bucket-level-access
+      - https://docs.cloud.google.com/storage/docs/public-access-prevention
+    verified_at: 2026-10-06
+    exams: [ACE, PCSE]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: >-
+      Sin costo fijo: Private Google Access no tiene cargo. Ojo con soft delete (ver gotcha): es el costo oculto de
+      este patrón en GCP.
+    en: >-
+      No fixed cost: Private Google Access is free. Watch out for soft delete (see gotcha): it's this pattern's
+      hidden cost on GCP.

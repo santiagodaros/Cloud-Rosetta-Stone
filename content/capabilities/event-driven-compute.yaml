@@ -1,0 +1,30 @@
+id: event-driven-compute
+category: compute-web
+name:
+  es: Cómputo dirigido por eventos
+  en: Event-driven compute
+description:
+  es: Ejecución de código/contenedores disparada por eventos o mensajes, con escala a cero.
+  en: Code/container execution triggered by events or messages, scaling to zero.
+providers:
+  azure:
+    services:
+      - service: Azure Container Apps Jobs (event-driven, KEDA)
+        docs: https://learn.microsoft.com/azure/container-apps/jobs
+      - service: Azure Functions
+        docs: https://learn.microsoft.com/azure/azure-functions/functions-overview
+  aws:
+    services:
+      - service: AWS Lambda
+        docs: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
+      - service: Amazon ECS on Fargate
+        docs: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+        notes:
+          es: Puede bajar a 0 tareas con Application Auto Scaling, pero no es escala-a-cero nativa por evento.
+          en: Can go down to 0 tasks with Application Auto Scaling, but it is not native event-driven scale-to-zero.
+  gcp:
+    services:
+      - service: Cloud Run (services, jobs, worker pools)
+        docs: https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run
+      - service: Cloud Run functions
+        docs: https://docs.cloud.google.com/functions/docs/concepts/overview

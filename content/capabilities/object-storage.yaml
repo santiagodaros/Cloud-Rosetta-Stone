@@ -1,0 +1,27 @@
+id: object-storage
+category: storage-data
+name:
+  es: Almacenamiento de objetos
+  en: Object storage
+description:
+  es: Almacenamiento durable de blobs/objetos accesible por API HTTP, facturado por GB almacenado, operaciones y egress.
+  en: Durable blob/object storage accessed over an HTTP API, billed by stored GB, operations and egress.
+providers:
+  azure:
+    services:
+      - service: Azure Blob Storage
+        docs: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-introduction
+        notes:
+          es: Vive dentro de una Storage Account, que es la unidad de red, cifrado y autenticación.
+          en: Lives inside a Storage Account, which is the unit for networking, encryption and authentication.
+  aws:
+    services:
+      - service: Amazon S3
+        docs: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
+  gcp:
+    services:
+      - service: Cloud Storage
+        docs: https://docs.cloud.google.com/storage/docs/introduction
+caveats:
+  - es: "En Azure la configuración de red, cifrado y autenticación vive en la Storage Account (que contiene N contenedores); en S3 y Cloud Storage vive en cada bucket. Un 'bucket' no equivale a un 'container': equivale más bien a Storage Account + container."
+    en: "In Azure, networking, encryption and auth settings live on the Storage Account (which holds N containers); in S3 and Cloud Storage they live on each bucket. A 'bucket' is not a 'container': it is closer to Storage Account + container."
