@@ -75,6 +75,7 @@ describe('crossValidate', () => {
         terraform: {},
       },
     ],
+    concepts: [],
     exams: [
       { code: 'SAA-C03', provider: 'aws', name: 'n', certification: 'c', level: 'associate', url: 'https://aws.amazon.com/x' },
       { code: 'AZ-104', provider: 'azure', name: 'n', certification: 'c', level: 'associate', url: 'https://learn.microsoft.com/x' },
@@ -175,6 +176,7 @@ describe('crossValidate: diagrama interactivo y nube de origen', () => {
   const base = (): ContentData => ({
     capabilities: [{ id: 'queue', category: 'async-event', name: { es: 'Cola' }, description: { es: 'd' }, providers: { azure: { gap: { es: 'no' } }, aws: { gap: { es: 'no' } }, gcp: { gap: { es: 'no' } } }, caveats: [] }],
     exams: [],
+    concepts: [],
     patterns: [{
       pattern: {
         id: 'p', status: 'draft', category: 'async-event', title: { es: 'P', en: 'P' }, summary: { es: 's' }, problem: { es: 'p' },

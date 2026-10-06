@@ -1,0 +1,67 @@
+id: resource-hierarchy
+category: organization
+name: { es: Jerarquía de recursos, en: Resource hierarchy }
+description:
+  es: Cómo se organizan las cuentas y los recursos, y dónde se aplican y heredan los permisos y las políticas.
+  en: How accounts and resources are organized, and where permissions and policies are applied and inherited.
+providers:
+  azure:
+    terms:
+      - { term: Tenant (root management group), docs: "https://learn.microsoft.com/azure/governance/management-groups/overview" }
+      - { term: Management groups, docs: "https://learn.microsoft.com/azure/governance/management-groups/overview" }
+      - { term: Subscription, docs: "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups" }
+      - { term: Resource group, docs: "https://learn.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal" }
+    explanation:
+      es: >-
+        Tenant root group → management groups (hasta seis niveles, sin contar la raíz ni las suscripciones) →
+        suscripciones → resource groups → recursos. Roles y políticas asignados arriba se heredan hacia abajo.
+      en: >-
+        Tenant root group → management groups (up to six levels, not counting the root or subscriptions) →
+        subscriptions → resource groups → resources. Roles and policies assigned higher up are inherited downward.
+  aws:
+    terms:
+      - { term: Organization (root), docs: "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html" }
+      - { term: Organizational units (OU), docs: "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html" }
+      - { term: { es: Cuenta, en: Account }, docs: "https://docs.aws.amazon.com/accounts/latest/reference/welcome-multiple-accounts.html" }
+    explanation:
+      es: >-
+        Root → OUs anidadas (hasta cinco niveles) → cuentas. La cuenta es el límite de recursos, de IAM y de
+        facturación; no hay un contenedor equivalente al resource group dentro de ella.
+      en: >-
+        Root → nested OUs (up to five levels) → accounts. The account is the boundary for resources, IAM and
+        billing; there's no container equivalent to a resource group inside it.
+  gcp:
+    terms:
+      - { term: Organization, docs: "https://docs.cloud.google.com/resource-manager/docs/cloud-platform-resource-hierarchy" }
+      - { term: Folders, docs: "https://docs.cloud.google.com/resource-manager/docs/cloud-platform-resource-hierarchy" }
+      - { term: Project, docs: "https://docs.cloud.google.com/resource-manager/docs/creating-managing-projects" }
+    explanation:
+      es: >-
+        Organización → carpetas (opcionales, hasta diez niveles) → proyectos → recursos. La policy efectiva de
+        IAM es la unión de la del recurso y la de todos sus ancestros.
+      en: >-
+        Organization → folders (optional, up to ten levels) → projects → resources. The effective IAM policy is the
+        union of the resource's policy and those of all its ancestors.
+caveats:
+  - text:
+      es: >-
+        El resource group de Azure no tiene equivalente directo: en AWS los "Resource Groups" son una consulta por
+        tags o por stack de CloudFormation, no un contenedor, y en GCP el contenedor más cercano es el proyecto.
+      en: >-
+        The Azure resource group has no direct equivalent: AWS "Resource Groups" are a tag- or CloudFormation
+        stack-based query, not a container, and in GCP the closest container is the project.
+    sources:
+      - https://docs.aws.amazon.com/ARG/latest/userguide/gettingstarted-query.html
+      - https://docs.cloud.google.com/resource-manager/docs/creating-managing-projects
+  - text:
+      es: >-
+        En AWS las SCP nunca otorgan permisos: ponen un techo, y no afectan a la cuenta de management. En Azure y
+        GCP un rol asignado arriba sí otorga acceso a todo lo que está abajo.
+      en: >-
+        In AWS, SCPs never grant permissions: they set a ceiling, and they don't affect the management account. In
+        Azure and GCP a role assigned higher up does grant access to everything below.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+      - https://learn.microsoft.com/azure/governance/management-groups/overview
+      - https://docs.cloud.google.com/iam/docs/resource-hierarchy-access-control
+verified_at: 2026-10-06

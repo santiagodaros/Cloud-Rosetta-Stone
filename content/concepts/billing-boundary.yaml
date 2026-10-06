@@ -1,0 +1,37 @@
+id: billing-boundary
+category: organization
+name: { es: Límite de facturación y cuotas, en: Billing and quota boundary }
+description:
+  es: Qué objeto recibe la factura y en qué nivel se aplican las cuotas.
+  en: Which object gets the bill and at what level quotas apply.
+providers:
+  azure:
+    terms:
+      - { term: Subscription, docs: "https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits" }
+    explanation:
+      es: La suscripción es la unidad de facturación y de límites de servicio; varias suscripciones se agrupan en management groups.
+      en: The subscription is the unit of billing and service limits; several subscriptions are grouped under management groups.
+  aws:
+    terms:
+      - { term: { es: Cuenta (consolidated billing), en: Account (consolidated billing) }, docs: "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html" }
+    explanation:
+      es: Cada cuenta es un límite de facturación; con Organizations la facturación de las cuentas miembro se consolida en la cuenta de management.
+      en: Each account is a billing boundary; with Organizations, member account billing is consolidated in the management account.
+  gcp:
+    terms:
+      - { term: Cloud Billing account, docs: "https://docs.cloud.google.com/billing/docs/concepts" }
+      - { term: Project, docs: "https://docs.cloud.google.com/docs/quotas/overview" }
+    explanation:
+      es: Una cuenta de Cloud Billing paga los proyectos vinculados a ella; las cuotas se aplican en general por proyecto.
+      en: A Cloud Billing account pays for the projects linked to it; quotas generally apply per project.
+caveats:
+  - text:
+      es: >-
+        En GCP la cuenta de facturación es un objeto aparte de la jerarquía: un proyecto se puede mover de carpeta
+        sin cambiar quién lo paga, y viceversa.
+      en: >-
+        In GCP the billing account is a separate object from the hierarchy: a project can move to another folder
+        without changing who pays for it, and vice versa.
+    sources:
+      - https://docs.cloud.google.com/billing/docs/concepts
+verified_at: 2026-10-06

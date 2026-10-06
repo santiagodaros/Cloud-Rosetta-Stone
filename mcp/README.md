@@ -15,6 +15,8 @@ No necesita credenciales ni guarda nada. Lee los JSON publicados del sitio y los
 | `list_patterns` | Listar los patrones comparados |
 | `compare_pattern` | Ver qué servicio implementa cada rol en cada nube, más los gotchas por nube |
 | `lookup_service` | Equivalencias de un servicio entre nubes, con los huecos explícitos |
+| `explain_concept` | Conceptos estructurales por nube (jerarquía, zonas, alcance de red, tags) con sus caveats |
+| `terraform_equivalent` | Recurso Terraform equivalente en los otros providers, y qué cambia cuando no es 1:1 |
 | `exam_gotchas` | Gotchas de un examen (AZ-700, ANS-C01, PCNE…) y su estado (vigente, se retira, retirado → reemplazo) |
 
 Todas aceptan `lang: "es" | "en"` (default `en`).

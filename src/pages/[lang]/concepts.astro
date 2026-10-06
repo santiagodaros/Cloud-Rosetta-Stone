@@ -1,0 +1,77 @@
+---
+import { BRAND } from '../../lib/brand.ts';
+import Base from '../../layouts/Base.astro';
+import DictionaryTabs from '../../components/DictionaryTabs.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { CONCEPT_CATEGORIES, PROVIDERS } from '../../lib/schema.ts';
+import { site } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const concepts = [...site.concepts].sort(
+  (a, b) => CONCEPT_CATEGORIES.indexOf(a.category) - CONCEPT_CATEGORIES.indexOf(b.category) || t(a.name, lang).localeCompare(t(b.name, lang)),
+);
+const host = (u: string) => new URL(u).hostname.replace(/^docs\./, '');
+---
+
+<Base lang={lang} title={`${s.conceptsTitle} — ${BRAND.name}`} description={s.conceptsIntro} altPath="concepts/">
+  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
+  <DictionaryTabs lang={lang} current="concepts" />
+  <p class="mb-8 max-w-3xl text-muted">{s.conceptsIntro}</p>
+
+  <div class="flex flex-col gap-6" data-pagefind-body>
+    {
+      concepts.map((c) => (
+        <section id={c.id} class="scroll-mt-4 rounded-xl border border-line bg-surface">
+          <header class="border-b border-line p-4">
+            <h2 class="text-lg font-semibold">
+              <a class="text-fg no-underline hover:underline" href={`#${c.id}`}>{t(c.name, lang)}</a>
+              <span class="ml-2 align-middle text-xs font-normal text-muted">{s.conceptCategory[c.category]}</span>
+            </h2>
+            <p class="text-sm text-muted">{t(c.description, lang)}</p>
+          </header>
+          <div class="grid gap-px bg-line md:grid-cols-3">
+            {PROVIDERS.map((p) => {
+              const e = c.providers[p];
+              return (
+                <div class="bg-surface p-4 text-sm">
+                  <h3 class="mb-2 text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</h3>
+                  <ol class="mb-2 flex flex-wrap items-center gap-1 text-xs">
+                    {e.terms.map((term, i) => (
+                      <li class="flex items-center gap-1">
+                        {i > 0 && <span class="text-muted" aria-hidden="true">→</span>}
+                        <a class="inline-flex min-h-6 items-center rounded border border-line px-1.5 font-medium no-underline hover:bg-surface-2" href={term.docs} target="_blank" rel="noopener">{t(term.term, lang)}</a>
+                      </li>
+                    ))}
+                  </ol>
+                  <p class="text-muted">{t(e.explanation, lang)}</p>
+                </div>
+              );
+            })}
+          </div>
+          {c.caveats.length > 0 && (
+            <div class="border-t border-line p-4 text-sm">
+              <p class="mb-1 text-xs font-semibold tracking-wide text-warn uppercase">⚠ {s.caveats}</p>
+              <ul class="flex flex-col gap-2">
+                {c.caveats.map((cv) => (
+                  <li>
+                    <p>{t(cv.text, lang)}</p>
+                    <p class="mt-1 flex flex-wrap gap-x-3 text-xs" data-pagefind-ignore>
+                      {cv.sources.map((src) => (
+                        <a class="inline-flex min-h-6 items-center" href={src} target="_blank" rel="noopener">↗ {host(src)}</a>
+                      ))}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      ))
+    }
+  </div>
+</Base>

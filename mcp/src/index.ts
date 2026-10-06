@@ -8,7 +8,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { findCapabilities, formatCapability, formatGotcha, formatPattern, searchGotchas, t, type Locale } from './core.ts';
+import { findCapabilities, findConcepts, findTerraform, formatCapability, formatConcept, formatGotcha, formatPattern, formatTerraform, searchGotchas, t, type Locale } from './core.ts';
 import { loadDataset } from './data.ts';
 
 const PROVIDERS = ['azure', 'aws', 'gcp'] as const;
@@ -132,6 +132,38 @@ server.registerTool(
       : `No gotchas are tagged with ${exam.code} yet.`;
     const body = gotchas.length ? gotchas.map((g) => formatGotcha(g, lang as Locale)).join('\n\n') : empty;
     return text(withFooter(`${head}\n\n${body}`, ds.attribution, ds.generated_at));
+  },
+);
+
+server.registerTool(
+  'explain_concept',
+  {
+    title: 'Explain a structural concept across clouds',
+    description:
+      'How each cloud names and scopes a structural concept: resource hierarchy, billing boundary, network scope, availability zones, tags/labels, resource identifiers, workforce identity. Includes where the analogy breaks, with sources.',
+    inputSchema: { query: z.string().describe('e.g. "resource group", "availability zone", "labels", "vpc scope"'), lang },
+    annotations: readOnly,
+  },
+  async ({ query, lang }) => {
+    const ds = await loadDataset();
+    const hits = findConcepts(ds, query);
+    return text(hits.length ? hits.map((c) => formatConcept(c, lang as Locale)).join('\n\n') : `No concept matches "${query}". Known: ${ds.concepts.map((c) => c.id).join(', ')}.`);
+  },
+);
+
+server.registerTool(
+  'terraform_equivalent',
+  {
+    title: 'Terraform resource equivalents',
+    description:
+      'Given a Terraform resource type (azurerm_*, aws_*, google_*) or keywords, return the equivalent resources in the other providers, whether the mapping is 1:1, and what changes when it is not. Names are validated against the pinned provider schemas.',
+    inputSchema: { query: z.string().describe('e.g. "azurerm_private_endpoint", "aws_s3_bucket_lifecycle_configuration", "peering"'), lang },
+    annotations: readOnly,
+  },
+  async ({ query, lang }) => {
+    const ds = await loadDataset();
+    const hits = findTerraform(ds, query);
+    return text(hits.length ? hits.map((e) => formatTerraform(e, lang as Locale)).join('\n\n') : `No mapping for "${query}" yet.`);
   },
 );
 

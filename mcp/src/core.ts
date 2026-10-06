@@ -41,6 +41,24 @@ export type Pattern = {
 
 export type Exam = { code: string; provider: string; name: string; certification: string; status: string; retires_on?: string; replaced_by?: string; url: string; gotchas: string[] };
 
+export type Concept = {
+  id: string;
+  category: string;
+  name: Localized;
+  description: Localized;
+  providers: Record<string, { terms: { term: Text; docs: string }[]; explanation: Localized }>;
+  caveats: { text: Localized; sources: string[] }[];
+};
+
+export type TerraformMapEntry = {
+  id: string;
+  title: Localized;
+  match: 'one-to-one' | 'partial' | 'gap';
+  resources: Record<string, string[]>;
+  notes?: Localized;
+  registry?: Record<string, string>;
+};
+
 export type Dataset = {
   schema_version: number;
   generated_at: string;
@@ -49,6 +67,8 @@ export type Dataset = {
   patterns: Pattern[];
   capabilities: Capability[];
   exams: Exam[];
+  concepts: Concept[];
+  terraformMap: TerraformMapEntry[];
 };
 
 /** Versión del dataset que entiende este server. */
@@ -157,4 +177,46 @@ export function checkSchema(ds: { schema_version?: number }): void {
   if (ds.schema_version !== SUPPORTED_SCHEMA_VERSION) {
     throw new Error(`Unsupported dataset schema_version ${ds.schema_version}; this server understands ${SUPPORTED_SCHEMA_VERSION}. Update letra-chica-mcp.`);
   }
+}
+
+export function findConcepts(ds: Dataset, query: string): Concept[] {
+  const terms = tokens(query);
+  if (terms.length === 0) return [];
+  return ds.concepts.filter((c) => {
+    const hay = normalize(
+      [c.id, t(c.name, 'es'), t(c.name, 'en'), t(c.description, 'en'),
+        ...Object.values(c.providers).flatMap((p) => p.terms.map((x) => `${t(x.term, 'es')} ${t(x.term, 'en')}`))].join(' '),
+    );
+    return terms.every((term) => hay.includes(term));
+  });
+}
+
+export function formatConcept(c: Concept, lang: Locale): string {
+  const lines = [`### ${t(c.name, lang)} (${c.id})`, t(c.description, lang), ''];
+  for (const [provider, e] of Object.entries(c.providers)) {
+    lines.push(`- ${provider} (${e.terms.map((x) => `${t(x.term, lang)} <${x.docs}>`).join(' → ')}): ${t(e.explanation, lang)}`);
+  }
+  for (const cv of c.caveats) lines.push('', `Where the analogy breaks: ${t(cv.text, lang)} Sources: ${cv.sources.join(' ')}`);
+  return lines.join('\n');
+}
+
+/** Busca por nombre exacto de recurso (azurerm_*, aws_*, google_*) o por palabras del título. */
+export function findTerraform(ds: Dataset, query: string): TerraformMapEntry[] {
+  const q = query.trim().toLowerCase();
+  const exact = ds.terraformMap.filter((e) => Object.values(e.resources).flat().some((r) => r === q || r.split('.')[0] === q));
+  if (exact.length) return exact;
+  const terms = tokens(query);
+  return ds.terraformMap.filter((e) => {
+    const hay = normalize(`${e.id} ${t(e.title, 'es')} ${t(e.title, 'en')} ${Object.values(e.resources).flat().join(' ')}`);
+    return terms.length > 0 && terms.every((term) => hay.includes(term));
+  });
+}
+
+export function formatTerraform(e: TerraformMapEntry, lang: Locale): string {
+  const lines = [`### ${t(e.title, lang)} (${e.match})`];
+  for (const [provider, refs] of Object.entries(e.resources)) {
+    lines.push(`- ${provider}: ${refs.length ? refs.map((r) => (e.registry?.[r] ? `${r} <${e.registry[r]}>` : r)).join(', ') : 'no equivalent resource'}`);
+  }
+  if (e.notes) lines.push('', t(e.notes, lang));
+  return lines.join('\n');
 }

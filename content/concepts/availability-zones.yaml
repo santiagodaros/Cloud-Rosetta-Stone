@@ -1,0 +1,52 @@
+id: availability-zones
+category: networking
+name: { es: Zonas de disponibilidad, en: Availability zones }
+description:
+  es: Cómo se nombran las zonas y si el nombre que ves apunta al mismo datacenter que ve otra cuenta o suscripción.
+  en: How zones are named and whether the name you see points to the same datacenter another account or subscription sees.
+providers:
+  azure:
+    terms:
+      - { term: { es: "Zonas lógicas 1, 2, 3", en: "Logical zones 1, 2, 3" }, docs: "https://learn.microsoft.com/azure/reliability/availability-zones-overview" }
+    explanation:
+      es: >-
+        Las zonas físicas se mapean a zonas lógicas por suscripción, y dos suscripciones pueden tener un orden
+        distinto. Para alinear zonas entre suscripciones hay que consultar el mapeo (az account list-locations).
+      en: >-
+        Physical zones are mapped to logical zones per subscription, and two subscriptions can have a different
+        order. Aligning zones across subscriptions requires checking the mapping (az account list-locations).
+  aws:
+    terms:
+      - { term: { es: Nombre de AZ (us-east-1a) y AZ ID (use1-az1), en: AZ name (us-east-1a) and AZ ID (use1-az1) }, docs: "https://docs.aws.amazon.com/global-infrastructure/latest/regions/az-ids.html" }
+    explanation:
+      es: >-
+        El AZ ID identifica la misma zona física en todas las cuentas. En cuentas viejas de las regiones más
+        antiguas, el nombre de AZ puede apuntar a zonas distintas según la cuenta; desde noviembre de 2025 las
+        cuentas nuevas tienen el mismo mapeo.
+      en: >-
+        The AZ ID identifies the same physical zone in every account. In older accounts in the oldest Regions, the
+        AZ name can point to different zones per account; accounts created since November 2025 get the same mapping.
+  gcp:
+    terms:
+      - { term: { es: Zona (us-central1-a), en: Zone (us-central1-a) }, docs: "https://docs.cloud.google.com/compute/docs/regions-zones" }
+    explanation:
+      es: >-
+        Las zonas se nombran región + letra. La documentación las describe como abstracciones lógicas de recursos
+        físicos y no detalla un mapeo por proyecto.
+      en: >-
+        Zones are named region + letter. The documentation describes them as logical abstractions of physical
+        resources and doesn't describe a per-project mapping.
+caveats:
+  - text:
+      es: >-
+        "Zona 1" en dos suscripciones de Azure, o "us-east-1a" en dos cuentas viejas de AWS, no garantiza el mismo
+        datacenter. Si una arquitectura cruza suscripciones o cuentas y depende de la latencia o del aislamiento
+        por zona, alineá por el ID físico.
+      en: >-
+        "Zone 1" in two Azure subscriptions, or "us-east-1a" in two older AWS accounts, doesn't guarantee the same
+        datacenter. If an architecture crosses subscriptions or accounts and depends on per-zone latency or
+        isolation, align by the physical ID.
+    sources:
+      - https://learn.microsoft.com/azure/reliability/availability-zones-overview
+      - https://docs.aws.amazon.com/global-infrastructure/latest/regions/az-ids.html
+verified_at: 2026-10-06

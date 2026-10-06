@@ -131,6 +131,10 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 feed Atom · F4-11 copiar como Markdown · F4-12 reportar desactualizado · F4-17 repetición espaciada +
 gotcha del día.
 
+**Tercera entrega (✅):** F4-16 diccionario de conceptos (7 conceptos con caveats y fuentes) · F4-15 mapa de
+recursos Terraform (29 entradas, 130 referencias validadas en CI contra el schema de azurerm, aws y google). El
+MCP server suma `explain_concept` y `terraform_equivalent`.
+
 **Segunda entrega (✅):** F4-22 isla interactiva del diagrama · F4-09 "Mi nube". Schema nuevo: `roles` por
 gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por patrón. F4-09 usa solo
 `localStorage`: no agrega medición, así que F4-21 sigue abierta como decisión independiente.
@@ -138,8 +142,7 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 **Orden propuesto para lo que falta:**
 
 1. ~~**F4-22** + **F4-09**~~ (hechos).
-2. **F4-16** diccionario de conceptos y **F4-15** mapa de recursos Terraform: contenido nuevo con schema,
-   abre otra vía de contribución.
+2. ~~**F4-16** + **F4-15**~~ (hechos).
 3. **F4-13** checklist de migración y **F4-14** generador de ADR: reutilizan lo que ya hay, sin contenido
    nuevo.
 4. **F4-03 / F4-05** pricing + matriz de decisión.
@@ -170,8 +173,8 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 | F4-12 ✅ | **"Reportar desactualizado"** en cada gotcha → abre `stale-gotcha.yml` con `location` precargado | Los issue forms aceptan precarga por query param (`?template=…&location=…`); baja la fricción para contribuir |
 | F4-13 | **Checklist de migración**: origen → destino → patrón = lista de gotchas a validar, exportable a Markdown/PDF | Uso directo en preventa y kick-off de migraciones; reutiliza los gotchas, sin contenido nuevo |
 | F4-14 | **Generador de ADR** desde la comparación: decisión, alternativas descartadas, gotchas citados con fuente | Plantilla MADR; 100% client-side |
-| F4-15 | **Mapa de recursos Terraform** `azurerm_*` ↔ `aws_*` ↔ `google_*`, curado, con marca "no es 1:1" | Nuevo tipo de contenido con schema y fuente obligatoria; es la alternativa verificada a F4-07 |
-| F4-16 | **Diccionario de conceptos** (no servicios): jerarquía de recursos (tenant/MG/subscription/RG · org/OU/account · org/folder/project), regiones y zonas, modelo de identidad | Donde más se confunde quien salta de nube; mismo formato hub-and-spoke que capabilities |
+| F4-15 ✅ | **Mapa de recursos Terraform** `azurerm_*` ↔ `aws_*` ↔ `google_*`, curado, con marca "no es 1:1" | Nuevo tipo de contenido con schema y fuente obligatoria; es la alternativa verificada a F4-07 |
+| F4-16 ✅ | **Diccionario de conceptos** (no servicios): jerarquía de recursos (tenant/MG/subscription/RG · org/OU/account · org/folder/project), regiones y zonas, modelo de identidad | Donde más se confunde quien salta de nube; mismo formato hub-and-spoke que capabilities |
 | F4-17 ✅ | **Repetición espaciada** (Leitner) + "gotcha del día" sobre las flashcards de F3-02 | Progreso en `localStorage`; genera hábito diario sin login |
 | F4-18 | **Widgets embebibles**: card de gotcha o comparación para blogs y Notion | Snippet `<iframe>`/HTML estático con link de vuelta; respeta CC BY-SA (atribución incluida) |
 | F4-19 | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |

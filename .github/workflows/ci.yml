@@ -119,6 +119,35 @@ jobs:
           tflint --init --config "$GITHUB_WORKSPACE/.tflint/${{ matrix.module.provider }}.hcl"
           tflint --config "$GITHUB_WORKSPACE/.tflint/${{ matrix.module.provider }}.hcl" --format compact
 
+  terraform-map:
+    name: Mapa Terraform contra el schema de los providers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Schema de azurerm, aws y google (mismas versiones que el mapa)
+        run: |
+          mkdir -p "$RUNNER_TEMP/tfmap"
+          node -e '
+            const y = require("yaml"); const fs = require("fs");
+            const m = y.parse(fs.readFileSync("content/terraform-map.yaml", "utf8")).providers;
+            fs.writeFileSync(process.argv[1], `terraform {\n  required_providers {\n` +
+              Object.entries(m).map(([n, v]) => `    ${n} = { source = "hashicorp/${n}", version = "${v}" }`).join("\n") + `\n  }\n}\n`);
+          ' "$RUNNER_TEMP/tfmap/versions.tf"
+          terraform -chdir="$RUNNER_TEMP/tfmap" init -backend=false -input=false
+          terraform -chdir="$RUNNER_TEMP/tfmap" providers schema -json > "$RUNNER_TEMP/schema.json"
+      - name: Validar recursos y bloques del mapa
+        run: pnpm tf:map-check "$RUNNER_TEMP/schema.json"
+
   checkov:
     name: Checkov (seguridad IaC)
     runs-on: ubuntu-latest

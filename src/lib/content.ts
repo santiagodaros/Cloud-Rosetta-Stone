@@ -15,12 +15,15 @@ import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import {
   Capability,
+  Concept,
   type Exam,
   ExamCatalog,
   Implementation,
   Pattern,
   PROVIDERS,
   type Provider,
+  TerraformMap,
+  TF_PREFIX,
 } from './schema.ts';
 
 export type Issue = { level: 'error' | 'warning'; file: string; message: string };
@@ -44,6 +47,8 @@ export type ContentData = {
   capabilities: Capability[];
   patterns: PatternBundle[];
   exams: Exam[];
+  concepts: Concept[];
+  terraformMap?: TerraformMap;
 };
 
 export type ExamStatus = 'active' | 'retiring' | 'retired';
@@ -142,7 +147,14 @@ export function loadContent(root = process.cwd()): LoadResult {
   const catalog = existsSync(examsFile) ? readYaml(examsFile, ExamCatalog, root, issues) : undefined;
   if (!existsSync(examsFile)) issues.push({ level: 'error', file: 'content/exams.yaml', message: 'falta el catálogo de exámenes' });
 
-  const data = { capabilities, patterns, exams: catalog?.exams ?? [] };
+  const concepts = listFiles(join(contentDir, 'concepts'), '.yaml')
+    .map((f) => readYaml(join(contentDir, 'concepts', f), Concept, root, issues))
+    .filter((c): c is Concept => c !== undefined);
+
+  const mapFile = join(contentDir, 'terraform-map.yaml');
+  const terraformMap = existsSync(mapFile) ? readYaml(mapFile, TerraformMap, root, issues) : undefined;
+
+  const data = { capabilities, patterns, exams: catalog?.exams ?? [], concepts, terraformMap };
   issues.push(...crossValidate(data));
   return { ...data, issues };
 }
@@ -154,6 +166,37 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
   for (const c of data.capabilities) {
     if (capIds.has(c.id)) issues.push({ level: 'error', file: `content/capabilities/${c.id}.yaml`, message: `capability duplicada: ${c.id}` });
     capIds.add(c.id);
+  }
+
+  const conceptIds = new Set<string>();
+  for (const c of data.concepts) {
+    const file = `content/concepts/${c.id}.yaml`;
+    if (conceptIds.has(c.id)) issues.push({ level: 'error', file, message: `concepto duplicado: ${c.id}` });
+    conceptIds.add(c.id);
+    const age = daysSince(c.verified_at, today);
+    if (age < 0) issues.push({ level: 'error', file, message: 'verified_at está en el futuro' });
+    else if (age > STALE_AFTER_DAYS) issues.push({ level: 'warning', file, message: `verificado hace ${age} días (> ${STALE_AFTER_DAYS}): re-verificar` });
+  }
+
+  if (data.terraformMap) {
+    const MAP_FILE = 'content/terraform-map.yaml';
+    const mapErr = (message: string) => issues.push({ level: 'error', file: MAP_FILE, message });
+    const ids = new Set<string>();
+    for (const e of data.terraformMap.entries) {
+      if (ids.has(e.id)) mapErr(`entrada duplicada: ${e.id}`);
+      ids.add(e.id);
+      if (e.capability && !capIds.has(e.capability)) mapErr(`${e.id}: capability inexistente "${e.capability}"`);
+      if (e.concept && !conceptIds.has(e.concept)) mapErr(`${e.id}: concepto inexistente "${e.concept}"`);
+      for (const p of PROVIDERS) {
+        for (const r of e.resources[p]) if (!r.startsWith(TF_PREFIX[p])) mapErr(`${e.id}: "${r}" no es un recurso de ${p} (${TF_PREFIX[p]}*)`);
+      }
+      const empty = PROVIDERS.filter((p) => e.resources[p].length === 0);
+      if (e.match === 'gap' && empty.length === 0) mapErr(`${e.id}: match gap pero las tres nubes tienen recursos`);
+      if (e.match !== 'gap' && empty.length > 0) mapErr(`${e.id}: ${empty.join(', ')} sin recursos: usá match gap`);
+      if (e.match !== 'one-to-one' && !e.notes) mapErr(`${e.id}: match ${e.match} necesita notes que expliquen la diferencia`);
+    }
+    const age = daysSince(data.terraformMap.verified_at, today);
+    if (age > STALE_AFTER_DAYS) issues.push({ level: 'warning', file: MAP_FILE, message: `verificado hace ${age} días: re-verificar` });
   }
 
   const EXAMS_FILE = 'content/exams.yaml';

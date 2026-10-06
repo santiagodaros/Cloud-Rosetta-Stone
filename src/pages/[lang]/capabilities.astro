@@ -1,6 +1,7 @@
 ---
 import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
+import DictionaryTabs from '../../components/DictionaryTabs.astro';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
 import { PROVIDERS } from '../../lib/schema.ts';
 import { site } from '../../lib/site.ts';
@@ -16,6 +17,7 @@ const caps = [...site.capabilities].sort((a, b) => a.category.localeCompare(b.ca
 
 <Base lang={lang} title={`${s.dictionary} — ${BRAND.name}`} description={s.tagline} altPath="capabilities/">
   <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
+  <DictionaryTabs lang={lang} current="services" />
   <p class="mb-8 max-w-3xl text-muted">{s.tagline}</p>
 
   <div class="flex flex-col gap-6" data-pagefind-body>

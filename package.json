@@ -21,7 +21,8 @@
     "verify": "pnpm validate && pnpm check && pnpm test && pnpm build",
     "new:pattern": "tsx scripts/new-pattern.ts",
     "lighthouse": "lhci autorun",
-    "launch:weekly": "tsx scripts/gotcha-of-the-week.ts"
+    "launch:weekly": "tsx scripts/gotcha-of-the-week.ts",
+    "tf:map-check": "tsx scripts/check-terraform-map.ts"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

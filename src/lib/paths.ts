@@ -7,6 +7,8 @@ export const href = (path: string) => `${base}/${path.replace(/^\//, '')}`;
 
 export const homeHref = (lang: Locale) => href(`${lang}/`);
 export const capabilitiesHref = (lang: Locale) => href(`${lang}/capabilities/`);
+export const conceptsHref = (lang: Locale) => href(`${lang}/concepts/`);
+export const terraformMapHref = (lang: Locale) => href(`${lang}/terraform/`);
 export const patternHref = (lang: Locale, slug: string, view?: string) =>
   href(`${lang}/patterns/${slug}/${view ? `${view}/` : ''}`);
 

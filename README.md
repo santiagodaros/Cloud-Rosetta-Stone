@@ -35,7 +35,9 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
   para pegar en un PR o un ADR; "Reportar desactualizado" abre el issue ya completo.
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
-- **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").
+- **Diccionario** en tres partes: servicios (con huecos explícitos), **conceptos** (jerarquía, alcance de la
+  red, zonas, identidad, tags: lo que más confunde al cambiar de nube) y **mapa de recursos Terraform**
+  `azurerm_*` ↔ `aws_*` ↔ `google_*`, validado en CI contra el schema real de los providers.
 - **Datos abiertos y para asistentes:** dataset JSON versionado (`/api/v1/`), `llms.txt` y un MCP server de
   solo lectura para que Claude o Copilot citen gotchas con su fuente. Ver [docs/DATASET.md](docs/DATASET.md).
 - **Para compartir:** cada comparación tiene su imagen OG y cada gotcha un deep link.

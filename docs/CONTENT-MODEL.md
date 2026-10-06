@@ -57,6 +57,20 @@ build (`vigente` → `se retira` → `retirado`). Cuando un examen pasa a retira
 referencian dan warning para re-etiquetarlos con el reemplazo. Google no publica códigos: usamos los
 acrónimos de uso común (ACE, PCA, PCNE…).
 
+## Conceptos (`content/concepts/*.yaml`)
+
+Estructura de cada nube, no servicios: jerarquía de recursos, límite de facturación, alcance de la red, zonas,
+identidad de personas, tags/labels, identificadores. Por nube: `terms` (de mayor a menor alcance, cada uno con
+link oficial) y `explanation`. Los `caveats` ("dónde se rompe la analogía") exigen `sources` oficiales, y el
+concepto entero lleva `verified_at`.
+
+## Mapa de recursos Terraform (`content/terraform-map.yaml`)
+
+Qué recurso de `azurerm`, `aws` y `google` cumple el mismo papel. Cada entrada tiene `resources.{azure,aws,gcp}`
+(tipos de recurso, o `recurso.bloque` cuando en una nube es un bloque), `match` (`one-to-one`, `partial`,
+`gap`) y `notes` obligatorias si no es 1:1. CI baja los providers con las versiones del mapa, genera
+`terraform providers schema -json` y falla si algún recurso o bloque no existe (`pnpm tf:map-check`).
+
 ## Validaciones cruzadas (`pnpm validate`)
 
 | Regla | Nivel |
@@ -71,6 +85,8 @@ acrónimos de uso común (ACE, PCA, PCNE…).
 | Gotcha etiquetado con un examen ya retirado | warning |
 | `roles` de un gotcha inexistentes o actores; recorrido con roles inexistentes o sin edge | error |
 | `equivalence: partial` sin `notes`; `from` de la propia nube | error |
+| Mapa Terraform: prefijo de otra nube, `gap` sin nube vacía o nube vacía sin `gap`, `partial`/`gap` sin notas, capability o concepto inexistente | error |
+| Recurso o bloque del mapa inexistente en el provider pinneado | error (job `terraform-map` de CI) |
 | Falta traducción al inglés | warning |
 
 ## Textos localizados

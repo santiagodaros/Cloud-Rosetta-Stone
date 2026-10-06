@@ -216,3 +216,63 @@ export const Implementation = z.strictObject({
   cost: Cost,
 });
 export type Implementation = z.infer<typeof Implementation>;
+
+// ---------------------------------------------------------------------------
+// Conceptos (content/concepts/*.yaml): estructura de cada nube, no servicios
+// ---------------------------------------------------------------------------
+
+export const CONCEPT_CATEGORIES = ['organization', 'identity', 'networking', 'operations'] as const;
+
+export const ConceptTerm = z.strictObject({
+  term: Text,
+  docs: SourceUrl,
+});
+
+export const ConceptProviderEntry = z.strictObject({
+  /** Los nombres que usa esa nube, de mayor a menor alcance si es una jerarquía. */
+  terms: z.array(ConceptTerm).min(1),
+  explanation: Localized,
+});
+
+export const Concept = z.strictObject({
+  id: slug,
+  category: z.enum(CONCEPT_CATEGORIES),
+  name: Localized,
+  description: Localized,
+  providers: z.strictObject({ azure: ConceptProviderEntry, aws: ConceptProviderEntry, gcp: ConceptProviderEntry }),
+  /** Dónde se rompe la analogía. Cada una con fuente oficial. */
+  caveats: z.array(z.strictObject({ text: Localized, sources: z.array(SourceUrl).min(1) })).default([]),
+  verified_at: z.iso.date(),
+});
+export type Concept = z.infer<typeof Concept>;
+
+// ---------------------------------------------------------------------------
+// Mapa de recursos Terraform (content/terraform-map.yaml)
+// ---------------------------------------------------------------------------
+
+/** `tipo_de_recurso` o `tipo_de_recurso.bloque` (cuando en una nube es un bloque, no un recurso). */
+export const TerraformRef = z.string().regex(/^(azurerm|aws|google)_[a-z0-9_]+(\.[a-z0-9_]+)?$/, 'recurso de Terraform (azurerm_*, aws_*, google_*) o recurso.bloque');
+
+export const TF_PREFIX = { azure: 'azurerm_', aws: 'aws_', gcp: 'google_' } as const satisfies Record<Provider, string>;
+
+export const TerraformMapEntry = z.strictObject({
+  id: slug,
+  title: Localized,
+  /** Capability o concepto del sitio con el que se relaciona (opcional). */
+  capability: slug.optional(),
+  concept: slug.optional(),
+  /** one-to-one: mismo alcance y forma; partial: hay que pensar distinto; gap: alguna nube no tiene recurso. */
+  match: z.enum(['one-to-one', 'partial', 'gap']),
+  resources: z.strictObject({ azure: z.array(TerraformRef), aws: z.array(TerraformRef), gcp: z.array(TerraformRef) }),
+  notes: Localized.optional(),
+  sources: z.array(SourceUrl).default([]),
+});
+export type TerraformMapEntry = z.infer<typeof TerraformMapEntry>;
+
+export const TerraformMap = z.strictObject({
+  /** Versiones de provider contra las que se validaron los nombres (las mismas de los módulos). */
+  providers: z.strictObject({ azurerm: z.string(), aws: z.string(), google: z.string() }),
+  verified_at: z.iso.date(),
+  entries: z.array(TerraformMapEntry).min(1),
+});
+export type TerraformMap = z.infer<typeof TerraformMap>;

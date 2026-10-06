@@ -1,0 +1,43 @@
+id: resource-identifiers
+category: operations
+name: { es: Identificadores de recursos, en: Resource identifiers }
+description:
+  es: El formato del ID completo de un recurso, el que aparece en policies, logs y referencias entre recursos.
+  en: The format of a resource's full ID, the one that shows up in policies, logs and cross-resource references.
+providers:
+  azure:
+    terms:
+      - { term: Resource ID, docs: "https://learn.microsoft.com/azure/azure-resource-manager/templates/template-functions-resource" }
+    explanation:
+      es: Una ruta jerárquica /subscriptions/{id}/resourceGroups/{rg}/providers/{namespace}/{tipo}/{nombre}.
+      en: A hierarchical path /subscriptions/{id}/resourceGroups/{rg}/providers/{namespace}/{type}/{name}.
+  aws:
+    terms:
+      - { term: ARN, docs: "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html" }
+    explanation:
+      es: >-
+        arn:partition:servicio:región:cuenta:recurso. Algunos servicios omiten la región, la cuenta o ambas (por
+        ejemplo, los buckets de S3).
+      en: >-
+        arn:partition:service:region:account:resource. Some services omit the region, the account or both (S3
+        buckets, for example).
+  gcp:
+    terms:
+      - { term: Full resource name, docs: "https://docs.cloud.google.com/asset-inventory/docs/asset-names" }
+    explanation:
+      es: //servicio.googleapis.com/projects/{proyecto}/… con el servicio como prefijo, por ejemplo //compute.googleapis.com/projects/p/zones/z/instances/vm.
+      en: //service.googleapis.com/projects/{project}/… with the service as prefix, e.g. //compute.googleapis.com/projects/p/zones/z/instances/vm.
+caveats:
+  - text:
+      es: >-
+        El ID de Azure incluye el resource group, así que mover un recurso de resource group cambia su ID. En GCP el
+        proyecto se identifica por ID (elegido, permanente) o por número (asignado): algunas APIs y principals usan
+        el número.
+      en: >-
+        The Azure ID includes the resource group, so moving a resource to another resource group changes its ID. In
+        GCP the project is identified by ID (chosen, permanent) or by number (assigned): some APIs and principals use
+        the number.
+    sources:
+      - https://learn.microsoft.com/azure/azure-resource-manager/management/move-resource-group-and-subscription
+      - https://docs.cloud.google.com/resource-manager/docs/creating-managing-projects
+verified_at: 2026-10-06

@@ -1,0 +1,38 @@
+id: network-scope
+category: networking
+name: { es: Alcance de la red virtual, en: Virtual network scope }
+description:
+  es: Si la red y sus subnets son globales, regionales o zonales, y qué implica para el diseño multi-región y multi-zona.
+  en: Whether the network and its subnets are global, regional or zonal, and what that means for multi-region and multi-zone design.
+providers:
+  azure:
+    terms:
+      - { term: Virtual network (VNet), docs: "https://learn.microsoft.com/azure/virtual-network/concepts-and-best-practices" }
+    explanation:
+      es: La VNet es regional y sus subnets abarcan todas las zonas de la región. Multi-región = una VNet por región, conectadas.
+      en: The VNet is regional and its subnets span every zone in the region. Multi-region = one VNet per region, connected.
+  aws:
+    terms:
+      - { term: VPC, docs: "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html" }
+    explanation:
+      es: La VPC es regional y abarca todas las AZs de la región, pero cada subnet vive en una sola AZ. Alta disponibilidad = una subnet por AZ.
+      en: The VPC is regional and spans every AZ in the region, but each subnet lives in a single AZ. High availability = one subnet per AZ.
+  gcp:
+    terms:
+      - { term: VPC network, docs: "https://docs.cloud.google.com/vpc/docs/vpc" }
+    explanation:
+      es: La VPC es global (con sus rutas y reglas de firewall) y las subnets son regionales. Una sola red puede cubrir varias regiones.
+      en: The VPC is global (with its routes and firewall rules) and subnets are regional. A single network can cover several regions.
+caveats:
+  - text:
+      es: >-
+        La misma palabra "VPC" significa cosas distintas en AWS (regional, subnets zonales) y en GCP (global, subnets
+        regionales). La subnet de Azure se parece más a la de GCP que a la de AWS.
+      en: >-
+        The same word "VPC" means different things in AWS (regional, zonal subnets) and GCP (global, regional
+        subnets). The Azure subnet is closer to GCP's than to AWS's.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html
+      - https://docs.cloud.google.com/vpc/docs/vpc
+      - https://learn.microsoft.com/azure/reliability/reliability-virtual-network
+verified_at: 2026-10-06

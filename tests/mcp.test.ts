@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSchema, findCapabilities, formatGotcha, formatPattern, searchGotchas, type Dataset } from '../mcp/src/core.ts';
+import { checkSchema, findCapabilities, findConcepts, findTerraform, formatGotcha, formatPattern, formatTerraform, searchGotchas, type Dataset } from '../mcp/src/core.ts';
 import { flatGotchas } from '../src/lib/dataset.ts';
 import { publishedPatterns, site } from '../src/lib/site.ts';
 
@@ -12,6 +12,8 @@ const ds = {
   patterns: publishedPatterns.map(({ pattern, implementations }) => ({ ...pattern, implementations })),
   capabilities: site.capabilities,
   exams: site.exams.map((e) => ({ ...e, status: 'active', gotchas: [] })),
+  concepts: site.concepts,
+  terraformMap: site.terraformMap?.entries ?? [],
 } as unknown as Dataset;
 
 describe('mcp core', () => {
@@ -54,6 +56,13 @@ describe('mcp core', () => {
     const text = formatPattern(p, ds, 'en', ['azure', 'aws']);
     expect(text).toMatch(/\| Role \| azure \| aws \|/);
     expect(text).not.toMatch(/Fine print on gcp/);
+  });
+
+  it('encuentra conceptos y equivalentes de Terraform', () => {
+    expect(findConcepts(ds, 'availability zones').map((c) => c.id)).toContain('availability-zones');
+    expect(findTerraform(ds, 'azurerm_private_endpoint').map((e) => e.id)).toEqual(['private-endpoint']);
+    expect(findTerraform(ds, 'google_storage_bucket').map((e) => e.id)).toEqual(expect.arrayContaining(['object-storage', 'object-lifecycle']));
+    expect(formatTerraform(findTerraform(ds, 'peering')[0], 'en')).toMatch(/aws_vpc_peering_connection/);
   });
 
   it('rechaza un dataset con otra schema_version', () => {
