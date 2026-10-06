@@ -26,7 +26,10 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 - **Por examen:** cada certificación tiene su página con los gotchas que aplican y su estado (vigente, se
   retira, retirado → reemplazo), derivado de la fecha de retiro oficial.
 - **Práctica:** modo a ciegas ("¿de qué nube es este gotcha?", con los nombres de producto tapados) y
-  flashcards filtrables por examen.
+  flashcards por examen con repetición espaciada (sin cuentas), más un gotcha del día.
+- **Qué cambió:** cada gotcha nuevo, corregido o re-verificado, con diff y feed Atom.
+- **Para el día a día:** cada gotcha y cada comparación se copian como Markdown (con fuente y atribución)
+  para pegar en un PR o un ADR; "Reportar desactualizado" abre el issue ya completo.
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
 - **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").

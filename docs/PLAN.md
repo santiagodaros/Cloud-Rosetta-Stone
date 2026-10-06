@@ -125,12 +125,36 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 | F3-05 | Reviewers de AWS y GCP | 🟡 | Convocatoria en #18; falta difundirla en AWS UG y GDG LATAM |
 | F3-06 | Hacktoberfest | ✅ | 13 issues con `hacktoberfest` + [guía](HACKTOBERFEST.md). Falta el topic del repo (acción del maintainer) |
 
-### Fase 4 — Plataforma (trimestre siguiente)
+### Fase 4 — Plataforma (en curso, desde 2026-10-06)
+
+**Primera entrega (✅):** F4-01 MCP server · F4-02 dataset versionado + `llms.txt` · F4-10 "Qué cambió" +
+feed Atom · F4-11 copiar como Markdown · F4-12 reportar desactualizado · F4-17 repetición espaciada +
+gotcha del día.
+
+**Orden propuesto para lo que falta:**
+
+1. **F4-22** isla interactiva del diagrama + **F4-09** "tu nube de origen": comparten el cambio de schema
+   (`role` por gotcha, `equivalence` y `from_<nube>` por binding), conviene hacerlos juntos.
+2. **F4-16** diccionario de conceptos y **F4-15** mapa de recursos Terraform: contenido nuevo con schema,
+   abre otra vía de contribución.
+3. **F4-13** checklist de migración y **F4-14** generador de ADR: reutilizan lo que ya hay, sin contenido
+   nuevo.
+4. **F4-03 / F4-05** pricing + matriz de decisión.
+5. **F4-18** widgets, **F4-19** PWA.
+
+**Decisiones del mantenedor (bloquean su ítem):**
+
+- **F4-21** medir retención: Cloudflare Web Analytics o solo métricas proxy. Bloquea F4-09.
+- **F4-03** pricing: Azure Retail Prices y el Price List de AWS son públicos; el Billing Catalog de GCP pide
+  una API key (secret de CI). **F4-04** Infracost también.
+- **F4-20** votación: requiere habilitar GitHub Discussions.
+- **F4-06** (sponsor con cuentas sandbox), **F4-07** (riesgo vs. D2) y **F4-08** (CODEOWNER de OCI) siguen
+  condicionados.
 
 | ID | Tarea | Notas |
 |---|---|---|
-| F4-01 | **MCP server read-only** sobre el dataset: que Claude/Copilot citen gotchas verificados | Sirve el mismo JSON; $0 |
-| F4-02 | `llms.txt` + dataset versionado (`schema_version`) | |
+| F4-01 ✅ | **MCP server read-only** sobre el dataset: que Claude/Copilot citen gotchas verificados | Sirve el mismo JSON; $0 |
+| F4-02 ✅ | `llms.txt` + dataset versionado (`schema_version`) | |
 | F4-03 | **Pricing job** semanal: Azure Retail Prices API, AWS Price List, GCP Billing Catalog → "piso mensual" por patrón/región | Build time, nunca runtime |
 | F4-04 | Alternativa: Infracost en CI sobre los módulos | Requiere API key gratuita como secret de CI |
 | F4-05 | **Matriz de decisión**: requisitos (private-only, scale-to-zero, FIFO) → SKUs que lo cumplen + piso de costo | |
@@ -138,14 +162,14 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 | F4-07 | (Opcional) "Traducí mi Terraform" con IA, **solo BYOK client-side** y siempre con los gotchas curados al lado | Riesgo de alucinaciones vs. D2 |
 | F4-08 | OCI como cuarta nube | Solo si hay CODEOWNER de OCI |
 | F4-09 | **"Tu nube de origen"**: el usuario elige Azure/AWS/GCP una vez y el contenido se explica desde ahí ("venís de Azure: es como Private Endpoint, pero…") | Preferencia en `localStorage`, sin cuentas (D8). Requiere un campo opcional `from_<nube>` por binding |
-| F4-10 | **"Qué cambió"**: changelog de gotchas creados, corregidos o re-verificados, con diff de texto, + feed RSS/Atom | Build time desde el historial de git y `verified_at`; es la excusa honesta para volver cada semana |
-| F4-11 | **"Copiar como Markdown"** en cada gotcha y comparación (texto + fuente + `verified_at` + link) | Para pegar en PRs, ADRs y tickets; cada pegada es un link entrante (métrica §5) |
-| F4-12 | **"Reportar desactualizado"** en cada gotcha → abre `stale-gotcha.yml` con `location` precargado | Los issue forms aceptan precarga por query param (`?template=…&location=…`); baja la fricción para contribuir |
+| F4-10 ✅ | **"Qué cambió"**: changelog de gotchas creados, corregidos o re-verificados, con diff de texto, + feed RSS/Atom | Build time desde el historial de git y `verified_at`; es la excusa honesta para volver cada semana |
+| F4-11 ✅ | **"Copiar como Markdown"** en cada gotcha y comparación (texto + fuente + `verified_at` + link) | Para pegar en PRs, ADRs y tickets; cada pegada es un link entrante (métrica §5) |
+| F4-12 ✅ | **"Reportar desactualizado"** en cada gotcha → abre `stale-gotcha.yml` con `location` precargado | Los issue forms aceptan precarga por query param (`?template=…&location=…`); baja la fricción para contribuir |
 | F4-13 | **Checklist de migración**: origen → destino → patrón = lista de gotchas a validar, exportable a Markdown/PDF | Uso directo en preventa y kick-off de migraciones; reutiliza los gotchas, sin contenido nuevo |
 | F4-14 | **Generador de ADR** desde la comparación: decisión, alternativas descartadas, gotchas citados con fuente | Plantilla MADR; 100% client-side |
 | F4-15 | **Mapa de recursos Terraform** `azurerm_*` ↔ `aws_*` ↔ `google_*`, curado, con marca "no es 1:1" | Nuevo tipo de contenido con schema y fuente obligatoria; es la alternativa verificada a F4-07 |
 | F4-16 | **Diccionario de conceptos** (no servicios): jerarquía de recursos (tenant/MG/subscription/RG · org/OU/account · org/folder/project), regiones y zonas, modelo de identidad | Donde más se confunde quien salta de nube; mismo formato hub-and-spoke que capabilities |
-| F4-17 | **Repetición espaciada** (Leitner) + "gotcha del día" sobre las flashcards de F3-02 | Progreso en `localStorage`; genera hábito diario sin login |
+| F4-17 ✅ | **Repetición espaciada** (Leitner) + "gotcha del día" sobre las flashcards de F3-02 | Progreso en `localStorage`; genera hábito diario sin login |
 | F4-18 | **Widgets embebibles**: card de gotcha o comparación para blogs y Notion | Snippet `<iframe>`/HTML estático con link de vuelta; respeta CC BY-SA (atribución incluida) |
 | F4-19 | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
 | F4-20 | **Votación del próximo patrón** con reacciones en GitHub Discussions, visible en el sitio | El ranking se lee en build time; la comunidad empuja el roadmap |
