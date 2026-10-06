@@ -136,3 +136,45 @@ main li a {
   overflow-x: auto;
   max-height: 32rem;
 }
+
+/* Diagrama interactivo (F4-22) */
+.dg-node:not([data-actor]) {
+  cursor: pointer;
+}
+.dg-node:focus {
+  outline: none;
+}
+.dg-node:focus-visible rect {
+  stroke-width: 3;
+}
+.dg-node,
+.dg-edge {
+  transition: opacity 120ms ease;
+}
+[data-dg-active] .dg-node:not(.is-on),
+[data-dg-active] .dg-edge:not(.is-on) {
+  opacity: 0.25;
+}
+[data-dg-active] .dg-edge.is-on path {
+  stroke: var(--node);
+  stroke-width: 2.2;
+}
+.dg-node[aria-pressed='true'] rect {
+  stroke-width: 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dg-node,
+  .dg-edge {
+    transition: none;
+  }
+}
+
+/* Tu nube de origen (F4-09): las notas solo se ven para la nube elegida. */
+.from-note {
+  display: none;
+}
+:root[data-origin='azure'] .from-note[data-from='azure'],
+:root[data-origin='aws'] .from-note[data-from='aws'],
+:root[data-origin='gcp'] .from-note[data-from='gcp'] {
+  display: block;
+}

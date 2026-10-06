@@ -3,12 +3,26 @@ bindings:
   inbound:
     service: { es: "Cloud DNS inbound server policy", en: "Cloud DNS inbound server policy" }
     config: { es: "enable_inbound_forwarding: una IP de entrada por subnet de la VPC", en: "enable_inbound_forwarding: one entry IP per subnet in the VPC" }
+    from:
+      aws:
+        es: "No hay endpoints que dimensionar ni ENIs por hora: la policy toma una IP de cada subnet de la VPC."
+        en: "There are no endpoints to size and no hourly ENIs: the policy takes one IP from every subnet in the VPC."
+      azure:
+        es: "No hay endpoints ni subnets dedicadas: la policy toma una IP de cada subnet de la VPC."
+        en: "There are no endpoints or dedicated subnets: the policy takes one IP from every subnet in the VPC."
   private-zone:
     service: Cloud DNS private zone
     config: { es: "Visible para la VPC hub", en: "Visible to the hub VPC" }
   outbound:
     service: { es: "Cloud DNS forwarding zone", en: "Cloud DNS forwarding zone" }
     config: { es: "forwarding_path = private + Cloud Router anunciando 35.199.192.0/19", en: "forwarding_path = private + Cloud Router advertising 35.199.192.0/19" }
+    from:
+      azure:
+        es: "Las consultas reenviadas salen desde 35.199.192.0/19, no desde IPs de tu VPC: on-premises tiene que permitir ese rango y tener la ruta de vuelta."
+        en: "Forwarded queries come from 35.199.192.0/19, not from your VPC's IPs: on-premises must allow that range and have a return route."
+      aws:
+        es: "Las consultas reenviadas salen desde 35.199.192.0/19, no desde IPs de tu VPC: on-premises tiene que permitir ese rango y tener la ruta de vuelta."
+        en: "Forwarded queries come from 35.199.192.0/19, not from your VPC's IPs: on-premises must allow that range and have a return route."
 gotchas:
   - id: return-route-35-199-192-0-19
     severity: networking
@@ -32,6 +46,7 @@ gotchas:
       - https://docs.cloud.google.com/dns/docs/zones/forwarding-zones
       - https://docs.cloud.google.com/dns/docs/server-policies-overview
     verified_at: 2026-10-06
+    roles: [outbound]
     exams: [PCNE, PCA]
   - id: forwarding-path-private
     severity: security
@@ -51,6 +66,7 @@ gotchas:
       - https://docs.cloud.google.com/dns/docs/zones/zones-overview
       - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone
     verified_at: 2026-10-06
+    roles: [outbound]
     exams: [PCNE]
   - id: inbound-entry-point-per-subnet
     severity: networking
@@ -71,6 +87,7 @@ gotchas:
     sources:
       - https://docs.cloud.google.com/dns/docs/server-policies-overview
     verified_at: 2026-10-06
+    roles: [inbound]
     exams: [PCNE, ACE]
   - id: dns-not-shared-over-peering
     severity: networking
@@ -91,6 +108,7 @@ gotchas:
       - https://docs.cloud.google.com/dns/docs/zones/peering-zones
       - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
     verified_at: 2026-10-06
+    roles: [private-zone]
     exams: [PCNE, PCA]
 cost:
   scales_to_zero: partial

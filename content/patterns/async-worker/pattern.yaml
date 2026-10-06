@@ -46,4 +46,8 @@ edges:
   - { from: worker, to: identity, label: { es: token, en: token } }
   - { from: worker, to: results, label: { es: escribe, en: writes } }
   - { from: queue, to: dead-letter, label: { es: tras N intentos, en: after N attempts } }
+paths:
+  - { id: message, label: { es: "Mensaje", en: "Message" }, roles: [producer, queue, worker, results] }
+  - { id: token, label: { es: "Token", en: "Token" }, roles: [worker, identity] }
+  - { id: failure, label: { es: "Falla", en: "Failure" }, roles: [queue, dead-letter] }
 tags: [messaging, serverless, scale-to-zero, passwordless]

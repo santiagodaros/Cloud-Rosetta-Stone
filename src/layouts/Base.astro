@@ -1,7 +1,8 @@
 ---
 import { BRAND } from '../lib/brand.ts';
 import '../styles/global.css';
-import { ui, LOCALES, type Locale } from '../lib/i18n.ts';
+import { ui, LOCALES, PROVIDER_META, type Locale } from '../lib/i18n.ts';
+import { PROVIDERS } from '../lib/schema.ts';
 import { capabilitiesHref, examsHref, homeHref, href, practiceHref } from '../lib/paths.ts';
 
 interface Props {
@@ -41,6 +42,13 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImageUrl} />
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <script is:inline>
+      // "Mi nube" (F4-09) se aplica antes de pintar para que las notas no parpadeen.
+      try {
+        var o = localStorage.getItem('letra-chica:origin');
+        if (o === 'azure' || o === 'aws' || o === 'gcp') document.documentElement.dataset.origin = o;
+      } catch (e) {}
+    </script>
     <link rel="alternate" type="application/atom+xml" title={`${BRAND.name} — ${s.changesTitle}`} href={href(`${lang}/feed.xml`)} />
   </head>
   <body class="min-h-screen antialiased">
@@ -59,6 +67,13 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
           <a class="text-muted hover:text-fg" href={href(`${lang}/search/`)}>{s.search}</a>
           <a class="text-muted hover:text-fg" href={`${repo}/blob/main/CONTRIBUTING.md`}>{s.contribute}</a>
         </div>
+        <label id="origin-picker" class="flex items-center gap-1 text-sm text-muted" title={s.originHint} hidden>
+          {s.originLabel}
+          <select id="origin-select" class="min-h-8 rounded-md border border-line bg-surface px-1 text-fg">
+            <option value="">{s.originNone}</option>
+            {PROVIDERS.map((p) => <option value={p}>{PROVIDER_META[p].short}</option>)}
+          </select>
+        </label>
         <div class="flex items-center gap-1 text-sm" aria-label="Idioma / Language">
           {
             LOCALES.map((l) =>
@@ -88,5 +103,25 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
         </p>
       </div>
     </footer>
+    <script>
+      import { applyOrigin, ORIGIN_KEY } from '../lib/origin-client.ts';
+
+      const picker = document.getElementById('origin-picker');
+      const select = document.getElementById('origin-select') as HTMLSelectElement | null;
+      if (picker && select) {
+        picker.hidden = false;
+        select.value = document.documentElement.dataset.origin ?? '';
+        select.addEventListener('change', () => {
+          try {
+            if (select.value) localStorage.setItem(ORIGIN_KEY, select.value);
+            else localStorage.removeItem(ORIGIN_KEY);
+          } catch {
+            /* sin storage: vale para esta página */
+          }
+          applyOrigin(select.value);
+        });
+        applyOrigin(select.value);
+      }
+    </script>
   </body>
 </html>

@@ -3,6 +3,10 @@ bindings:
   queue:
     service: Amazon SQS (Standard)
     config: { es: "SSE administrado por SQS", en: "SQS-managed SSE" }
+    from:
+      azure:
+        es: "El visibility timeout cumple el papel del lock de peek-lock, y tiene que ser al menos 6 veces el timeout de la Lambda."
+        en: "The visibility timeout plays the role of the peek-lock lock, and it must be at least 6 times the Lambda timeout."
   worker:
     service: AWS Lambda
     config: { es: "Event source mapping con ReportBatchItemFailures", en: "Event source mapping with ReportBatchItemFailures" }
@@ -15,6 +19,10 @@ bindings:
   dead-letter:
     service: { es: "Cola SQS separada", en: "Separate SQS queue" }
     config: { es: "redrive_policy con maxReceiveCount", en: "redrive_policy with maxReceiveCount" }
+    from:
+      azure:
+        es: "No es una subcola: es otra cola, y en Standard el mensaje vence según cuándo entró a la cola original. Dale más retención que al origen."
+        en: "It isn't a subqueue: it's another queue, and in Standard the message expires based on when it entered the original queue. Give it longer retention than the source."
 gotchas:
   - id: visibility-timeout-6x
     severity: reliability
@@ -34,6 +42,7 @@ gotchas:
       - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html
       - https://docs.aws.amazon.com/lambda/latest/operatorguide/sqs-retries.html
     verified_at: 2026-10-06
+    roles: [queue, worker]
     exams: [DVA-C02, SAA-C03]
   - id: partial-batch-failures
     severity: reliability
@@ -52,6 +61,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html
     verified_at: 2026-10-06
+    roles: [worker]
     exams: [DVA-C02]
   - id: dlq-retention-original-timestamp
     severity: reliability
@@ -71,6 +81,7 @@ gotchas:
       - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
       - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/setting-up-dead-letter-queue-retention.html
     verified_at: 2026-10-06
+    roles: [dead-letter]
     exams: [SAA-C03, DVA-C02]
   - id: max-concurrency-protects-downstream
     severity: operations
@@ -89,6 +100,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html
     verified_at: 2026-10-06
+    roles: [worker]
     exams: [DVA-C02, SAA-C03]
 cost:
   scales_to_zero: 'yes'

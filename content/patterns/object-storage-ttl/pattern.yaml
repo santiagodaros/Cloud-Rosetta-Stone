@@ -46,4 +46,9 @@ edges:
   - { from: private-access, to: bucket }
   - { from: lifecycle, to: bucket, label: { es: borra a los N días, en: deletes after N days } }
   - { from: perimeter, to: bucket, label: { es: restringe origen, en: restricts origin } }
+paths:
+  - { id: write, label: { es: "Escritura", en: "Write" }, roles: [producer, private-access, bucket] }
+  - { id: token, label: { es: "Token", en: "Token" }, roles: [producer, identity] }
+  - { id: expiration, label: { es: "Expiración", en: "Expiration" }, roles: [lifecycle, bucket] }
+  - { id: perimeter, label: { es: "Perímetro", en: "Perimeter" }, roles: [perimeter, bucket] }
 tags: [storage, lifecycle, zero-trust, private-networking]

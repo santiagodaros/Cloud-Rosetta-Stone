@@ -9,6 +9,10 @@ bindings:
   outbound:
     service: { es: "Route 53 Resolver outbound endpoint + regla FORWARD", en: "Route 53 Resolver outbound endpoint + FORWARD rule" }
     config: { es: "Regla asociada a cada VPC; a otras cuentas con AWS RAM", en: "Rule associated with each VPC; to other accounts via AWS RAM" }
+    from:
+      azure:
+        es: "La regla FORWARD le gana a una private hosted zone con el mismo nombre; en Azure la zona vinculada gana sobre el ruleset."
+        en: "The FORWARD rule beats a private hosted zone with the same name; in Azure the linked zone wins over the ruleset."
 gotchas:
   - id: resolver-endpoints-fixed-cost
     severity: cost
@@ -30,6 +34,7 @@ gotchas:
       - https://aws.amazon.com/route53/pricing/
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries-values.html
     verified_at: 2026-10-06
+    roles: [inbound, outbound]
     exams: [ANS-C01, SAA-C03]
   - id: vpc-plus-two-not-from-onprem
     severity: networking
@@ -50,6 +55,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
     verified_at: 2026-10-06
+    roles: [inbound]
     exams: [ANS-C01]
   - id: phz-must-be-associated-with-inbound-vpc
     severity: networking
@@ -68,6 +74,7 @@ gotchas:
     sources:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-choose-vpc.html
     verified_at: 2026-10-06
+    roles: [private-zone, inbound]
     exams: [ANS-C01, SAA-C03]
   - id: forward-rule-beats-phz
     severity: networking
@@ -87,6 +94,7 @@ gotchas:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-forward-vpc-to-network-domain-name-matches.html
     verified_at: 2026-10-06
+    roles: [outbound, private-zone]
     exams: [ANS-C01]
   - id: qps-per-eni-connection-tracking
     severity: reliability
@@ -108,6 +116,7 @@ gotchas:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-resolver-endpoint-scaling.html
     verified_at: 2026-10-06
+    roles: [inbound]
     exams: [ANS-C01]
 cost:
   scales_to_zero: 'no'

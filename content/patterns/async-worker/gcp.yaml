@@ -3,6 +3,17 @@ bindings:
   queue:
     service: Pub/Sub topic + push subscription
     config: { es: "Push autenticado con OIDC", en: "OIDC-authenticated push" }
+    notes:
+      es: "Pub/Sub es publicación/suscripción: el topic no guarda mensajes, se retienen por suscripción."
+      en: "Pub/Sub is publish/subscribe: the topic doesn't store messages, they're retained per subscription."
+    equivalence: partial
+    from:
+      aws:
+        es: "No es una cola: los mensajes viven en la suscripción. Con push, el ack es la respuesta HTTP y tiene que llegar dentro del ack deadline."
+        en: "It isn't a queue: messages live in the subscription. With push, the ack is the HTTP response and must arrive within the ack deadline."
+      azure:
+        es: "No es una cola: los mensajes viven en la suscripción. Con push, el ack es la respuesta HTTP y tiene que llegar dentro del ack deadline."
+        en: "It isn't a queue: messages live in the subscription. With push, the ack is the HTTP response and must arrive within the ack deadline."
   worker:
     service: Cloud Run (service)
     config: { es: "Ingress interno, invocado por Pub/Sub", en: "Internal ingress, invoked by Pub/Sub" }
@@ -33,6 +44,7 @@ gotchas:
     sources:
       - https://docs.cloud.google.com/pubsub/docs/handling-failures
     verified_at: 2026-10-06
+    roles: [dead-letter, identity]
     exams: [PCD, PDE]
   - id: dead-letter-topic-needs-subscription
     severity: reliability
@@ -52,6 +64,7 @@ gotchas:
       - https://docs.cloud.google.com/pubsub/docs/handling-failures
       - https://docs.cloud.google.com/pubsub/docs/dead-letter-topics
     verified_at: 2026-10-06
+    roles: [dead-letter]
     exams: [PDE, PCD]
   - id: push-ack-deadline
     severity: reliability
@@ -71,6 +84,7 @@ gotchas:
       - https://docs.cloud.google.com/pubsub/docs/push
       - https://docs.cloud.google.com/pubsub/docs/lease-management
     verified_at: 2026-10-06
+    roles: [queue, worker]
     exams: [PCD, PDE]
   - id: exactly-once-pull-only
     severity: reliability
@@ -89,6 +103,7 @@ gotchas:
     sources:
       - https://docs.cloud.google.com/pubsub/docs/exactly-once-delivery
     verified_at: 2026-10-06
+    roles: [queue]
     exams: [PDE, PCD]
 cost:
   scales_to_zero: 'yes'

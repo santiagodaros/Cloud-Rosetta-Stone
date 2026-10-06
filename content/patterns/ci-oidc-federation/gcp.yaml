@@ -3,6 +3,10 @@ bindings:
   federation:
     service: Workload Identity Federation (pool + provider OIDC)
     config: { es: "attribute_condition sobre repository_owner_id, repository_id y environment", en: "attribute_condition on repository_owner_id, repository_id and environment" }
+    from:
+      aws:
+        es: "La confianza es una condición CEL sobre atributos mapeados, y conviene acotarla por repository_id (inmutable) en vez del nombre."
+        en: "Trust is a CEL condition on mapped attributes, and it's best scoped by repository_id (immutable) rather than the name."
   deploy-identity:
     service: Service Account (impersonada)
     config: { es: "roles/iam.workloadIdentityUser solo para el principalSet del repositorio", en: "roles/iam.workloadIdentityUser only for the repository's principalSet" }
@@ -30,6 +34,7 @@ gotchas:
       - https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines
       - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [PCSE, PCDOE]
   - id: use-immutable-ids
     severity: security
@@ -51,6 +56,7 @@ gotchas:
       - https://docs.cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation
       - https://docs.github.com/en/actions/reference/security/oidc
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [PCSE]
   - id: pool-soft-delete-30-days
     severity: operations
@@ -72,6 +78,7 @@ gotchas:
       - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool
       - https://docs.cloud.google.com/iam/docs/manage-workload-identity-pools-providers
     verified_at: 2026-10-06
+    roles: [federation]
     exams: [ACE, PCDOE]
   - id: direct-access-vs-impersonation
     severity: iam
@@ -93,6 +100,7 @@ gotchas:
       - https://docs.cloud.google.com/iam/docs/federated-identity-supported-services
       - https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines
     verified_at: 2026-10-06
+    roles: [deploy-identity, permissions]
     exams: [PCSE, ACE]
   - id: project-number-and-propagation
     severity: reliability
@@ -114,6 +122,7 @@ gotchas:
       - https://docs.cloud.google.com/iam/docs/workload-identity-federation
       - https://docs.cloud.google.com/iam/docs/granting-changing-revoking-access
     verified_at: 2026-10-06
+    roles: [federation, permissions]
     exams: [ACE]
 cost:
   scales_to_zero: 'yes'

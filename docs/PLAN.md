@@ -131,10 +131,13 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 feed Atom · F4-11 copiar como Markdown · F4-12 reportar desactualizado · F4-17 repetición espaciada +
 gotcha del día.
 
+**Segunda entrega (✅):** F4-22 isla interactiva del diagrama · F4-09 "Mi nube". Schema nuevo: `roles` por
+gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por patrón. F4-09 usa solo
+`localStorage`: no agrega medición, así que F4-21 sigue abierta como decisión independiente.
+
 **Orden propuesto para lo que falta:**
 
-1. **F4-22** isla interactiva del diagrama + **F4-09** "tu nube de origen": comparten el cambio de schema
-   (`role` por gotcha, `equivalence` y `from_<nube>` por binding), conviene hacerlos juntos.
+1. ~~**F4-22** + **F4-09**~~ (hechos).
 2. **F4-16** diccionario de conceptos y **F4-15** mapa de recursos Terraform: contenido nuevo con schema,
    abre otra vía de contribución.
 3. **F4-13** checklist de migración y **F4-14** generador de ADR: reutilizan lo que ya hay, sin contenido
@@ -144,7 +147,7 @@ gotcha del día.
 
 **Decisiones del mantenedor (bloquean su ítem):**
 
-- **F4-21** medir retención: Cloudflare Web Analytics o solo métricas proxy. Bloquea F4-09.
+- **F4-21** medir retención: Cloudflare Web Analytics o solo métricas proxy.
 - **F4-03** pricing: Azure Retail Prices y el Price List de AWS son públicos; el Billing Catalog de GCP pide
   una API key (secret de CI). **F4-04** Infracost también.
 - **F4-20** votación: requiere habilitar GitHub Discussions.
@@ -161,7 +164,7 @@ gotcha del día.
 | F4-06 | (Opcional, con sponsor) deploy real nightly en cuentas sandbox vía OIDC + destroy | Fuera del sitio; solo CI |
 | F4-07 | (Opcional) "Traducí mi Terraform" con IA, **solo BYOK client-side** y siempre con los gotchas curados al lado | Riesgo de alucinaciones vs. D2 |
 | F4-08 | OCI como cuarta nube | Solo si hay CODEOWNER de OCI |
-| F4-09 | **"Tu nube de origen"**: el usuario elige Azure/AWS/GCP una vez y el contenido se explica desde ahí ("venís de Azure: es como Private Endpoint, pero…") | Preferencia en `localStorage`, sin cuentas (D8). Requiere un campo opcional `from_<nube>` por binding |
+| F4-09 ✅ | **"Tu nube de origen"**: el usuario elige Azure/AWS/GCP una vez y el contenido se explica desde ahí ("venís de Azure: es como Private Endpoint, pero…") | Preferencia en `localStorage`, sin cuentas (D8). Requiere un campo opcional `from_<nube>` por binding |
 | F4-10 ✅ | **"Qué cambió"**: changelog de gotchas creados, corregidos o re-verificados, con diff de texto, + feed RSS/Atom | Build time desde el historial de git y `verified_at`; es la excusa honesta para volver cada semana |
 | F4-11 ✅ | **"Copiar como Markdown"** en cada gotcha y comparación (texto + fuente + `verified_at` + link) | Para pegar en PRs, ADRs y tickets; cada pegada es un link entrante (métrica §5) |
 | F4-12 ✅ | **"Reportar desactualizado"** en cada gotcha → abre `stale-gotcha.yml` con `location` precargado | Los issue forms aceptan precarga por query param (`?template=…&location=…`); baja la fricción para contribuir |
@@ -174,7 +177,7 @@ gotcha del día.
 | F4-19 | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
 | F4-20 | **Votación del próximo patrón** con reacciones en GitHub Discussions, visible en el sitio | El ranking se lee en build time; la comunidad empuja el roadmap |
 | F4-21 | **Decisión: medir retención** sin romper "sin trackers": Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores RSS, tráfico de GitHub, descargas del dataset) | Decide el mantenedor antes de F4-09; si se adopta, actualizar README y D8 |
-| F4-22 | **Isla interactiva sobre el diagrama ELK**: hover/foco traza rol o conexión; click fija un panel con bindings por nube y gotchas del tramo; recorridos predefinidos (escritura, token, expiración, perímetro); contador de gotchas por rol; equivalentes parciales punteados. En mobile: tap expande el rol inline | Encima del mismo layout de ADR-0003, sin LLM ni dependencia nueva. Requiere schema: `role` opcional por gotcha y `equivalence: full \| partial \| none` por binding (validación cruzada en `content.ts`) |
+| F4-22 ✅ | **Isla interactiva sobre el diagrama ELK**: hover/foco traza rol o conexión; click fija un panel con bindings por nube y gotchas del tramo; recorridos predefinidos (escritura, token, expiración, perímetro); contador de gotchas por rol; equivalentes parciales punteados. En mobile: tap expande el rol inline | Encima del mismo layout de ADR-0003, sin LLM ni dependencia nueva. Requiere schema: `role` opcional por gotcha y `equivalence: full \| partial \| none` por binding (validación cruzada en `content.ts`) |
 
 F4-09 a F4-22 apuntan a **uso recurrente**: que el sitio entre en el trabajo diario (PRs, ADRs,
 migraciones), en el estudio (repetición espaciada) y tenga novedades reales (changelog). Ritmo sugerido:

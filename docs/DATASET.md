@@ -6,7 +6,7 @@ estado ni límites de uso). Licencia **CC BY-SA 4.0**: citá "Letra Chica" con l
 | Endpoint | Contenido |
 |---|---|
 | `/api/v1/index.json` | Versión, conteos y URLs de los demás endpoints |
-| `/api/v1/gotchas.json` | Lista plana de gotchas: `key`, `pattern`, `provider`, `severity`, `title`, `body`, `sources`, `verified_at`, `exams`, `url.{es,en}` |
+| `/api/v1/gotchas.json` | Lista plana de gotchas: `key`, `pattern`, `provider`, `severity`, `title`, `body`, `sources`, `verified_at`, `exams`, `roles`, `url.{es,en}` |
 | `/api/v1/patterns.json` | Patrones con roles, edges, bindings por nube, gotchas, modelo de costo y versiones de providers |
 | `/api/v1/capabilities.json` | Diccionario de capabilities, con huecos (`gap`) explícitos |
 | `/api/v1/exams.json` | Catálogo de exámenes con `status` derivado y las `key` de sus gotchas |

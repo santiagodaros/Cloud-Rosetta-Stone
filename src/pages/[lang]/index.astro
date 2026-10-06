@@ -58,7 +58,7 @@ const totalGotchas = publishedPatterns.reduce(
           return (
             <li class="flex flex-col rounded-xl border border-line bg-surface p-5">
               <h3 class="mb-2 text-lg leading-snug font-semibold">
-                <a class="text-fg no-underline hover:underline" href={patternHref(lang, pattern.id, DEFAULT_VIEW)}>{t(pattern.title, lang)}</a>
+                <a class="text-fg no-underline hover:underline" href={patternHref(lang, pattern.id, DEFAULT_VIEW)} data-pattern-link data-default-view={DEFAULT_VIEW}>{t(pattern.title, lang)}</a>
               </h3>
               <p class="mb-4 flex-1 text-sm text-muted">{t(pattern.summary, lang)}</p>
               <div class="flex flex-wrap items-center gap-2 text-xs text-muted">

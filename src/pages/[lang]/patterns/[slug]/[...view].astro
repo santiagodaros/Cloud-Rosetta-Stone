@@ -8,6 +8,7 @@ import { patternHref } from '../../../../lib/paths.ts';
 import { PROVIDERS } from '../../../../lib/schema.ts';
 import { DEFAULT_VIEW, publishedPatterns, VIEWS } from '../../../../lib/site.ts';
 import { comparisonMarkdown } from '../../../../lib/share.ts';
+import RoleExplorer from '../../../../components/RoleExplorer.astro';
 
 export function getStaticPaths() {
   return LOCALES.flatMap((lang) =>
@@ -86,7 +87,9 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
         data-pagefind-ignore>⧉ {s.copyComparison}</button>
     </nav>
 
-    <div class:list={['grid grid-cols-1 gap-8', gridCols]}>
+    <RoleExplorer bundle={bundle} providers={view.providers} lang={lang} />
+
+    <div class:list={['grid grid-cols-1 gap-8', gridCols]} data-dg-scope>
       {view.providers.map((provider) => <ImplementationColumn bundle={bundle} provider={provider} layout={layout} lang={lang} />)}
     </div>
   </article>

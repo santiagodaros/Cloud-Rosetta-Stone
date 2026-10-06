@@ -6,6 +6,10 @@ bindings:
   private-zone:
     service: Azure Private DNS
     config: { es: "Zona vinculada al hub; los spokes la resuelven por una regla al inbound endpoint", en: "Zone linked to the hub; spokes resolve it through a rule to the inbound endpoint" }
+    from:
+      aws:
+        es: "La zona vinculada a la VNet se consulta antes que el ruleset; en Route 53 una regla de forward le gana a la zona del mismo nombre."
+        en: "The zone linked to the VNet is checked before the ruleset; in Route 53 a forward rule beats the zone with the same name."
   outbound:
     service: { es: "DNS Private Resolver: outbound endpoint + forwarding ruleset", en: "DNS Private Resolver: outbound endpoint + forwarding ruleset" }
     config: { es: "Ruleset linkeado a los spokes (no al hub)", en: "Ruleset linked to the spokes (not the hub)" }
@@ -29,6 +33,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
     verified_at: 2026-10-06
+    roles: [inbound, outbound]
     exams: [AZ-700, AZ-305]
   - id: private-zone-beats-ruleset
     severity: networking
@@ -50,6 +55,7 @@ gotchas:
       - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html
     verified_at: 2026-10-06
+    roles: [private-zone, outbound]
     exams: [AZ-700]
   - id: ruleset-hub-loop
     severity: reliability
@@ -70,6 +76,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
     verified_at: 2026-10-06
+    roles: [outbound, inbound]
     exams: [AZ-700]
   - id: wildcard-rule-and-azure-dns-target
     severity: reliability
@@ -91,6 +98,7 @@ gotchas:
       - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
       - https://learn.microsoft.com/azure/architecture/networking/architecture/azure-dns-private-resolver
     verified_at: 2026-10-06
+    roles: [outbound]
     exams: [AZ-700, AZ-104]
   - id: resolver-not-lighthouse-compatible
     severity: operations
@@ -109,6 +117,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/dns/dns-private-resolver-overview
     verified_at: 2026-10-06
+    roles: [inbound, outbound]
     exams: [AZ-700, AZ-305]
 cost:
   scales_to_zero: 'no'

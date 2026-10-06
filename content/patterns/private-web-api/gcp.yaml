@@ -3,6 +3,13 @@ bindings:
   ingress:
     service: Cloud Run ingress "internal"
     config: INGRESS_TRAFFIC_INTERNAL_ONLY + roles/run.invoker
+    from:
+      azure:
+        es: "\"Internal\" es un control de red, y además Cloud Run exige IAM (roles/run.invoker) por default: el cliente manda un ID token."
+        en: "\"Internal\" is a network control, and Cloud Run also requires IAM (roles/run.invoker) by default: the client sends an ID token."
+      aws:
+        es: "\"Internal\" es un control de red, y además Cloud Run exige IAM (roles/run.invoker) por default: el cliente manda un ID token."
+        en: "\"Internal\" is a network control, and Cloud Run also requires IAM (roles/run.invoker) by default: the client sends an ID token."
   app:
     service: Cloud Run (service)
     config: { es: "Direct VPC egress hacia rangos privados", en: "Direct VPC egress to private ranges" }
@@ -12,9 +19,24 @@ bindings:
   db-access:
     service: Private services access (VPC peering)
     config: ipv4_enabled = false
+    notes:
+      es: "La IP privada llega por un VPC peering que no es transitivo; en hub-and-spoke conviene Private Service Connect."
+      en: "The private IP comes over a VPC peering that isn't transitive; in hub-and-spoke, Private Service Connect is a better fit."
+    equivalence: partial
+    from:
+      azure:
+        es: "No es un Private Endpoint: es un VPC peering hacia la red de Google, que no es transitivo."
+        en: "It isn't a Private Endpoint: it's a VPC peering to Google's network, which isn't transitive."
   database:
     service: Cloud SQL for PostgreSQL
     config: { es: "cloudsql.iam_authentication = on + connector obligatorio", en: "cloudsql.iam_authentication = on + connector required" }
+    from:
+      azure:
+        es: "El usuario IAM se crea por API, sin SQL, y el de una Service Account va sin \".gserviceaccount.com\"."
+        en: "The IAM user is created via API, without SQL, and a Service Account's user drops \".gserviceaccount.com\"."
+      aws:
+        es: "El usuario IAM se crea por API, sin SQL, y el de una Service Account va sin \".gserviceaccount.com\"."
+        en: "The IAM user is created via API, without SQL, and a Service Account's user drops \".gserviceaccount.com\"."
 gotchas:
   - id: iam-sa-username-trim
     severity: iam
@@ -34,6 +56,7 @@ gotchas:
       - https://docs.cloud.google.com/sql/docs/postgres/add-manage-iam-users
       - https://docs.cloud.google.com/sql/docs/postgres/iam-logins
     verified_at: 2026-10-06
+    roles: [identity, database]
     exams: [ACE, PCA]
   - id: iam-user-created-by-api
     severity: iam
@@ -53,6 +76,7 @@ gotchas:
       - https://docs.cloud.google.com/sql/docs/postgres/add-manage-iam-users
       - https://docs.cloud.google.com/sql/docs/postgres/iam-overview
     verified_at: 2026-10-06
+    roles: [database, identity]
     exams: [ACE, PCSE]
   - id: psa-peering-not-transitive
     severity: networking
@@ -72,6 +96,7 @@ gotchas:
       - https://docs.cloud.google.com/sql/docs/postgres/private-ip
       - https://docs.cloud.google.com/vpc/docs/vpc-peering
     verified_at: 2026-10-06
+    roles: [db-access]
     exams: [PCNE, PCA]
   - id: run-internal-is-not-auth
     severity: iam
@@ -93,6 +118,7 @@ gotchas:
       - https://docs.cloud.google.com/run/docs/securing/ingress
       - https://docs.cloud.google.com/run/docs/securing/managing-access
     verified_at: 2026-10-06
+    roles: [ingress, app]
     exams: [PCSE, PCA]
   - id: connector-enforcement
     severity: security
@@ -112,6 +138,7 @@ gotchas:
       - https://docs.cloud.google.com/sql/docs/postgres/iam-logins
       - https://docs.cloud.google.com/sql/docs/postgres/connect-connectors
     verified_at: 2026-10-06
+    roles: [db-access, identity]
     exams: [PCSE]
 cost:
   scales_to_zero: partial

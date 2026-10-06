@@ -43,4 +43,7 @@ edges:
   - { from: workloads, to: private-zone }
   - { from: workloads, to: outbound, label: { es: corp.example.com, en: corp.example.com } }
   - { from: outbound, to: onprem-dns, label: { es: reenvía por VPN, en: forwards over VPN } }
+paths:
+  - { id: onprem-to-cloud, label: { es: "On-prem → nube", en: "On-prem → cloud" }, roles: [onprem-dns, inbound, private-zone] }
+  - { id: cloud-to-onprem, label: { es: "Nube → on-prem", en: "Cloud → on-prem" }, roles: [workloads, outbound, onprem-dns] }
 tags: [networking, dns, hybrid, hub-and-spoke]

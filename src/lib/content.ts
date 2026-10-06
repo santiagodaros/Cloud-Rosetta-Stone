@@ -188,6 +188,18 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
       for (const end of [e.from, e.to]) if (!roleIds.has(end)) err('pattern.yaml', `edge ${e.from}→${e.to}: rol inexistente "${end}"`);
     }
     if (!pattern.title.en) warn('pattern.yaml', 'falta traducción al inglés del título');
+    const pathIds = new Set<string>();
+    for (const path of pattern.paths) {
+      if (pathIds.has(path.id)) err('pattern.yaml', `recorrido duplicado: ${path.id}`);
+      pathIds.add(path.id);
+      for (const r of path.roles) if (!roleIds.has(r)) err('pattern.yaml', `recorrido "${path.id}": rol inexistente "${r}"`);
+      for (let k = 1; k < path.roles.length; k++) {
+        const [a, b] = [path.roles[k - 1], path.roles[k]];
+        if (!pattern.edges.some((e) => (e.from === a && e.to === b) || (e.from === b && e.to === a))) {
+          err('pattern.yaml', `recorrido "${path.id}": no hay edge entre "${a}" y "${b}"`);
+        }
+      }
+    }
 
     const capabilityRoles = pattern.roles.filter((r) => r.kind === 'capability').map((r) => r.id);
 
@@ -203,9 +215,13 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
       for (const roleId of capabilityRoles) {
         if (!(roleId in impl.bindings)) err(file, `falta binding para el rol "${roleId}" (usá { gap: ... } si no hay equivalente)`);
       }
-      for (const roleId of Object.keys(impl.bindings)) {
+      for (const [roleId, b] of Object.entries(impl.bindings)) {
         if (!roleIds.has(roleId)) err(file, `binding para rol inexistente "${roleId}"`);
         else if (!capabilityRoles.includes(roleId)) err(file, `el rol "${roleId}" es un actor: no lleva binding`);
+        if ('service' in b) {
+          if (b.equivalence === 'partial' && !b.notes) err(file, `binding "${roleId}": equivalence partial necesita notes que expliquen la diferencia`);
+          if (b.from && provider in b.from) err(file, `binding "${roleId}": from.${provider} no tiene sentido en la propia nube`);
+        }
       }
 
       const gotchaIds = new Set<string>();
@@ -216,6 +232,9 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
         if (age < 0) err(file, `gotcha "${g.id}": verified_at está en el futuro`);
         else if (age > STALE_AFTER_DAYS) warn(file, `gotcha "${g.id}" verificado hace ${age} días (> ${STALE_AFTER_DAYS}): re-verificar`);
         if (!g.title.en || !g.body.en) warn(file, `gotcha "${g.id}": falta traducción al inglés`);
+        for (const r of g.roles) {
+          if (!capabilityRoles.includes(r)) err(file, `gotcha "${g.id}": el rol "${r}" no existe o es un actor`);
+        }
         for (const code of g.exams) {
           const exam = exams.get(code);
           if (!exam) {

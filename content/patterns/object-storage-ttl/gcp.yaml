@@ -6,9 +6,24 @@ bindings:
   private-access:
     service: Private Google Access
     config: { es: "flag en la subnet", en: "subnet flag" }
+    notes:
+      es: "Da salida a las APIs de Google sin IP pública, pero no es un endpoint privado del bucket ni restringe quién accede."
+      en: "Reaches Google APIs without a public IP, but it isn't a private endpoint for the bucket and doesn't restrict who reaches it."
+    equivalence: partial
+    from:
+      azure:
+        es: "No es un Private Endpoint: no hay IP privada del bucket. Para restringir el origen hace falta bucket IP filtering o VPC Service Controls."
+        en: "It isn't a Private Endpoint: the bucket gets no private IP. Restricting the origin takes bucket IP filtering or VPC Service Controls."
   bucket:
     service: Cloud Storage bucket
     config: Uniform bucket-level access + Public access prevention enforced
+    from:
+      azure:
+        es: "Soft delete viene activo por default (7 días): un objeto efímero se cobra una semana más salvo que lo pongas en 0."
+        en: "Soft delete is on by default (7 days): an ephemeral object is billed for an extra week unless you set it to 0."
+      aws:
+        es: "Soft delete viene activo por default (7 días): un objeto efímero se cobra una semana más salvo que lo pongas en 0."
+        en: "Soft delete is on by default (7 days): an ephemeral object is billed for an extra week unless you set it to 0."
   lifecycle:
     service: Object Lifecycle Management
     config: { es: "Delete por age + AbortIncompleteMultipartUpload", en: "Delete by age + AbortIncompleteMultipartUpload" }
@@ -17,6 +32,7 @@ bindings:
     notes:
       es: El perímetro completo es VPC Service Controls, que se configura a nivel organización.
       en: The full perimeter is VPC Service Controls, configured at organization level.
+    equivalence: partial
 gotchas:
   - id: soft-delete-default-7-days
     severity: cost
@@ -35,6 +51,7 @@ gotchas:
     sources:
       - https://docs.cloud.google.com/storage/docs/soft-delete
     verified_at: 2026-10-06
+    roles: [bucket, lifecycle]
     exams: [ACE, PCA]
   - id: lifecycle-up-to-24h
     severity: reliability
@@ -51,6 +68,7 @@ gotchas:
     sources:
       - https://docs.cloud.google.com/storage/docs/lifecycle
     verified_at: 2026-10-06
+    roles: [lifecycle]
     exams: [ACE]
   - id: objectcreator-cannot-overwrite
     severity: iam
@@ -70,6 +88,7 @@ gotchas:
       - https://docs.cloud.google.com/storage/docs/access-control/iam-roles
       - https://docs.cloud.google.com/storage/docs/access-control/iam-permissions
     verified_at: 2026-10-06
+    roles: [identity]
     exams: [ACE, PCSE]
   - id: pga-is-not-a-perimeter
     severity: networking
@@ -91,6 +110,7 @@ gotchas:
       - https://docs.cloud.google.com/storage/docs/ip-filtering-overview
       - https://docs.cloud.google.com/vpc-service-controls/docs/overview
     verified_at: 2026-10-06
+    roles: [private-access, perimeter]
     exams: [PCNE, PCA]
   - id: ubla-and-pap
     severity: security
@@ -110,6 +130,7 @@ gotchas:
       - https://docs.cloud.google.com/storage/docs/uniform-bucket-level-access
       - https://docs.cloud.google.com/storage/docs/public-access-prevention
     verified_at: 2026-10-06
+    roles: [bucket]
     exams: [ACE, PCSE]
 cost:
   scales_to_zero: 'yes'
