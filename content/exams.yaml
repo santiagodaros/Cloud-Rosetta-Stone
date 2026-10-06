@@ -144,6 +144,12 @@ exams:
     certification: Google Cloud Certified - Professional Cloud Network Engineer
     level: professional
     url: https://cloud.google.com/learn/certification/cloud-network-engineer
+  - code: PCDOE
+    provider: gcp
+    name: Professional Cloud DevOps Engineer
+    certification: Google Cloud Certified - Professional Cloud DevOps Engineer
+    level: professional
+    url: https://cloud.google.com/learn/certification/cloud-devops-engineer
   - code: PDE
     provider: gcp
     name: Professional Data Engineer

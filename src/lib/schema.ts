@@ -44,6 +44,8 @@ export const OFFICIAL_SOURCE_HOSTS = [
   'docs.cloud.google.com',
   'registry.terraform.io',
   'developer.hashicorp.com',
+  // El IdP de los patrones de CI/CD: su documentación es la fuente oficial del formato de los tokens.
+  'docs.github.com',
 ] as const;
 
 export const SourceUrl = z.url({ protocol: /^https$/ }).refine(

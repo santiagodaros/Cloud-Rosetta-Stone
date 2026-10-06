@@ -1,0 +1,121 @@
+provider: azure
+bindings:
+  federation:
+    service: { es: "Federated identity credential (workload identity federation)", en: "Federated identity credential (workload identity federation)" }
+    config: { es: "Uno por environment: issuer de GitHub + subject exacto + audience api://AzureADTokenExchange", en: "One per environment: GitHub issuer + exact subject + audience api://AzureADTokenExchange" }
+  deploy-identity:
+    service: User-assigned Managed Identity
+    config: { es: "Sin secretos ni certificados; el workflow solo conoce client-id y tenant-id", en: "No secrets or certificates; the workflow only knows client-id and tenant-id" }
+  permissions:
+    service: Azure RBAC
+    config: { es: "Un role assignment sobre el resource group destino", en: "One role assignment on the target resource group" }
+gotchas:
+  - id: fic-exact-match-max-20
+    severity: iam
+    title:
+      es: El subject tiene que coincidir exacto, sin comodines, y hay un máximo de 20 credenciales por identidad
+      en: The subject must match exactly, with no wildcards, and there are at most 20 credentials per identity
+    body:
+      es: >-
+        En Azure la confianza no es una policy: cada federated identity credential es un par issuer + subject que
+        tiene que coincidir carácter por carácter con el sub del token. No hay comodines, así que necesitás una
+        credencial por environment, rama o tag, con un tope de 20 por identidad. En AWS o GCP lo resolvés con
+        StringLike o una condición CEL. Ojo: si cargás mal el subject, la credencial se crea sin error y la falla
+        recién aparece en el login.
+      en: >-
+        In Azure trust isn't a policy: each federated identity credential is an issuer + subject pair that must
+        match the token's sub character by character. There are no wildcards, so you need one credential per
+        environment, branch or tag, capped at 20 per identity. In AWS or GCP you'd use StringLike or a CEL
+        condition. Watch out: a wrong subject is created without error, and the failure only shows up at login.
+    sources:
+      - https://learn.microsoft.com/entra/workload-id/workload-identity-federation-considerations
+    verified_at: 2026-10-06
+    exams: [AZ-400, SC-300]
+  - id: fic-propagation-aadsts70021
+    severity: reliability
+    title:
+      es: Una credencial recién creada puede fallar con AADSTS70021 durante unos minutos
+      en: A freshly created credential can fail with AADSTS70021 for a few minutes
+    body:
+      es: >-
+        La credencial tarda en replicarse en la región. Si el mismo pipeline la crea y enseguida la usa, el token
+        exchange puede fallar con "No matching federated identity record found for presented assertion" aunque el
+        subject esté bien. Microsoft recomienda esperar y reintentar. Si el bootstrap y el primer deploy van en la
+        misma corrida, separalos o agregá un reintento con espera.
+      en: >-
+        The credential takes time to replicate across the region. If the same pipeline creates it and uses it right
+        away, the token exchange can fail with "No matching federated identity record found for presented
+        assertion" even though the subject is right. Microsoft recommends waiting and retrying. If bootstrap and
+        the first deploy run together, split them or add a retry with backoff.
+    sources:
+      - https://learn.microsoft.com/entra/workload-id/workload-identity-federation-considerations
+    verified_at: 2026-10-06
+    exams: [AZ-400]
+  - id: fic-concurrent-writes-409
+    severity: operations
+    title:
+      es: Crear varias credenciales en paralelo sobre la misma identidad da 409
+      en: Creating several credentials in parallel on the same identity returns 409
+    body:
+      es: >-
+        Las escrituras concurrentes de federated identity credentials bajo una misma user-assigned identity se
+        rechazan con 409 Conflict. El provider azurerm las crea en serie desde la 3.40, así que un for_each no
+        rompe. En ARM o Bicep, en cambio, un loop las crea en paralelo: usá el modo serial (batchSize 1) o
+        encadená dependsOn.
+      en: >-
+        Concurrent writes of federated identity credentials under the same user-assigned identity are rejected with
+        409 Conflict. The azurerm provider creates them serially since 3.40, so a for_each won't break. In ARM or
+        Bicep, though, a loop creates them in parallel: use serial mode (batchSize 1) or chain dependsOn.
+    sources:
+      - https://learn.microsoft.com/entra/workload-id/workload-identity-federation-considerations
+    verified_at: 2026-10-06
+    exams: [AZ-400]
+  - id: contributor-cannot-assign-roles
+    severity: iam
+    title:
+      es: Con Contributor el pipeline no puede crear role assignments
+      en: With Contributor the pipeline can't create role assignments
+    body:
+      es: >-
+        Contributor no tiene Microsoft.Authorization/roleAssignments/write. Si tu Terraform asigna roles (por
+        ejemplo, la identidad de una app sobre un Key Vault), el apply falla con AuthorizationFailed. La salida
+        rápida es darle Owner o User Access Administrator al pipeline, y es justo lo que no querés. La salida
+        correcta es Role Based Access Control Administrator con una condición que limite qué roles puede asignar
+        (y que excluya los roles privilegiados).
+      en: >-
+        Contributor lacks Microsoft.Authorization/roleAssignments/write. If your Terraform assigns roles (say, an
+        app's identity on a Key Vault), apply fails with AuthorizationFailed. The quick fix is giving the pipeline
+        Owner or User Access Administrator, which is exactly what you don't want. The right fix is Role Based Access
+        Control Administrator with a condition limiting which roles it can assign (and excluding privileged ones).
+    sources:
+      - https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-portal
+      - https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-examples
+    verified_at: 2026-10-06
+    exams: [AZ-104, SC-500, AZ-400]
+  - id: github-sub-format-changed
+    severity: iam
+    title:
+      es: Desde el 15/07/2026, los repos nuevos, renombrados o transferidos usan otro formato de sub
+      en: Since 2026-07-15, new, renamed or transferred repos use a different sub format
+    body:
+      es: >-
+        GitHub agrega los IDs numéricos al claim: repo:org@123/repo@456:environment:prod en lugar de
+        repo:org/repo:environment:prod. Así un nombre reciclado no hereda la confianza. Los repos anteriores siguen
+        con el formato viejo salvo que lo activen. Si renombrás un repo, el sub cambia y todas las credenciales
+        exactas dejan de matchear. El módulo arma el subject con IDs cuando se los pasás.
+      en: >-
+        GitHub adds the numeric IDs to the claim: repo:org@123/repo@456:environment:prod instead of
+        repo:org/repo:environment:prod, so a recycled name doesn't inherit the trust. Older repos keep the old
+        format unless they opt in. If you rename a repo, the sub changes and every exact credential stops matching.
+        The module builds the subject with IDs when you pass them.
+    sources:
+      - https://docs.github.com/en/actions/reference/security/oidc
+      - https://learn.microsoft.com/azure/databricks/dev-tools/auth/provider-github
+    verified_at: 2026-10-06
+    exams: [AZ-400]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: Managed identities, federated identity credentials y role assignments no tienen costo. Pagás solo los recursos que despliega el pipeline.
+    en: Managed identities, federated identity credentials and role assignments are free. You only pay for what the pipeline deploys.
