@@ -1,0 +1,41 @@
+name: Proponer patrón
+description: Un patrón de arquitectura que vale la pena comparar entre nubes.
+labels: [pattern-proposal]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Nombre del patrón
+      placeholder: DNS privado híbrido (on-prem ↔ nube)
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema de negocio
+      description: Qué necesita resolver alguien, sin nombrar servicios.
+    validations:
+      required: true
+  - type: textarea
+    id: mapping
+    attributes:
+      label: Implementación tentativa por nube
+      value: |
+        - Azure:
+        - AWS:
+        - GCP:
+  - type: textarea
+    id: gotchas
+    attributes:
+      label: Dónde se rompe la analogía
+      description: Las diferencias que te hicieron pensar que este patrón merece estar. Con fuentes si las tenés.
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribución
+      options:
+        - label: Puedo escribir el YAML
+        - label: Puedo escribir los módulos de Terraform
+        - label: Tengo experiencia de producción en al menos una de las nubes

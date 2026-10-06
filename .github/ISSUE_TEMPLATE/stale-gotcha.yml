@@ -1,0 +1,30 @@
+name: Gotcha desactualizado o incorrecto
+description: Un gotcha ya no es cierto, está incompleto o su fuente cambió.
+labels: [freshness, content]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Patrón, nube y gotcha
+      description: 'Ej.: object-storage-ttl / gcp / soft-delete-default-7-days (o el link con #ancla)'
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Qué cambió o qué está mal
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Fuente oficial que lo respalda
+      placeholder: https://learn.microsoft.com/...
+    validations:
+      required: true
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Contribución
+      options:
+        - label: Puedo mandar el PR con la corrección

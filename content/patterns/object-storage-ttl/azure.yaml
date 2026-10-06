@@ -1,0 +1,149 @@
+provider: azure
+bindings:
+  identity:
+    service: User-assigned Managed Identity
+    config: Storage Blob Data Contributor sobre el contenedor
+  private-access:
+    service: Private Endpoint (subresource blob)
+    config: + zona privatelink.blob.core.windows.net
+  bucket:
+    service: Storage Account (StorageV2) + container
+    config: Shared Key deshabilitado, acceso público de red deshabilitado
+  lifecycle:
+    service: Lifecycle management policy
+    config: delete_after_days_since_creation_greater_than
+  perimeter:
+    service: Storage firewall
+    config: public_network_access = Disabled
+    notes:
+      es: Para un perímetro a nivel organización entre varios PaaS, ver Network Security Perimeter.
+      en: For an organization-level perimeter across several PaaS services, see Network Security Perimeter.
+gotchas:
+  - id: lifecycle-not-exact-ttl
+    severity: reliability
+    title:
+      es: La policy tarda hasta 24 h en aplicarse y corre en background
+      en: The policy takes up to 24 h to apply and runs in the background
+    body:
+      es: >-
+        Al crear o editar una lifecycle policy puede tardar hasta 24 h en entrar en vigor, y cada corrida puede
+        llevar más de un día en cuentas grandes. No uses lifecycle como control de seguridad ("el archivo ya no
+        existe a las 48 h"): si el requisito es estricto, borrá desde la aplicación o usá un job propio.
+      en: >-
+        A new or edited lifecycle policy can take up to 24 h to take effect, and each run can take more than a
+        day on large accounts. Don't use lifecycle as a security control ("the file is gone at 48 h"): if the
+        requirement is strict, delete from the application or run your own job.
+    sources:
+      - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-overview
+      - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-performance-characteristics
+    verified_at: 2026-10-06
+    exams: [AZ-104]
+  - id: soft-delete-keeps-capacity
+    severity: cost
+    title:
+      es: Con soft delete activo, "borrar" no libera capacidad
+      en: With soft delete on, "delete" does not free capacity
+    body:
+      es: >-
+        Si la cuenta tiene soft delete de blobs, la acción delete de lifecycle deja el blob en estado
+        soft-deleted durante el período de retención, y lo seguís pagando. Tu TTL efectivo de costo es
+        ttl_days + días de soft delete. El módulo lo expone como variable para que sea una decisión explícita.
+      en: >-
+        If blob soft delete is on, the lifecycle delete action leaves the blob soft-deleted for the retention
+        period, and you keep paying for it. Your effective cost TTL is ttl_days + soft-delete days. The module
+        exposes it as a variable so it's an explicit decision.
+    sources:
+      - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-policy-delete
+      - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-policy-faq
+    verified_at: 2026-10-06
+    exams: [AZ-104]
+  - id: prefix-includes-container
+    severity: reliability
+    title:
+      es: En Azure el prefijo del filtro incluye el nombre del contenedor
+      en: In Azure the filter prefix includes the container name
+    body:
+      es: >-
+        prefix_match es "contenedor/ruta", no solo la ruta. Un filtro "incoming/" que en S3 o Cloud Storage
+        funciona, en Azure matchea un contenedor llamado "incoming" y nunca borra nada. El error no es visible:
+        la policy se crea sin fallar.
+      en: >-
+        prefix_match is "container/path", not just the path. An "incoming/" filter that works in S3 or Cloud
+        Storage matches a container named "incoming" in Azure and never deletes anything. The failure is silent:
+        the policy is created without error.
+    sources:
+      - https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-policy-structure
+    verified_at: 2026-10-06
+    exams: [AZ-104]
+  - id: shared-key-needs-azuread-provider
+    severity: iam
+    title:
+      es: Deshabilitar Shared Key obliga a que Terraform use Entra ID
+      en: Disabling Shared Key forces Terraform to use Entra ID
+    body:
+      es: >-
+        Con shared_access_key_enabled = false, toda llamada de data plane tiene que autenticarse con Entra ID,
+        incluida la del provider. Configurá storage_use_azuread = true en el provider azurerm y dale a la
+        identidad del pipeline un rol de datos (no alcanza con Contributor, que es solo control plane).
+      en: >-
+        With shared_access_key_enabled = false, every data-plane call must authenticate with Entra ID, including
+        the provider's own. Set storage_use_azuread = true on the azurerm provider and grant the pipeline
+        identity a data role (Contributor is control plane only and is not enough).
+    sources:
+      - https://learn.microsoft.com/azure/storage/common/shared-key-authorization-prevent
+      - https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs
+    verified_at: 2026-10-06
+    exams: [AZ-104, AZ-500]
+  - id: rbac-scope-is-container
+    severity: iam
+    title:
+      es: El scope mínimo de RBAC es el contenedor, no el prefijo
+      en: The smallest RBAC scope is the container, not the prefix
+    body:
+      es: >-
+        En S3 acotás la policy a arn:...:bucket/incoming/* y en GCP usás IAM Conditions por prefijo. En Azure un
+        role assignment llega como mínimo al contenedor; para acotar por ruta necesitás condiciones ABAC sobre el
+        role assignment. Alternativa simple: un contenedor dedicado a la ingesta (lo que hace este módulo).
+      en: >-
+        In S3 you scope the policy to arn:...:bucket/incoming/* and in GCP you use IAM Conditions by prefix. In
+        Azure a role assignment reaches the container at minimum; to scope by path you need ABAC conditions on
+        the role assignment. Simple alternative: a container dedicated to ingestion (what this module does).
+    sources:
+      - https://learn.microsoft.com/azure/storage/blobs/storage-auth-abac
+    verified_at: 2026-10-06
+    exams: [AZ-104, AZ-500]
+  - id: private-endpoint-needs-dns
+    severity: networking
+    title:
+      es: Private Endpoint sin zona DNS privada = 403 desde la VNet
+      en: Private Endpoint without a private DNS zone = 403 from the VNet
+    body:
+      es: >-
+        Crear el Private Endpoint no alcanza: el FQDN <cuenta>.blob.core.windows.net tiene que resolver a la IP
+        privada vía la zona privatelink.blob.core.windows.net vinculada a la VNet (o a tu DNS híbrido). Si
+        resuelve a la IP pública, con acceso público deshabilitado la request falla con 403 y parece un problema
+        de permisos.
+      en: >-
+        Creating the Private Endpoint is not enough: the FQDN <account>.blob.core.windows.net must resolve to the
+        private IP via the privatelink.blob.core.windows.net zone linked to the VNet (or your hybrid DNS). If it
+        resolves to the public IP, with public access disabled the request fails with 403 and looks like a
+        permissions issue.
+    sources:
+      - https://learn.microsoft.com/azure/private-link/private-endpoint-dns
+      - https://learn.microsoft.com/azure/private-link/private-endpoint-overview
+    verified_at: 2026-10-06
+    exams: [AZ-700, AZ-104]
+cost:
+  scales_to_zero: partial
+  fixed_cost_drivers:
+    - es: Private Endpoint (cargo por hora, más GB procesados)
+      en: Private Endpoint (hourly charge, plus processed GB)
+    - es: Zona DNS privada (cargo mensual por zona)
+      en: Private DNS zone (monthly charge per zone)
+  notes:
+    es: >-
+      El storage escala a cero (pagás GB y operaciones). El costo fijo lo pone la red privada. Es la diferencia
+      principal con AWS, donde el Gateway Endpoint de S3 no tiene costo.
+    en: >-
+      Storage scales to zero (you pay GB and operations). The fixed cost comes from private networking. That's
+      the main difference with AWS, where the S3 Gateway Endpoint is free.

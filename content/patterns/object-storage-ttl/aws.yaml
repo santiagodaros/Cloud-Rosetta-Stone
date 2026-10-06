@@ -1,0 +1,139 @@
+provider: aws
+bindings:
+  identity:
+    service: IAM Role (ECS task role)
+    config: s3:PutObject acotado a bucket/incoming/*
+  private-access:
+    service: Gateway VPC Endpoint para S3
+    config: asociado a la route table privada
+  bucket:
+    service: S3 bucket
+    config: Block Public Access + BucketOwnerEnforced + SSE-KMS
+  lifecycle:
+    service: S3 Lifecycle rule
+    config: Expiration.Days + AbortIncompleteMultipartUpload
+  perimeter:
+    service: Bucket policy
+    config: Deny si aws:SourceVpce ≠ endpoint
+gotchas:
+  - id: lifecycle-async-billing-stops
+    severity: cost
+    title:
+      es: La expiración es asincrónica, pero el cobro se corta en la fecha de expiración
+      en: Expiration is asynchronous, but billing stops at the expiration date
+    body:
+      es: >-
+        S3 encola las expiraciones y puede tardar días en borrar físicamente. A diferencia de Azure, no pagás
+        storage de un objeto vencido aunque todavía aparezca en el listado. Igual que en las otras nubes: no es un
+        control de seguridad, el objeto sigue siendo legible hasta que se borra.
+      en: >-
+        S3 queues expirations and can take days to physically delete. Unlike Azure, you don't pay storage for an
+        expired object even if it still shows up in listings. Same as the other clouds: it's not a security
+        control, the object remains readable until it's deleted.
+    sources:
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03]
+  - id: versioning-delete-marker
+    severity: cost
+    title:
+      es: En un bucket versionado, Expiration no borra nada
+      en: On a versioned bucket, Expiration deletes nothing
+    body:
+      es: >-
+        Con versioning habilitado, la acción Expiration solo agrega un delete marker y la versión pasa a
+        noncurrent, que se sigue cobrando. Necesitás además NoncurrentVersionExpiration (y limpiar delete markers
+        huérfanos). Este patrón deja el bucket sin versioning a propósito: el TTL es la protección que se busca.
+      en: >-
+        With versioning on, the Expiration action only adds a delete marker and the version becomes noncurrent,
+        which is still billed. You also need NoncurrentVersionExpiration (and to clean orphaned delete markers).
+        This pattern leaves the bucket unversioned on purpose: the TTL is the desired behavior.
+    sources:
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03]
+  - id: abort-incomplete-multipart
+    severity: cost
+    title:
+      es: Los multipart uploads incompletos se cobran y no se ven
+      en: Incomplete multipart uploads are billed and invisible
+    body:
+      es: >-
+        Las partes de un multipart upload que nunca se completó ocupan storage y no aparecen al listar objetos.
+        Agregá siempre una regla AbortIncompleteMultipartUpload; en un bucket de ingesta es donde más se acumulan.
+      en: >-
+        Parts from a multipart upload that never completed take up storage and don't show up when listing
+        objects. Always add an AbortIncompleteMultipartUpload rule; ingestion buckets are where they pile up most.
+    sources:
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-abort-incomplete-mpu-lifecycle-config.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03]
+  - id: secure-defaults-since-2023
+    severity: security
+    title:
+      es: Block Public Access y ACLs deshabilitadas ya son default (pero declaralos igual)
+      en: Block Public Access and disabled ACLs are already default (but declare them anyway)
+    body:
+      es: >-
+        Desde abril de 2023 los buckets nuevos se crean con Block Public Access activo y Object Ownership en
+        BucketOwnerEnforced. Ya no es "la" diferencia con Azure. Igual declaralos en IaC: los buckets viejos no
+        cambiaron, y declarar el estado evita drift si alguien los toca desde la consola.
+      en: >-
+        Since April 2023 new buckets are created with Block Public Access on and Object Ownership set to
+        BucketOwnerEnforced. It's no longer "the" difference with Azure. Still declare them in IaC: older buckets
+        didn't change, and declaring the state prevents drift if someone edits them in the console.
+    sources:
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03]
+  - id: gateway-endpoint-scope
+    severity: networking
+    title:
+      es: El Gateway Endpoint es gratis, pero solo sirve dentro de la VPC y la región
+      en: The Gateway Endpoint is free, but only works within the VPC and region
+    body:
+      es: >-
+        Es una entrada en la route table, sin costo por hora ni por GB, y por eso es la opción por defecto para S3.
+        Pero no es alcanzable desde on-premises (VPN/Direct Connect) ni desde otra región. Para esos casos
+        necesitás un Interface Endpoint, que sí se cobra por hora por AZ y es el equivalente real de Private
+        Endpoint en Azure.
+      en: >-
+        It's a route table entry with no hourly or per-GB charge, which is why it's the default for S3. But it's
+        not reachable from on-premises (VPN/Direct Connect) or from another region. For those cases you need an
+        Interface Endpoint, which is billed hourly per AZ and is the real equivalent of Azure Private Endpoint.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, ANS-C01]
+  - id: sourcevpce-lockout
+    severity: iam
+    title:
+      es: Un Deny por aws:SourceVpce también te deja afuera a vos
+      en: A Deny on aws:SourceVpce locks you out too
+    body:
+      es: >-
+        Un Deny explícito gana sobre cualquier Allow, incluido el del admin. Si la policy niega todo s3:* fuera del
+        endpoint, la consola y el pipeline de CI (que no están en la VPC) pierden acceso, y podés terminar sin
+        poder editar la propia bucket policy. Este módulo limita el Deny a operaciones de objetos y permite
+        excluir principals de break-glass con aws:PrincipalArn.
+      en: >-
+        An explicit Deny beats any Allow, including the admin's. If the policy denies all s3:* outside the
+        endpoint, the console and the CI pipeline (outside the VPC) lose access, and you can end up unable to edit
+        the bucket policy itself. This module limits the Deny to object operations and lets you exclude
+        break-glass principals via aws:PrincipalArn.
+    sources:
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html
+    verified_at: 2026-10-06
+    exams: [SAA-C03, SCS-C02]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: >-
+      Sin costo fijo: el Gateway Endpoint es gratis y la clave KMS administrada por AWS (aws/s3) no tiene cargo
+      mensual; Bucket Keys reduce las llamadas a KMS que sí se cobran por request.
+    en: >-
+      No fixed cost: the Gateway Endpoint is free and the AWS-managed KMS key (aws/s3) has no monthly fee; Bucket
+      Keys reduce the KMS calls that are billed per request.

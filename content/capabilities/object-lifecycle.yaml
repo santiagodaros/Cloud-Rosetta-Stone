@@ -1,0 +1,24 @@
+id: object-lifecycle
+category: storage-data
+name:
+  es: Ciclo de vida de objetos (TTL / tiering)
+  en: Object lifecycle (TTL / tiering)
+description:
+  es: Reglas declarativas que expiran o cambian de tier objetos según edad, prefijo o tags.
+  en: Declarative rules that expire or re-tier objects by age, prefix or tags.
+providers:
+  azure:
+    services:
+      - service: Blob Storage lifecycle management
+        docs: https://learn.microsoft.com/azure/storage/blobs/lifecycle-management-overview
+  aws:
+    services:
+      - service: S3 Lifecycle
+        docs: https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html
+  gcp:
+    services:
+      - service: Object Lifecycle Management
+        docs: https://docs.cloud.google.com/storage/docs/lifecycle
+caveats:
+  - es: Ninguna de las tres es un TTL exacto. Son procesos asincrónicos en background; diseñá asumiendo que el objeto puede seguir existiendo horas o días después de "vencer".
+    en: None of the three is an exact TTL. They are asynchronous background processes; design assuming the object may still exist hours or days after it "expires".

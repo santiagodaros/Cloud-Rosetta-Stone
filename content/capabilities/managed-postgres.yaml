@@ -1,0 +1,28 @@
+id: managed-postgres
+category: storage-data
+name:
+  es: PostgreSQL gestionado
+  en: Managed PostgreSQL
+description:
+  es: PostgreSQL como servicio con backups, HA y parches gestionados.
+  en: PostgreSQL as a service with managed backups, HA and patching.
+providers:
+  azure:
+    services:
+      - service: Azure Database for PostgreSQL – Flexible Server
+        docs: https://learn.microsoft.com/azure/postgresql/flexible-server/overview
+  aws:
+    services:
+      - service: Amazon RDS for PostgreSQL
+        docs: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html
+      - service: Amazon Aurora PostgreSQL
+        docs: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html
+  gcp:
+    services:
+      - service: Cloud SQL for PostgreSQL
+        docs: https://docs.cloud.google.com/sql/docs/postgres
+      - service: AlloyDB for PostgreSQL
+        docs: https://docs.cloud.google.com/alloydb/docs/overview
+caveats:
+  - es: Azure SQL Database NO es el equivalente de RDS PostgreSQL (es SQL Server). Comparar motores distintos invalida cualquier conclusión sobre autenticación o costos.
+    en: Azure SQL Database is NOT the equivalent of RDS PostgreSQL (it is SQL Server). Comparing different engines invalidates any conclusion about auth or cost.

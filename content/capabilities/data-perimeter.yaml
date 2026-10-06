@@ -1,0 +1,25 @@
+id: data-perimeter
+category: networking
+name:
+  es: Perímetro de datos (anti-exfiltración)
+  en: Data perimeter (anti-exfiltration)
+description:
+  es: Control que impide que datos de servicios PaaS salgan hacia identidades o redes fuera de la organización, aunque la credencial sea válida.
+  en: Control preventing PaaS data from leaving to identities or networks outside the organization, even with valid credentials.
+providers:
+  azure:
+    services:
+      - service: Network Security Perimeter
+        docs: https://learn.microsoft.com/azure/private-link/network-security-perimeter-concepts
+  aws:
+    gap:
+      es: "No hay un servicio único. El 'data perimeter' de AWS se arma combinando SCPs/RCPs de Organizations, políticas de VPC endpoint y bucket policies con condiciones (aws:PrincipalOrgID, aws:SourceVpce, aws:ResourceOrgID)."
+      en: "There is no single service. AWS's 'data perimeter' is assembled from Organizations SCPs/RCPs, VPC endpoint policies and bucket policies with conditions (aws:PrincipalOrgID, aws:SourceVpce, aws:ResourceOrgID)."
+    docs: https://docs.aws.amazon.com/whitepapers/latest/building-a-data-perimeter-on-aws/perimeter-overview.html
+  gcp:
+    services:
+      - service: VPC Service Controls
+        docs: https://docs.cloud.google.com/vpc-service-controls/docs/overview
+        notes:
+          es: Se configura a nivel organización (Access Context Manager), no por proyecto.
+          en: Configured at organization level (Access Context Manager), not per project.
