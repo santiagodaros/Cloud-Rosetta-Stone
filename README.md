@@ -19,18 +19,20 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
   credenciales), `tflint` y `checkov` en cada PR.
 - **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").
 - **Datos abiertos:** `/api/v1/patterns.json` y `/api/v1/capabilities.json`.
+- **Para compartir:** cada comparación tiene su imagen OG y cada gotcha un deep link.
+- **Búsqueda** estática (Pagefind) en español e inglés.
 - **Español primero**, inglés incluido. Sin cuentas, sin credenciales, sin trackers, $0.
 
 ## Estado
 
-Fase 0 cerrada: fundaciones + 1 patrón de referencia en las 3 nubes. Ver el [plan](docs/PLAN.md) y el
-[análisis que lo originó](docs/ANALISIS-END-TO-END.md).
+Fase 1 cerrada: 3 patrones en las 3 nubes, 45 gotchas con fuente oficial, 26 capabilities. Ver el
+[plan](docs/PLAN.md) y el [análisis que lo originó](docs/ANALISIS-END-TO-END.md).
 
 | Patrón | Azure | AWS | GCP |
 |---|---|---|---|
-| Ingesta privada de objetos con expiración (TTL) | ✅ | ✅ | ✅ |
-| Web API privada Zero Trust | Fase 1 | Fase 1 | Fase 1 |
-| Worker asíncrono con escala a cero | Fase 1 | Fase 1 | Fase 1 |
+| Ingesta privada de objetos con expiración (TTL) | Blob + lifecycle + Private Endpoint | S3 + lifecycle + Gateway Endpoint | GCS + lifecycle + PGA |
+| Web API privada Zero Trust (PostgreSQL sin contraseñas) | ACA interno + PG Flexible (Entra) | ECS Fargate + ALB interno + RDS IAM | Cloud Run internal + Cloud SQL IAM |
+| Worker asíncrono con escala a cero y dead-letter | ACA Jobs + Service Bus | Lambda + SQS | Cloud Run + Pub/Sub push |
 
 ## Desarrollo local
 
@@ -41,7 +43,8 @@ pnpm install
 pnpm dev          # http://localhost:4321
 pnpm validate     # valida content/ (schema + referencias cruzadas)
 pnpm test         # tests unitarios
-pnpm build        # sitio estático en dist/
+pnpm build        # sitio estático en dist/ + índice de búsqueda
+pnpm new:pattern mi-patron message-queue object-storage   # esqueleto de un patrón nuevo
 ```
 
 Probar un módulo de Terraform sin credenciales:

@@ -27,6 +27,14 @@ están para proteger eso.
 
 ## Agregar o modificar un patrón
 
+Arrancá con el scaffolder (crea todo en estado `draft`, con módulos de Terraform que ya validan):
+
+```bash
+pnpm new:pattern <slug> <capability> [<capability> ...]
+```
+
+Estructura resultante:
+
 ```
 content/patterns/<slug>/
 ├── pattern.yaml            # roles + edges: la topología, UNA sola vez

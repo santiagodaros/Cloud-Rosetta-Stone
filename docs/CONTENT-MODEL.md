@@ -11,6 +11,8 @@ content/
     └── terraform/<nube>/            ← módulo real: versions.tf, main.tf, variables.tf, outputs.tf, tests/
 ```
 
+Categorías: `compute-web`, `async-event`, `storage-data`, `networking`, `identity`, `governance`, `observability`.
+
 ## Capability (hub-and-spoke)
 
 Una capability es un concepto independiente de la nube (`object-storage`, `workload-identity`). Cada nube
