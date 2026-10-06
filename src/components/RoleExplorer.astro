@@ -1,0 +1,194 @@
+---
+/**
+ * Isla interactiva sobre los diagramas (F4-22): hover/foco resalta un rol y sus
+ * conexiones en todas las nubes; click/Enter fija un panel con lo que implementa
+ * ese rol en cada nube y su letra chica; los recorridos resaltan un camino.
+ * Sin JS, el panel no aparece y la página queda igual que antes.
+ */
+import type { PatternBundle } from '../lib/content.ts';
+import { PROVIDER_META, t, ui, type Locale } from '../lib/i18n.ts';
+import { capabilitiesHref } from '../lib/paths.ts';
+import { originNotes } from '../lib/origin.ts';
+import type { Provider } from '../lib/schema.ts';
+
+interface Props {
+  bundle: PatternBundle;
+  providers: Provider[];
+  lang: Locale;
+}
+
+const { bundle, providers, lang } = Astro.props;
+const s = ui(lang);
+const { pattern, implementations } = bundle;
+const roles = pattern.roles.filter((r) => r.kind === 'capability');
+---
+
+<div id="role-explorer" class="mb-6" data-pagefind-ignore hidden>
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <span class="text-muted">{s.explorerHint}</span>
+    {
+      pattern.paths.length > 0 && (
+        <span class="flex flex-wrap items-center gap-2">
+          <span class="text-muted">· {s.explorerPaths}:</span>
+          {pattern.paths.map((p) => (
+            <button type="button" class="dg-path inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs hover:bg-surface-2" data-roles={p.roles.join(' ')} aria-pressed="false">
+              {t(p.label, lang)}
+            </button>
+          ))}
+        </span>
+      )
+    }
+    <button type="button" id="dg-clear" class="inline-flex min-h-8 items-center rounded-full px-3 text-xs text-muted hover:bg-surface-2" hidden>✕ {s.explorerClear}</button>
+  </div>
+
+  <div id="dg-panel" class="mt-4 rounded-xl border border-line bg-surface p-4" hidden aria-live="polite">
+    {
+      roles.map((role) => (
+        <section data-role-panel={role.id} hidden>
+          <h2 class="mb-1 text-base font-semibold">{t(role.label, lang)}</h2>
+          <p class="mb-3 text-xs">
+            <a href={`${capabilitiesHref(lang)}#${role.capability}`}>{role.capability}</a>
+          </p>
+          <div class:list={['grid gap-4', providers.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2']}>
+            {providers.map((p) => {
+              const b = implementations[p]?.bindings[role.id];
+              const gotchas = (implementations[p]?.gotchas ?? []).filter((g) => g.roles.includes(role.id));
+              return (
+                <div class="text-sm">
+                  <h3 class="mb-1 text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</h3>
+                  {!b || 'gap' in b ? (
+                    <p class="text-bad">{s.gap}{b && 'gap' in b && <span class="block text-xs text-muted">{t(b.gap, lang)}</span>}</p>
+                  ) : (
+                    <>
+                      <p class="font-medium">
+                        {t(b.service, lang)}
+                        {b.equivalence === 'partial' && <span class="ml-1 text-xs font-normal text-warn">≈ {s.partialEquivalent}</span>}
+                      </p>
+                      {b.config && <p class="text-xs text-muted">{t(b.config, lang)}</p>}
+                      {b.notes && <p class="text-xs text-muted italic">{t(b.notes, lang)}</p>}
+                    </>
+                  )}
+                  {originNotes(bundle, p, role.id, lang).map((n) => (
+                    <p class="from-note mt-1 rounded bg-surface-2 px-2 py-1 text-xs" data-from={n.from}>
+                      {n.used}
+                      {n.curated && <> {n.curated}</>}
+                    </p>
+                  ))}
+                  <p class="mt-2 text-xs text-muted">{gotchas.length ? s.explorerCount(gotchas.length) : s.explorerNone}</p>
+                  <ul class="mt-1 flex flex-col gap-1 text-xs">
+                    {gotchas.map((g) => (
+                      <li>
+                        <a class="inline-flex min-h-6 items-center" href={`#${p}-${g.id}`}>{t(g.title, lang)}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  const explorer = document.getElementById('role-explorer');
+  const scope = document.querySelector<HTMLElement>('[data-dg-scope]');
+  const panel = document.getElementById('dg-panel');
+  if (explorer && scope && panel) {
+    explorer.hidden = false;
+    const home = panel.parentElement!;
+    const nodes = () => scope.querySelectorAll<SVGGElement>('.dg-node');
+    const edges = () => scope.querySelectorAll<SVGGElement>('.dg-edge');
+    const pathButtons = explorer.querySelectorAll<HTMLButtonElement>('.dg-path');
+    const clearBtn = document.getElementById('dg-clear') as HTMLButtonElement;
+    let pinned: string | null = null;
+    let activePath: string[] | null = null;
+    const mobile = window.matchMedia('(max-width: 1023px)');
+
+    /** Resalta un conjunto de roles y las conexiones entre ellos (o adyacentes, si es un solo rol). */
+    function highlight(roles: string[] | null, mode: 'role' | 'path' = 'role') {
+      if (!roles) {
+        delete scope!.dataset.dgActive;
+        nodes().forEach((n) => n.classList.remove('is-on'));
+        edges().forEach((e) => e.classList.remove('is-on'));
+        return;
+      }
+      scope!.dataset.dgActive = '';
+      const set = new Set(roles);
+      const on = new Set(roles);
+      edges().forEach((e) => {
+        const { from = '', to = '' } = e.dataset;
+        let lit: boolean;
+        if (mode === 'path') {
+          lit = roles.some((r, i) => i > 0 && ((roles[i - 1] === from && r === to) || (roles[i - 1] === to && r === from)));
+        } else {
+          lit = set.has(from) || set.has(to);
+          if (lit) on.add(from).add(to);
+        }
+        e.classList.toggle('is-on', lit);
+      });
+      nodes().forEach((n) => n.classList.toggle('is-on', on.has(n.dataset.role ?? '')));
+    }
+
+    const restore = () => highlight(activePath ?? (pinned ? [pinned] : null), activePath ? 'path' : 'role');
+
+    function pin(role: string | null, origin?: Element) {
+      pinned = role;
+      activePath = null;
+      pathButtons.forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      panel!.querySelectorAll<HTMLElement>('[data-role-panel]').forEach((sec) => (sec.hidden = sec.dataset.rolePanel !== role));
+      panel!.hidden = !role;
+      clearBtn.hidden = !role;
+      nodes().forEach((n) => n.setAttribute('aria-pressed', String(n.dataset.role === role)));
+      // En mobile el panel aparece debajo del diagrama tocado, no arriba de todo.
+      const wrap = origin?.closest('[data-dg-wrap]');
+      if (role && mobile.matches && wrap) wrap.after(panel!);
+      else if (panel!.parentElement !== home) home.append(panel!);
+      restore();
+    }
+
+    scope.addEventListener('pointerover', (ev) => {
+      const n = (ev.target as Element).closest<SVGGElement>('.dg-node:not([data-actor])');
+      if (n && !activePath) highlight([n.dataset.role!]);
+    });
+    scope.addEventListener('pointerout', (ev) => {
+      if ((ev.target as Element).closest('.dg-node')) restore();
+    });
+    scope.addEventListener('focusin', (ev) => {
+      const n = (ev.target as Element).closest<SVGGElement>('.dg-node');
+      if (n && !activePath) highlight([n.dataset.role!]);
+    });
+    scope.addEventListener('focusout', restore);
+    scope.addEventListener('click', (ev) => {
+      const n = (ev.target as Element).closest<SVGGElement>('.dg-node:not([data-actor])');
+      if (n) pin(pinned === n.dataset.role ? null : n.dataset.role!, n);
+    });
+    scope.addEventListener('keydown', (ev) => {
+      const n = (ev.target as Element).closest<SVGGElement>('.dg-node:not([data-actor])');
+      if (n && (ev.key === 'Enter' || ev.key === ' ')) {
+        ev.preventDefault();
+        pin(pinned === n.dataset.role ? null : n.dataset.role!, n);
+      }
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && (pinned || activePath)) {
+        pin(null);
+      }
+    });
+    clearBtn.addEventListener('click', () => pin(null));
+    pathButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const same = b.getAttribute('aria-pressed') === 'true';
+        pin(null);
+        if (!same) {
+          activePath = b.dataset.roles!.split(' ');
+          b.setAttribute('aria-pressed', 'true');
+          clearBtn.hidden = false;
+          highlight(activePath, 'path');
+        }
+      }),
+    );
+  }
+</script>

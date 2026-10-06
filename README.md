@@ -21,6 +21,9 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 
 - **Comparador lado a lado** (2 o 3 nubes) por patrón: diagrama con la misma topología, implementación por
   rol, modelo de costo, "letra chica" y Terraform.
+- **Diagrama interactivo:** tocá un rol y ves qué lo implementa en cada nube y su letra chica; recorridos
+  predefinidos (escritura, token, expiración…) y equivalentes parciales marcados con "≈".
+- **Mi nube:** elegís la nube que ya conocés y cada rol te dice qué cambia ("Venís de Azure: …"), sin cuentas.
 - **Gotchas verificables:** severidad, fuente oficial obligatoria, `verified_at` y examen de certificación
   donde suma (AZ-104, AZ-700, SAA-C03, ACE…).
 - **Por examen:** cada certificación tiene su página con los gotchas que aplican y su estado (vigente, se

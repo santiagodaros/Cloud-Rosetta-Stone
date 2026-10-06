@@ -48,6 +48,7 @@ export function flatGotchas(siteUrl: URL | undefined) {
     sources: g.sources,
     verified_at: g.verified_at,
     exams: g.exams,
+    roles: g.roles,
     url: Object.fromEntries(
       (['es', 'en'] as Locale[]).map((l) => [l, `${absolute(patternHref(l, pattern.id, 'all'), siteUrl)}#${anchor}`]),
     ),

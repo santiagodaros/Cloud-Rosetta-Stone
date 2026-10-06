@@ -8,6 +8,7 @@ import { nodeContents } from '../lib/diagram.ts';
 import { PROVIDER_META, t, ui, type Locale } from '../lib/i18n.ts';
 import type { Provider } from '../lib/schema.ts';
 import { SEVERITIES } from '../lib/schema.ts';
+import { originNotes } from '../lib/origin.ts';
 
 interface Props {
   bundle: PatternBundle;
@@ -24,6 +25,7 @@ const tf = bundle.terraform[provider];
 const { pattern } = bundle;
 const contents = nodeContents(pattern, impl, lang, s.gap);
 const capabilityRoles = pattern.roles.filter((r) => r.kind === 'capability');
+const counts = Object.fromEntries(capabilityRoles.map((r) => [r.id, (impl?.gotchas ?? []).filter((g) => g.roles.includes(r.id)).length]));
 const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.severity) - SEVERITIES.indexOf(b.severity)) : [];
 ---
 
@@ -32,8 +34,8 @@ const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.sev
     <h2 id={`col-${provider}`} class="text-lg font-bold" style={`color: ${meta.color}`}>{meta.name}</h2>
   </header>
 
-  <div class="rounded-lg border border-line bg-surface p-3" data-pagefind-ignore>
-    <Diagram layout={layout} contents={contents} color={meta.color} title={`${t(pattern.title, lang)} — ${meta.short}`} />
+  <div class="rounded-lg border border-line bg-surface p-3" data-pagefind-ignore data-dg-wrap>
+    <Diagram layout={layout} contents={contents} color={meta.color} title={`${t(pattern.title, lang)} — ${meta.short}`} counts={counts} countLabel={s.explorerCount} />
   </div>
 
   <div>
@@ -54,8 +56,15 @@ const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.sev
                 ) : (
                   <>
                     <span class="font-medium">{t(b.service, lang)}</span>
+                    {b.equivalence === 'partial' && <span class="ml-1 text-xs text-warn" title={s.partialEquivalent}>≈</span>}
                     {b.config && <span class="block text-xs text-muted">{t(b.config, lang)}</span>}
                     {b.notes && <span class="block text-xs text-muted italic">{t(b.notes, lang)}</span>}
+                    {originNotes(bundle, provider, role.id, lang).map((n) => (
+                      <span class="from-note mt-1 rounded bg-surface-2 px-2 py-1 text-xs" data-from={n.from}>
+                        {n.used}
+                        {n.curated && <> {n.curated}</>}
+                      </span>
+                    ))}
                   </>
                 )}
               </dd>

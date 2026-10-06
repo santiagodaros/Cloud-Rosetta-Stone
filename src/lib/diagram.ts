@@ -19,13 +19,13 @@ const ROLE_LABEL_HEIGHT = 16;
 const CHARS_PER_LINE = 22;
 const EDGE_LABEL_CHAR_WIDTH = 6.4;
 
-export type NodeContent = { role: string; lines: string[]; gap: boolean; actor: boolean };
+export type NodeContent = { role: string; lines: string[]; gap: boolean; actor: boolean; partial: boolean };
 
 export type DiagramLayout = {
   width: number;
   height: number;
   nodes: { id: string; x: number; y: number; width: number; height: number }[];
-  edges: { id: string; path: string; label?: { text: string; x: number; y: number } }[];
+  edges: { id: string; from: string; to: string; path: string; label?: { text: string; x: number; y: number } }[];
 };
 
 /** Corta texto en líneas de ~CHARS_PER_LINE sin partir palabras. */
@@ -49,7 +49,7 @@ export function nodeContents(pattern: Pattern, impl: Implementation | undefined,
   const out: Record<string, NodeContent> = {};
   for (const role of pattern.roles) {
     if (role.kind === 'actor') {
-      out[role.id] = { role: t(role.label, lang), lines: [], gap: false, actor: true };
+      out[role.id] = { role: t(role.label, lang), lines: [], gap: false, actor: true, partial: false };
       continue;
     }
     const b = impl?.bindings[role.id];
@@ -59,6 +59,7 @@ export function nodeContents(pattern: Pattern, impl: Implementation | undefined,
       lines: isGap ? [gapLabel] : wrap(t(b.service, lang)),
       gap: isGap,
       actor: false,
+      partial: !isGap && b.equivalence === 'partial',
     };
   }
   return out;
@@ -114,12 +115,15 @@ export async function layoutPattern(
   }));
 
   const edges = (graph.edges ?? []).map((e) => {
+    const src = pattern.edges[Number(e.id.slice(1))];
     const s = e.sections?.[0];
     const points = s ? [s.startPoint, ...(s.bendPoints ?? []), s.endPoint] : [];
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
     const l = e.labels?.[0];
     return {
       id: e.id,
+      from: src.from,
+      to: src.to,
       path,
       label: l?.text ? { text: l.text, x: (l.x ?? 0) + (l.width ?? 0) / 2, y: (l.y ?? 0) + (l.height ?? 0) / 2 } : undefined,
     };
