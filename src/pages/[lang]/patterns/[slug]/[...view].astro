@@ -1,0 +1,82 @@
+---
+import Base from '../../../../layouts/Base.astro';
+import ImplementationColumn from '../../../../components/ImplementationColumn.astro';
+import { layoutPattern } from '../../../../lib/diagram.ts';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../../lib/i18n.ts';
+import { patternHref } from '../../../../lib/paths.ts';
+import { PROVIDERS } from '../../../../lib/schema.ts';
+import { DEFAULT_VIEW, publishedPatterns, VIEWS } from '../../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) =>
+    publishedPatterns.flatMap((bundle) =>
+      [undefined, ...VIEWS.map((v) => v.id)].map((view) => ({
+        params: { lang, slug: bundle.pattern.id, view },
+        props: { bundle, viewId: view ?? DEFAULT_VIEW },
+      })),
+    ),
+  );
+}
+
+const { bundle, viewId } = Astro.props;
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const { pattern } = bundle;
+const view = VIEWS.find((v) => v.id === viewId)!;
+const layout = await layoutPattern(pattern, bundle.implementations, lang, s.gap);
+const title = t(pattern.title, lang);
+const providersLabel = view.providers.map((p) => PROVIDER_META[p].short).join(` ${s.vs} `);
+const gridCols = view.providers.length === 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2';
+
+// Un botón por par en orden canónico (azure, aws, gcp); si la vista actual es el
+// par invertido, el botón muestra esa. El orden inverso se alcanza con ⇄.
+const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.indexOf(v.providers[0]) < PROVIDERS.indexOf(v.providers[1]))
+  .map((v) => (view.providers.length === 2 && v.providers.every((p) => view.providers.includes(p)) ? view : v))
+  .concat(VIEWS.filter((v) => v.id === 'all'));
+---
+
+<Base
+  lang={lang}
+  title={`${title} · ${providersLabel} — Cloud Rosetta Stone`}
+  description={t(pattern.summary, lang)}
+  altPath={`patterns/${pattern.id}/${viewId}/`}
+>
+  <article>
+    <header class="mb-8 max-w-4xl">
+      <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+      <p class="mb-4 text-muted">{t(pattern.summary, lang)}</p>
+      <details class="rounded-lg border border-line bg-surface p-4 text-sm">
+        <summary class="cursor-pointer font-semibold">{s.problem}</summary>
+        <p class="mt-2 leading-relaxed text-muted">{t(pattern.problem, lang)}</p>
+        <p class="mt-2 text-xs text-muted">{s.topologyNote}</p>
+      </details>
+    </header>
+
+    <nav class="mb-6 flex flex-wrap items-center gap-2 text-sm" aria-label={s.compare}>
+      <span class="text-muted">{s.compare}:</span>
+      {
+        navViews.map((v) => {
+          const label = v.id === 'all' ? s.allThree : v.providers.map((p) => PROVIDER_META[p].short).join(` ${s.vs} `);
+          return v.id === viewId ? (
+            <span class="rounded-full bg-fg px-3 py-1 font-medium text-bg" aria-current="page">{label}</span>
+          ) : (
+            <a class="rounded-full border border-line px-3 py-1 text-fg no-underline hover:bg-surface-2" href={patternHref(lang, pattern.id, v.id)}>
+              {label}
+            </a>
+          );
+        })
+      }
+      {
+        view.providers.length === 2 && (
+          <a class="text-xs text-muted" href={patternHref(lang, pattern.id, `${view.providers[1]}-vs-${view.providers[0]}`)} title="swap">
+            ⇄
+          </a>
+        )
+      }
+    </nav>
+
+    <div class:list={['grid grid-cols-1 gap-8', gridCols]}>
+      {view.providers.map((provider) => <ImplementationColumn bundle={bundle} provider={provider} layout={layout} lang={lang} dense={view.providers.length === 3} />)}
+    </div>
+  </article>
+</Base>

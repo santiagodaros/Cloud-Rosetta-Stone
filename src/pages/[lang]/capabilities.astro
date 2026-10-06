@@ -1,0 +1,69 @@
+---
+import Base from '../../layouts/Base.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { PROVIDERS } from '../../lib/schema.ts';
+import { site } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const caps = [...site.capabilities].sort((a, b) => a.category.localeCompare(b.category) || t(a.name, lang).localeCompare(t(b.name, lang)));
+---
+
+<Base lang={lang} title={`${s.dictionary} — Cloud Rosetta Stone`} description={s.tagline} altPath="capabilities/">
+  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
+  <p class="mb-8 max-w-3xl text-muted">{s.tagline}</p>
+
+  <div class="flex flex-col gap-6">
+    {
+      caps.map((cap) => (
+        <section id={cap.id} class="scroll-mt-4 rounded-xl border border-line bg-surface">
+          <header class="border-b border-line p-4">
+            <h2 class="text-lg font-semibold">
+              <a class="text-fg no-underline hover:underline" href={`#${cap.id}`}>{t(cap.name, lang)}</a>
+              <span class="ml-2 align-middle text-xs font-normal text-muted">{cap.category}</span>
+            </h2>
+            <p class="text-sm text-muted">{t(cap.description, lang)}</p>
+          </header>
+          <div class="grid gap-px bg-line md:grid-cols-3">
+            {PROVIDERS.map((p) => {
+              const entry = cap.providers[p];
+              return (
+                <div class="bg-surface p-4 text-sm">
+                  <h3 class="mb-2 text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</h3>
+                  {'gap' in entry ? (
+                    <div class="rounded border border-dashed border-bad p-2">
+                      <p class="font-semibold text-bad">{s.gap}</p>
+                      <p class="text-xs text-muted">{t(entry.gap, lang)}</p>
+                      {entry.docs && <a class="text-xs" href={entry.docs} target="_blank" rel="noopener">↗ docs</a>}
+                    </div>
+                  ) : (
+                    <ul class="flex flex-col gap-2">
+                      {entry.services.map((svc) => (
+                        <li>
+                          <a class="font-medium" href={svc.docs} target="_blank" rel="noopener">{svc.service}</a>
+                          {svc.notes && <p class="text-xs text-muted">{t(svc.notes, lang)}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {cap.caveats.length > 0 && (
+            <div class="border-t border-line p-4 text-sm">
+              <p class="mb-1 text-xs font-semibold tracking-wide text-warn uppercase">⚠ {s.caveats}</p>
+              {cap.caveats.map((c) => (
+                <p class="text-muted">{t(c, lang)}</p>
+              ))}
+            </div>
+          )}
+        </section>
+      ))
+    }
+  </div>
+</Base>

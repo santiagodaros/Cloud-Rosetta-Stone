@@ -1,0 +1,54 @@
+---
+import Base from '../../layouts/Base.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { capabilitiesHref, patternHref } from '../../lib/paths.ts';
+import { PROVIDERS } from '../../lib/schema.ts';
+import { DEFAULT_VIEW, publishedPatterns, site } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const totalGotchas = publishedPatterns.reduce(
+  (n, p) => n + PROVIDERS.reduce((m, pr) => m + (p.implementations[pr]?.gotchas.length ?? 0), 0),
+  0,
+);
+---
+
+<Base lang={lang} title={`Cloud Rosetta Stone — ${s.patterns}`} description={s.tagline}>
+  <section class="mb-10 max-w-3xl">
+    <h1 class="mb-3 text-3xl font-bold tracking-tight sm:text-4xl">Cloud Rosetta Stone</h1>
+    <p class="text-lg text-muted">{s.tagline}</p>
+    <div class="mt-4 flex flex-wrap gap-2 text-sm">
+      {PROVIDERS.map((p) => <span class="rounded-full border px-3 py-0.5 font-medium" style={`border-color: ${PROVIDER_META[p].color}; color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</span>)}
+      <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-4 text-sm font-semibold tracking-wide text-muted uppercase">{s.patterns}</h2>
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        publishedPatterns.map(({ pattern, implementations }) => {
+          const n = PROVIDERS.reduce((m, p) => m + (implementations[p]?.gotchas.length ?? 0), 0);
+          return (
+            <li class="flex flex-col rounded-xl border border-line bg-surface p-5">
+              <h3 class="mb-2 text-lg leading-snug font-semibold">
+                <a class="text-fg no-underline hover:underline" href={patternHref(lang, pattern.id, DEFAULT_VIEW)}>{t(pattern.title, lang)}</a>
+              </h3>
+              <p class="mb-4 flex-1 text-sm text-muted">{t(pattern.summary, lang)}</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+                {pattern.tags.map((tag) => (
+                  <span class="rounded bg-surface-2 px-1.5 py-0.5">{tag}</span>
+                ))}
+                <span class="ml-auto">{s.gotchaCount(n)}</span>
+              </div>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </section>
+</Base>

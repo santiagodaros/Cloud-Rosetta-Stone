@@ -1,0 +1,111 @@
+---
+import Diagram from './Diagram.astro';
+import GotchaCard from './GotchaCard.astro';
+import TerraformView from './TerraformView.astro';
+import type { PatternBundle } from '../lib/content.ts';
+import type { DiagramLayout } from '../lib/diagram.ts';
+import { nodeContents } from '../lib/diagram.ts';
+import { PROVIDER_META, t, ui, type Locale } from '../lib/i18n.ts';
+import type { Provider } from '../lib/schema.ts';
+import { SEVERITIES } from '../lib/schema.ts';
+
+interface Props {
+  bundle: PatternBundle;
+  provider: Provider;
+  layout: DiagramLayout;
+  lang: Locale;
+  dense?: boolean;
+}
+
+const { bundle, provider, layout, lang, dense = false } = Astro.props;
+const s = ui(lang);
+const meta = PROVIDER_META[provider];
+const impl = bundle.implementations[provider];
+const tf = bundle.terraform[provider];
+const { pattern } = bundle;
+const contents = nodeContents(pattern, impl, lang, s.gap);
+const capabilityRoles = pattern.roles.filter((r) => r.kind === 'capability');
+const gotchas = impl ? [...impl.gotchas].sort((a, b) => SEVERITIES.indexOf(a.severity) - SEVERITIES.indexOf(b.severity)) : [];
+---
+
+<section class="flex min-w-0 flex-col gap-6" aria-labelledby={`col-${provider}`}>
+  <header class="sticky top-0 z-10 -mx-1 border-b-2 bg-bg/95 px-1 py-2 backdrop-blur" style={`border-color: ${meta.color}`}>
+    <h2 id={`col-${provider}`} class="text-lg font-bold" style={`color: ${meta.color}`}>{meta.name}</h2>
+  </header>
+
+  <div class="rounded-lg border border-line bg-surface p-3">
+    <Diagram layout={layout} contents={contents} color={meta.color} dense={dense} title={`${t(pattern.title, lang)} — ${meta.short}`} />
+  </div>
+
+  <div>
+    <h3 class="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{s.implementation}</h3>
+    <dl class="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface text-sm">
+      {
+        capabilityRoles.map((role) => {
+          const b = impl?.bindings[role.id];
+          return (
+            <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 px-3 py-2">
+              <dt class="text-muted">{t(role.label, lang)}</dt>
+              <dd>
+                {!b || 'gap' in b ? (
+                  <span class="text-bad">
+                    {s.gap}
+                    {b && 'gap' in b && <span class="block text-xs text-muted">{t(b.gap, lang)}</span>}
+                  </span>
+                ) : (
+                  <>
+                    <span class="font-medium">{b.service}</span>
+                    {b.config && <span class="block text-xs text-muted">{b.config}</span>}
+                    {b.notes && <span class="block text-xs text-muted italic">{t(b.notes, lang)}</span>}
+                  </>
+                )}
+              </dd>
+            </div>
+          );
+        })
+      }
+    </dl>
+  </div>
+
+  {
+    impl && (
+      <div class="rounded-lg border border-line bg-surface p-4 text-sm">
+        <h3 class="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{s.cost}</h3>
+        <p class="mb-2 font-semibold" class:list={[impl.cost.scales_to_zero === 'yes' ? 'text-ok' : impl.cost.scales_to_zero === 'no' ? 'text-bad' : 'text-warn']}>
+          {s.scalesToZero[impl.cost.scales_to_zero]}
+        </p>
+        {impl.cost.fixed_cost_drivers.length > 0 ? (
+          <>
+            <p class="text-xs text-muted">{s.fixedCost}:</p>
+            <ul class="mb-2 list-disc pl-5">
+              {impl.cost.fixed_cost_drivers.map((d) => (
+                <li>{t(d, lang)}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p class="mb-2 text-xs text-muted">{s.noFixedCost}</p>
+        )}
+        <p class="text-muted">{t(impl.cost.notes, lang)}</p>
+      </div>
+    )
+  }
+
+  <div>
+    <h3 class="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">
+      {s.gotchas} <span class="font-normal normal-case">· {s.gotchaCount(gotchas.length)}</span>
+    </h3>
+    <div class="flex flex-col gap-3">
+      {gotchas.map((g) => <GotchaCard gotcha={g} lang={lang} anchor={`${provider}-${g.id}`} />)}
+    </div>
+  </div>
+
+  {
+    tf && (
+      <div>
+        <h3 class="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{s.terraform}</h3>
+        <TerraformView tf={tf} lang={lang} repoPath={`content/patterns/${pattern.id}/terraform/${provider}`} />
+      </div>
+    )
+  }
+</section>

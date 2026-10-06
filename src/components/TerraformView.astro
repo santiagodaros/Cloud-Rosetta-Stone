@@ -1,0 +1,59 @@
+---
+import { Code } from 'astro:components';
+import type { TerraformModule } from '../lib/content.ts';
+import { ui, type Locale } from '../lib/i18n.ts';
+
+interface Props {
+  tf: TerraformModule;
+  lang: Locale;
+  repoPath: string;
+}
+
+const { tf, lang, repoPath } = Astro.props;
+const s = ui(lang);
+const repo = 'https://github.com/santiagodaros/Cloud-Rosetta-Stone';
+---
+
+<div class="flex flex-col gap-2">
+  <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+    {
+      Object.entries(tf.providers).map(([name, version]) => (
+        <span class="rounded border border-line px-1.5 py-px font-mono">
+          {name} {version}
+        </span>
+      ))
+    }
+    <span title="CI">✓ {s.terraformChecks}</span>
+    <a class="ml-auto" href={`${repo}/tree/main/${repoPath}`} target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+  {
+    tf.files.map((f, i) => (
+      <details class="tf-file overflow-hidden rounded-lg border border-line" open={i === 0}>
+        <summary class="flex cursor-pointer items-center justify-between bg-surface-2 px-3 py-1.5 font-mono text-xs select-none">
+          <span>{f.name}</span>
+          <button type="button" class="tf-copy rounded border border-line bg-surface px-2 py-0.5 font-sans text-[11px]" data-copied={s.copied}>
+            {s.copy}
+          </button>
+        </summary>
+        <Code code={f.code} lang="hcl" themes={{ light: 'github-light', dark: 'github-dark' }} defaultColor={false} />
+      </details>
+    ))
+  }
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.tf-copy').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const code = btn.closest('details')?.querySelector('pre')?.innerText ?? '';
+      const label = btn.textContent;
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = btn.dataset.copied ?? '✓';
+      } catch {
+        btn.textContent = '✗';
+      }
+      setTimeout(() => (btn.textContent = label), 1500);
+    });
+  });
+</script>
