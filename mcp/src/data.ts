@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { checkSchema, type Dataset } from './core.ts';
 
-export const DEFAULT_DATA = 'https://santiagodaros.github.io/Cloud-Rosetta-Stone/api/v1/';
+export const DEFAULT_DATA = 'https://cloud-rosetta-stone.vercel.app/api/v1/';
 const TTL_MS = 60 * 60 * 1000;
 const FILES = ['gotchas', 'patterns', 'capabilities', 'exams'] as const;
 

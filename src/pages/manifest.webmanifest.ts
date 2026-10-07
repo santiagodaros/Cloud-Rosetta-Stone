@@ -3,7 +3,7 @@ import { BRAND } from '../lib/brand.ts';
 import { href } from '../lib/paths.ts';
 import { ui } from '../lib/i18n.ts';
 
-/** Web app manifest (F4-19). Generado para respetar el `base` de GitHub Pages. */
+/** Web app manifest (F4-19). Generado para respetar el `base` del sitio. */
 export const GET: APIRoute = () =>
   new Response(
     JSON.stringify({

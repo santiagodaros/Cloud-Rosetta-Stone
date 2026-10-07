@@ -2,7 +2,7 @@ import type { Locale, Provider } from './schema.ts';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-/** Path absoluto respetando `base` (GitHub Pages sirve en /<repo>/). */
+/** Path absoluto respetando `base` (por si el sitio se sirve bajo un subpath). */
 export const href = (path: string) => `${base}/${path.replace(/^\//, '')}`;
 
 export const homeHref = (lang: Locale) => href(`${lang}/`);

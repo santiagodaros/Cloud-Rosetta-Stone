@@ -8,7 +8,7 @@ _The fine print of multicloud — Spanish first, English included._
 [![Código: MIT](https://img.shields.io/badge/c%C3%B3digo-MIT-blue)](LICENSE)
 [![Contenido: CC BY-SA 4.0](https://img.shields.io/badge/contenido-CC%20BY--SA%204.0-lightgrey)](LICENSE-CONTENT.md)
 
-**Sitio:** https://santiagodaros.github.io/Cloud-Rosetta-Stone/ · **Datos abiertos:** [`/api/v1/patterns.json`](https://santiagodaros.github.io/Cloud-Rosetta-Stone/api/v1/patterns.json)
+**Sitio:** https://cloud-rosetta-stone.vercel.app/ · **Datos abiertos:** [`/api/v1/patterns.json`](https://cloud-rosetta-stone.vercel.app/api/v1/patterns.json)
 
 Las tablas de equivalencias dicen que S3 "es" Blob Storage. No te dicen que en Azure el prefijo de lifecycle
 incluye el nombre del contenedor, que en GCP soft delete viene activo y te cobra 7 días extra por cada archivo
