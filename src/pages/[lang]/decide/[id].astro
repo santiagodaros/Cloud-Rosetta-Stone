@@ -1,0 +1,198 @@
+---
+import { BRAND } from '../../../lib/brand.ts';
+import Base from '../../../layouts/Base.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../lib/i18n.ts';
+import { capabilitiesHref, decideHref } from '../../../lib/paths.ts';
+import { computeFloor, formatUsd } from '../../../lib/pricing.ts';
+import { PROVIDERS, type Decision } from '../../../lib/schema.ts';
+import { site } from '../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) => (site.decisions ?? []).map((decision) => ({ params: { lang, id: decision.id }, props: { decision } })));
+}
+
+const lang = Astro.params.lang as Locale;
+const { decision } = Astro.props as { decision: Decision };
+const s = ui(lang);
+const SYMBOL = { yes: '✓', no: '✗', partial: '◐' } as const;
+const meets = (v: Decision['options'][number]['meets'][string]) => (typeof v === 'string' ? { value: v, note: undefined } : v);
+
+const options = PROVIDERS.flatMap((p) =>
+  decision.options
+    .filter((o) => o.provider === p)
+    .map((o) => ({ o, floor: site.pricing ? computeFloor(o.floor, o.provider, site.pricing, site.prices) : undefined })),
+);
+const floorLabel = (f: (typeof options)[number]['floor']) =>
+  !f ? '—' : `${f.complete ? '' : '≥ '}${formatUsd(f.total, lang)}`;
+const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
+const data = {
+  options: options.map(({ o, floor }) => ({
+    id: o.id,
+    provider: o.provider,
+    name: t(o.name, lang),
+    meets: Object.fromEntries(Object.entries(o.meets).map(([k, v]) => [k, meets(v).value])),
+    floor: floor?.total ?? null,
+    floorLabel: floorLabel(floor),
+  })),
+  strings: { best: s.decideBest, none: s.decideNone },
+  providers: PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, color: PROVIDER_META[p].color })),
+};
+const asOf = options.flatMap(({ floor }) => (floor?.asOf ? [floor.asOf] : [])).sort()[0];
+const region = (p: (typeof PROVIDERS)[number]) => site.pricing?.regions[p];
+---
+
+<Base lang={lang} title={`${t(decision.title, lang)} · ${s.decideTitle} — ${BRAND.name}`} description={t(decision.intro, lang)} altPath={`decide/${decision.id}/`}>
+  <p class="mb-2 text-sm"><a href={decideHref(lang)}>← {s.decideAll}</a></p>
+  <header class="mb-6 max-w-3xl" data-pagefind-body>
+    <h1 class="lc-h1">{t(decision.title, lang)}</h1>
+    <p class="text-muted">{t(decision.intro, lang)}</p>
+  </header>
+
+  <fieldset class="mb-4 rounded-xl border border-line bg-surface p-4 text-sm">
+    <legend class="px-1 font-semibold">{s.decideRequirements}</legend>
+    <div class="flex flex-col gap-1">
+      {
+        decision.requirements.map((r) => (
+          <label class="flex min-h-7 items-start gap-2">
+            <input type="checkbox" class="req mt-1 size-4" value={r.id} />
+            <span>
+              {t(r.label, lang)}
+              {r.hint && <span class="block text-xs text-muted">{t(r.hint, lang)}</span>}
+            </span>
+          </label>
+        ))
+      }
+      <label class="mt-2 flex min-h-7 items-center gap-2 text-xs text-muted">
+        <input type="checkbox" id="lenient" class="size-4" />
+        {s.decideStrict}
+      </label>
+    </div>
+  </fieldset>
+
+  <ul id="best" class="mb-6 grid gap-3 sm:grid-cols-3" aria-live="polite">
+    {
+      PROVIDERS.map((p) => (
+        <li class="rounded-lg border-2 bg-surface p-3 text-sm" style={`border-color: ${PROVIDER_META[p].color}`} data-best={p}>
+          <p class="text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short} · {s.decideBest}</p>
+          <p class="best-name font-medium"></p>
+          <p class="best-floor text-muted tabular-nums"></p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="overflow-x-auto rounded-xl border border-line" role="region" aria-labelledby="matrix-caption" tabindex="0">
+    <table class="w-full min-w-[44rem] border-collapse bg-surface text-sm">
+      <caption id="matrix-caption" class="sr-only">{t(decision.title, lang)}</caption>
+      <thead>
+        <tr class="border-b border-line text-left text-xs text-muted">
+          <th scope="col" class="p-3 font-semibold">{s.decideOption}</th>
+          {decision.requirements.map((r) => <th scope="col" class="p-3 font-semibold" data-col={r.id}>{t(r.label, lang)}</th>)}
+          <th scope="col" class="p-3 text-right font-semibold">{s.decideFloor}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          options.map(({ o, floor }) => (
+            <tr class="opt border-b border-line align-top transition-opacity" data-opt={o.id}>
+              <th scope="row" class="p-3 text-left font-medium">
+                <span class="block text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[o.provider].color}`}>
+                  {PROVIDER_META[o.provider].short}
+                </span>
+                {t(o.name, lang)}
+              </th>
+              {decision.requirements.map((r) => {
+                const m = meets(o.meets[r.id]);
+                return (
+                  <td class="p-3" data-col={r.id}>
+                    <span class:list={['font-bold', m.value === 'yes' ? 'text-ok' : m.value === 'no' ? 'text-bad' : 'text-warn']} aria-hidden="true">
+                      {SYMBOL[m.value]}
+                    </span>{' '}
+                    <span class="text-xs">{s.decideMeets[m.value]}</span>
+                    {m.note && <span class="mt-1 block text-xs text-muted">{t(m.note, lang)}</span>}
+                  </td>
+                );
+              })}
+              <td class="p-3 text-right font-semibold whitespace-nowrap tabular-nums">
+                {floorLabel(floor)}
+                <span class="block text-xs font-normal text-muted">/ {s.priceUnit.month}</span>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  {asOf && <p class="mt-2 text-xs text-muted">{s.decidePrices(asOf, PROVIDERS.map((p) => region(p)).join(' · '))}</p>}
+
+  <section class="mt-8 max-w-4xl">
+    <h2 class="mb-3 text-sm font-semibold tracking-wide text-muted uppercase">{s.sources}</h2>
+    <ul class="flex flex-col gap-3 text-sm">
+      {
+        options.map(({ o, floor }) => (
+          <li>
+            <p class="font-medium">
+              <span style={`color: ${PROVIDER_META[o.provider].color}`}>{PROVIDER_META[o.provider].short}</span> · {t(o.name, lang)}
+            </p>
+            {o.notes && <p class="text-muted">{t(o.notes, lang)}</p>}
+            <p class="flex flex-wrap gap-x-3 text-xs">
+              {o.sources.map((u) => (
+                <a class="inline-flex min-h-6 items-center" href={u} target="_blank" rel="noopener">↗ {host(u)}</a>
+              ))}
+              {floor?.lines.map((l) => (
+                <a class="inline-flex min-h-6 items-center text-muted" href={l.meter.docs} target="_blank" rel="noopener">$ {t(l.meter.label, lang)} × {l.count}</a>
+              ))}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-4 text-xs text-muted">{s.decideVerified} {decision.verified_at} · <a href={capabilitiesHref(lang)}>{s.dictionary}</a></p>
+  </section>
+
+  <script is:inline type="application/json" id="decide-data" set:html={JSON.stringify(data)} />
+</Base>
+
+<script>
+  type Opt = { id: string; provider: string; name: string; meets: Record<string, string>; floor: number | null; floorLabel: string };
+  const data = JSON.parse(document.getElementById('decide-data')!.textContent!) as {
+    options: Opt[];
+    strings: { best: string; none: string };
+    providers: { id: string }[];
+  };
+  const reqs = [...document.querySelectorAll<HTMLInputElement>('input.req')];
+  const lenient = document.getElementById('lenient') as HTMLInputElement;
+
+  function update() {
+    const wanted = reqs.filter((r) => r.checked).map((r) => r.value);
+    const ok = (o: Opt) => wanted.every((r) => o.meets[r] === 'yes' || (lenient.checked && o.meets[r] === 'partial'));
+    for (const o of data.options) {
+      const row = document.querySelector<HTMLElement>(`tr[data-opt="${o.id}"]`)!;
+      row.style.opacity = ok(o) ? '' : '0.55';
+      row.dataset.match = String(ok(o));
+    }
+    document.querySelectorAll<HTMLElement>('[data-col]').forEach((c) => c.classList.toggle('bg-surface-2', wanted.includes(c.dataset.col!)));
+    for (const p of data.providers) {
+      const card = document.querySelector<HTMLElement>(`[data-best="${p.id}"]`)!;
+      const best = data.options
+        .filter((o) => o.provider === p.id && ok(o))
+        .sort((a, b) => (a.floor ?? Infinity) - (b.floor ?? Infinity))[0];
+      card.querySelector('.best-name')!.textContent = best ? best.name : data.strings.none;
+      card.querySelector('.best-floor')!.textContent = best ? best.floorLabel : '';
+      card.style.opacity = best ? '' : '0.6';
+    }
+    const url = new URL(location.href);
+    if (wanted.length) url.searchParams.set('need', wanted.join(','));
+    else url.searchParams.delete('need');
+    if (lenient.checked) url.searchParams.set('caveats', '1');
+    else url.searchParams.delete('caveats');
+    history.replaceState(null, '', url);
+  }
+
+  const params = new URLSearchParams(location.search);
+  const need = params.get('need')?.split(',') ?? [];
+  reqs.forEach((r) => (r.checked = need.includes(r.value)));
+  lenient.checked = params.get('caveats') === '1';
+  [...reqs, lenient].forEach((r) => r.addEventListener('change', update));
+  update();
+</script>

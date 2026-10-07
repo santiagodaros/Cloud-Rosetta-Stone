@@ -1,0 +1,138 @@
+---
+import { BRAND } from '../../lib/brand.ts';
+import Base from '../../layouts/Base.astro';
+import ToolsData from '../../components/ToolsData.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { PROVIDERS } from '../../lib/schema.ts';
+import { publishedPatterns } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const STATUSES = ['proposed', 'accepted', 'rejected', 'deprecated', 'superseded'] as const;
+const field = 'min-h-9 w-full rounded-md border border-line bg-surface px-2 text-fg';
+const btn = 'inline-flex min-h-9 items-center rounded-lg border border-line bg-surface px-3 text-sm font-medium hover:bg-surface-2';
+---
+
+<Base lang={lang} title={`${s.adrTitle} — ${BRAND.name}`} description={s.adrIntro} altPath="adr/">
+  <h1 class="lc-h1">{s.adrTitle}</h1>
+  <p class="lc-lead">{s.adrIntro}</p>
+
+  <noscript><p class="text-muted">{s.toolsNoJs}</p><style>#adr { display: none; }</style></noscript>
+
+  <div id="adr" class="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+    <form id="adr-form" class="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4 text-sm">
+      <label class="flex flex-col gap-1 text-muted">
+        {s.adrPattern}
+        <select id="adr-pattern" class={field}>{publishedPatterns.map(({ pattern }) => <option value={pattern.id}>{t(pattern.title, lang)}</option>)}</select>
+      </label>
+      <label class="flex flex-col gap-1 text-muted">
+        {s.adrCloud}
+        <select id="adr-cloud" class={field}>{PROVIDERS.map((p) => <option value={p}>{PROVIDER_META[p].short}</option>)}</select>
+      </label>
+      <label class="flex flex-col gap-1 text-muted">
+        {s.adrDecisionTitle}
+        <input id="adr-title" type="text" class={field} />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1 text-muted">
+          {s.adrStatusLabel}
+          <select id="adr-status" class={field}>{STATUSES.map((x) => <option value={x}>{s.adrStatuses[x]}</option>)}</select>
+        </label>
+        <label class="flex flex-col gap-1 text-muted">
+          {s.adrDateLabel}
+          <input id="adr-date" type="date" class={field} />
+        </label>
+      </div>
+      <label class="flex flex-col gap-1 text-muted">
+        {s.adrDriversLabel}
+        <textarea id="adr-drivers" rows="4" class={`${field} py-1`} placeholder={s.adrDriversPlaceholder}></textarea>
+      </label>
+      <label class="flex flex-col gap-1 text-muted">
+        {s.adrRationaleLabel}
+        <textarea id="adr-rationale" rows="3" class={`${field} py-1`}></textarea>
+      </label>
+    </form>
+
+    <section aria-labelledby="adr-preview-title" class="min-w-0">
+      <div class="mb-2 flex flex-wrap items-center gap-2">
+        <h2 id="adr-preview-title" class="mr-auto text-sm font-semibold tracking-wide text-muted uppercase">{s.adrPreview}</h2>
+        <button type="button" id="adr-copy" class={btn}>⧉ {s.copyMd}</button>
+        <button type="button" id="adr-download" class={btn}>⤓ {s.downloadMd}</button>
+      </div>
+      <pre id="adr-out" class="h-[70vh] overflow-auto rounded-xl border border-line bg-surface p-4 text-xs leading-relaxed whitespace-pre-wrap" tabindex="0"></pre>
+    </section>
+  </div>
+
+  <ToolsData lang={lang} extra={{ copied: s.copiedMarkdown }} />
+</Base>
+
+<script>
+  import { adrMarkdown, type AdrInput, type ToolsData, type ToolStrings } from '../../lib/tools-md.ts';
+  import { copyText, downloadText, loadJson, saveJson } from '../../lib/tools-client.ts';
+  import type { Provider } from '../../lib/schema.ts';
+
+  const { data, S, copied } = JSON.parse(document.getElementById('tools-data')!.textContent!) as { data: ToolsData; S: ToolStrings; copied: string };
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const f = {
+    pattern: $<HTMLSelectElement>('adr-pattern'),
+    cloud: $<HTMLSelectElement>('adr-cloud'),
+    title: $<HTMLInputElement>('adr-title'),
+    status: $<HTMLSelectElement>('adr-status'),
+    date: $<HTMLInputElement>('adr-date'),
+    drivers: $<HTMLTextAreaElement>('adr-drivers'),
+    rationale: $<HTMLTextAreaElement>('adr-rationale'),
+  };
+  const out = $('adr-out');
+
+  // El borrador queda en este navegador (nada sale de acá); ?p= y ?cloud= vienen del link del patrón.
+  const DRAFT_KEY = 'letra-chica:adr-draft:v1';
+  const draft = loadJson<Partial<Record<keyof typeof f, string>>>(DRAFT_KEY, {});
+  for (const [k, el] of Object.entries(f)) if (draft[k as keyof typeof f]) el.value = draft[k as keyof typeof f]!;
+  const params = new URLSearchParams(location.search);
+  const has = (sel: HTMLSelectElement, v: string | null) => !!v && [...sel.options].some((o) => o.value === v);
+  if (has(f.pattern, params.get('p'))) f.pattern.value = params.get('p')!;
+  if (has(f.cloud, params.get('cloud'))) f.cloud.value = params.get('cloud')!;
+  else if (!draft.cloud && has(f.cloud, document.documentElement.dataset.origin ?? null)) f.cloud.value = document.documentElement.dataset.origin!;
+  if (!f.date.value) {
+    const d = new Date();
+    f.date.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  let md = '';
+  function render() {
+    // Un patrón sin implementación en la nube elegida no se ofrece.
+    const p = data.patterns.find((x) => x.id === f.pattern.value)!;
+    for (const o of f.cloud.options) o.disabled = !p.clouds[o.value as Provider];
+    if (!p.clouds[f.cloud.value as Provider]) f.cloud.value = [...f.cloud.options].find((o) => !o.disabled)!.value;
+    const input: AdrInput = {
+      pattern: p.id,
+      chosen: f.cloud.value as Provider,
+      title: f.title.value,
+      status: f.status.value as AdrInput['status'],
+      date: f.date.value,
+      drivers: f.drivers.value.split('\n'),
+      rationale: f.rationale.value,
+    };
+    md = adrMarkdown(data, input, S);
+    out.textContent = md;
+    saveJson(DRAFT_KEY, Object.fromEntries(Object.entries(f).map(([k, el]) => [k, el.value])));
+  }
+
+  $('adr-form').addEventListener('input', render);
+  $('adr-form').addEventListener('change', render);
+  $<HTMLButtonElement>('adr-copy').addEventListener('click', (e) => copyText(e.currentTarget as HTMLButtonElement, md, copied));
+  $<HTMLButtonElement>('adr-download').addEventListener('click', () => {
+    const slug = (f.title.value || `${f.pattern.value}-${f.cloud.value}`)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    downloadText(`adr-${slug || 'decision'}.md`, md);
+  });
+  render();
+</script>

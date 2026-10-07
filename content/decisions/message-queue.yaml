@@ -1,0 +1,188 @@
+id: message-queue
+capability: message-queue
+title:
+  es: Cola de mensajes
+  en: Message queue
+intro:
+  es: >-
+    Qué tier o modo de cola cumple cada requisito, y cuánto cuesta tenerlo prendido sin tráfico. El tier
+    define capacidades que después no se agregan con configuración (sesiones, red privada, tamaño de mensaje).
+  en: >-
+    Which queue tier or mode meets each requirement, and what it costs to keep it on with no traffic. The tier
+    sets capabilities you can't add later through configuration (sessions, private networking, message size).
+verified_at: 2026-10-06
+requirements:
+  - id: fifo
+    label: { es: 'Orden FIFO por grupo de mensajes', en: 'FIFO order per message group' }
+    hint:
+      es: Sesiones (Service Bus), MessageGroupId (SQS FIFO), ordering key (Pub/Sub).
+      en: Sessions (Service Bus), MessageGroupId (SQS FIFO), ordering key (Pub/Sub).
+  - id: private-only
+    label: { es: 'Acceso privado desde tu red', en: 'Private access from your network' }
+    hint:
+      es: Un endpoint con IP de tu red y el acceso público bloqueado por configuración.
+      en: An endpoint with an IP from your network and public access blocked by configuration.
+  - id: no-fixed-cost
+    label: { es: 'Sin costo fijo mensual', en: 'No fixed monthly cost' }
+  - id: large-messages
+    label: { es: 'Mensajes de más de 256 KB', en: 'Messages larger than 256 KB' }
+  - id: dlq
+    label: { es: 'Dead-letter nativa', en: 'Native dead-letter' }
+options:
+  - id: azure-servicebus-basic
+    provider: azure
+    name: Service Bus Basic
+    meets:
+      fifo:
+        value: 'no'
+        note: { es: 'Basic no soporta sesiones.', en: 'Basic doesn''t support sessions.' }
+      private-only:
+        value: 'no'
+        note: { es: 'Private endpoints solo en Premium.', en: 'Private endpoints are Premium only.' }
+      no-fixed-cost: 'yes'
+      large-messages: 'no'
+      dlq: 'yes'
+    notes:
+      es: Solo colas (sin topics ni transacciones). Se cobra por operación.
+      en: Queues only (no topics or transactions). Billed per operation.
+    sources:
+      - https://learn.microsoft.com/azure/service-bus-messaging/message-sessions
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-premium-messaging
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues
+      - https://azure.microsoft.com/pricing/details/service-bus/
+  - id: azure-servicebus-standard
+    provider: azure
+    name: Service Bus Standard
+    meets:
+      fifo: 'yes'
+      private-only:
+        value: 'no'
+        note:
+          es: Admite reglas de firewall IP, pero private endpoints y reglas de VNet son solo Premium.
+          en: Supports IP firewall rules, but private endpoints and VNet rules are Premium only.
+      no-fixed-cost:
+        value: 'no'
+        note:
+          es: Cargo base mensual, que se cobra una vez por suscripción (no por namespace), más operaciones.
+          en: Monthly base charge, billed once per subscription (not per namespace), plus operations.
+      large-messages:
+        value: 'no'
+        note: { es: 'Máximo 256 KB.', en: '256 KB maximum.' }
+      dlq: 'yes'
+    floor:
+      - { meter: azure-servicebus-standard-base, count: 1 }
+    sources:
+      - https://learn.microsoft.com/azure/service-bus-messaging/message-sessions
+      - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-faq
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-premium-messaging
+  - id: azure-servicebus-premium
+    provider: azure
+    name: Service Bus Premium
+    meets:
+      fifo: 'yes'
+      private-only: 'yes'
+      no-fixed-cost:
+        value: 'no'
+        note: { es: 'Precio fijo por messaging unit (mínimo 1).', en: 'Fixed price per messaging unit (minimum 1).' }
+      large-messages:
+        value: 'yes'
+        note: { es: 'Hasta 100 MB, solo por AMQP.', en: 'Up to 100 MB, AMQP only.' }
+      dlq: 'yes'
+    floor:
+      - { meter: azure-servicebus-premium-mu, count: 1 }
+    sources:
+      - https://learn.microsoft.com/azure/service-bus-messaging/service-bus-premium-messaging
+      - https://learn.microsoft.com/azure/service-bus-messaging/private-link-service
+  - id: aws-sqs-standard
+    provider: aws
+    name: Amazon SQS Standard
+    meets:
+      fifo:
+        value: 'no'
+        note: { es: 'Orden best-effort y entrega al menos una vez.', en: 'Best-effort ordering and at-least-once delivery.' }
+      private-only:
+        value: partial
+        note:
+          es: >-
+            Interface VPC endpoint y queue policy con aws:SourceVpce. El endpoint público sigue existiendo: el
+            bloqueo es por política.
+          en: >-
+            Interface VPC endpoint plus a queue policy with aws:SourceVpce. The public endpoint still exists: the
+            block is by policy.
+      no-fixed-cost: 'yes'
+      large-messages:
+        value: 'yes'
+        note:
+          es: Hasta 1 MiB desde agosto de 2025; más grande, con el Extended Client Library (S3).
+          en: Up to 1 MiB since August 2025; larger, with the Extended Client Library (S3).
+      dlq: 'yes'
+    sources:
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-types.html
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
+      - https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-sqs-max-payload-size-1mib/
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-creating-custom-policies-access-policy-examples.html
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+      - https://aws.amazon.com/sqs/pricing/
+  - id: aws-sqs-fifo
+    provider: aws
+    name: Amazon SQS FIFO
+    meets:
+      fifo: 'yes'
+      private-only:
+        value: partial
+        note:
+          es: Igual que Standard, interface endpoint más política aws:SourceVpce.
+          en: Same as Standard, interface endpoint plus an aws:SourceVpce policy.
+      no-fixed-cost: 'yes'
+      large-messages:
+        value: 'yes'
+        note: { es: 'Hasta 1 MiB.', en: 'Up to 1 MiB.' }
+      dlq:
+        value: 'yes'
+        note:
+          es: La DLQ tiene que ser FIFO y puede romper el orden exacto del grupo.
+          en: The DLQ must be FIFO and can break the group's exact order.
+    sources:
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues-understanding-logic.html
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+      - https://aws.amazon.com/sqs/pricing/
+  - id: gcp-pubsub
+    provider: gcp
+    name: Pub/Sub
+    meets:
+      fifo:
+        value: partial
+        note:
+          es: >-
+            Con message ordering en la suscripción y ordering key, el orden es por key y solo entre mensajes
+            publicados en la misma región.
+          en: >-
+            With message ordering on the subscription and an ordering key, order is per key and only among
+            messages published in the same region.
+      private-only:
+        value: partial
+        note:
+          es: >-
+            Sin IP en tu VPC por default: Private Google Access o un endpoint de Private Service Connect para APIs
+            de Google, y VPC Service Controls como perímetro. La API pública sigue existiendo.
+          en: >-
+            No IP in your VPC by default: Private Google Access or a Private Service Connect endpoint for Google
+            APIs, and VPC Service Controls as the perimeter. The public API still exists.
+      no-fixed-cost: 'yes'
+      large-messages:
+        value: 'yes'
+        note: { es: 'Hasta 10 MB.', en: 'Up to 10 MB.' }
+      dlq: 'yes'
+    notes:
+      es: >-
+        Sin costo fijo, pero la retención del topic y los mensajes confirmados retenidos se cobran como storage.
+      en: >-
+        No fixed cost, but topic retention and retained acknowledged messages are billed as storage.
+    sources:
+      - https://docs.cloud.google.com/pubsub/docs/ordering
+      - https://docs.cloud.google.com/pubsub/quotas
+      - https://docs.cloud.google.com/pubsub/docs/dead-letter-topics
+      - https://cloud.google.com/pubsub/pricing
+      - https://docs.cloud.google.com/vpc/docs/configure-private-service-connect-apis

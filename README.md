@@ -33,9 +33,22 @@ efímero, o que un `Deny` por `aws:SourceVpce` te deja afuera de tu propio bucke
 - **Qué cambió:** cada gotcha nuevo, corregido o re-verificado, con diff y feed Atom.
 - **Para el día a día:** cada gotcha y cada comparación se copian como Markdown (con fuente y atribución)
   para pegar en un PR o un ADR; "Reportar desactualizado" abre el issue ya completo.
+- **Piso mensual con precios de lista:** cuánto cuesta cada patrón con cero tráfico en cada nube, desglosado
+  por componente, con precios que un job semanal trae de las APIs oficiales de precios.
+- **Matriz de decisión:** marcás requisitos (FIFO, acceso privado, HA entre zonas, escala a cero…) y ves qué
+  SKU de cada nube los cumple, con fuente por celda y su piso mensual.
+- **Embebible y offline:** cada gotcha y cada comparación se embeben con un `<iframe>` (con atribución), y el
+  sitio se instala como app y se guarda entero para estudiar sin conexión.
+- **Checklist de migración:** origen → destino → patrones, y sale la lista de qué validar (mapeo de roles,
+  qué cambia viniendo de tu nube, letra chica del destino con fuente, recursos Terraform, costo fijo), con
+  tildes guardadas en el navegador y export a Markdown o PDF.
+- **Generador de ADR:** un Architecture Decision Record en formato MADR a partir de un patrón, con las tres
+  nubes como opciones y la letra chica de la elegida citada. Todo corre en el navegador.
 - **Terraform que compila y es seguro:** cada módulo pasa `fmt`, `validate`, `terraform test` (sin
   credenciales), `tflint` y `checkov` en cada PR.
-- **Diccionario** de capabilities con huecos explícitos ("en AWS no hay un servicio único de data perimeter").
+- **Diccionario** en tres partes: servicios (con huecos explícitos), **conceptos** (jerarquía, alcance de la
+  red, zonas, identidad, tags: lo que más confunde al cambiar de nube) y **mapa de recursos Terraform**
+  `azurerm_*` ↔ `aws_*` ↔ `google_*`, validado en CI contra el schema real de los providers.
 - **Datos abiertos y para asistentes:** dataset JSON versionado (`/api/v1/`), `llms.txt` y un MCP server de
   solo lectura para que Claude o Copilot citen gotchas con su fuente. Ver [docs/DATASET.md](docs/DATASET.md).
 - **Para compartir:** cada comparación tiene su imagen OG y cada gotcha un deep link.

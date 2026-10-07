@@ -1,17 +1,35 @@
 @import 'tailwindcss';
 
-/* Tokens: la UI usa solo estas variables, así dark mode es un único override. */
+
+/*
+ * Tokens: la UI usa solo estas variables, así dark mode es un único override.
+ * Estética del canvas "Cloud Rosetta Stone — UI": grises neutros tipo sistema, superficies sin borde
+ * con sombra suave, pills y un único azul de acción.
+ */
 :root {
-  --c-bg: #f7f8fa;
+  --c-bg: #f5f5f7;
   --c-surface: #ffffff;
-  --c-surface-2: #f0f2f5;
-  --c-border: #dde1e7;
-  --c-text: #14181f;
-  --c-muted: #5b6573;
-  --c-accent: #4338ca;
-  --c-azure: #0a6cc2;
-  --c-aws: #a34a00;
+  --c-surface-2: #f0f0f3;
+  --c-seg: #e8e8ed;
+  --c-thumb: #ffffff;
+  --c-border: rgba(0, 0, 0, 0.1);
+  --c-text: #1d1d1f;
+  --c-muted: #636366;
+  --c-accent: #0066cc;
+  --c-cta: #0071e3;
+  --c-inv-bg: #1d1d1f;
+  --c-inv-text: #ffffff;
+  --c-inv-muted: #a1a1a6;
+  --c-bar: rgba(245, 245, 247, 0.72);
+  --c-glow: rgba(0, 113, 227, 0.09);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  --lift: 0 26px 50px -22px rgba(0, 0, 0, 0.25);
+  --c-azure: #0067b8;
+  --c-azure-bg: #e8f1fb;
+  --c-aws: #a05200;
+  --c-aws-bg: #fdf0e3;
   --c-gcp: #137333;
+  --c-gcp-bg: #e6f4ea;
   --c-ok: #116329;
   --c-warn: #7d4e00;
   --c-bad: #b62324;
@@ -26,50 +44,80 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --c-bg: #0d1117;
-    --c-surface: #151b23;
-    --c-surface-2: #1c2430;
-    --c-border: #2d3744;
-    --c-text: #e6edf3;
-    --c-muted: #9198a1;
-    --c-accent: #a5b4fc;
-    --c-azure: #4aa3f0;
-    --c-aws: #ff9f43;
-    --c-gcp: #6dd58c;
-    --c-ok: #3fb950;
-    --c-warn: #d29922;
-    --c-bad: #f85149;
+    --c-bg: #000000;
+    --c-surface: #1c1c1e;
+    --c-surface-2: #2c2c2e;
+    --c-seg: #2c2c2e;
+    --c-thumb: #636366;
+    --c-border: rgba(255, 255, 255, 0.13);
+    --c-text: #f5f5f7;
+    --c-muted: #aeaeb2;
+    --c-accent: #2997ff;
+    --c-inv-bg: #f5f5f7;
+    --c-inv-text: #000000;
+    --c-inv-muted: #48484a;
+    --c-bar: rgba(0, 0, 0, 0.72);
+    --c-glow: rgba(255, 255, 255, 0.08);
+    --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --lift: 0 26px 50px -22px rgba(0, 0, 0, 0.9);
+    --c-azure: #5aaeff;
+    --c-azure-bg: rgba(90, 174, 255, 0.16);
+    --c-aws: #ffab5e;
+    --c-aws-bg: rgba(255, 171, 94, 0.16);
+    --c-gcp: #63d48a;
+    --c-gcp-bg: rgba(99, 212, 138, 0.16);
+    --c-ok: #30d158;
+    --c-warn: #ffd60a;
+    --c-bad: #ff6961;
     --c-sev-security: #ff7b72;
     --c-sev-iam: #d2a8ff;
     --c-sev-networking: #79c0ff;
     --c-sev-cost: #e3b341;
     --c-sev-reliability: #ff9bce;
-    --c-sev-operations: #9198a1;
+    --c-sev-operations: #aeaeb2;
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --c-bg: #0d1117;
-  --c-surface: #151b23;
-  --c-surface-2: #1c2430;
-  --c-border: #2d3744;
-  --c-text: #e6edf3;
-  --c-muted: #9198a1;
-  --c-accent: #a5b4fc;
-  --c-azure: #4aa3f0;
-  --c-aws: #ff9f43;
-  --c-gcp: #6dd58c;
-  --c-ok: #3fb950;
-  --c-warn: #d29922;
-  --c-bad: #f85149;
+  --c-bg: #000000;
+  --c-surface: #1c1c1e;
+  --c-surface-2: #2c2c2e;
+  --c-seg: #2c2c2e;
+  --c-thumb: #636366;
+  --c-border: rgba(255, 255, 255, 0.13);
+  --c-text: #f5f5f7;
+  --c-muted: #aeaeb2;
+  --c-accent: #2997ff;
+  --c-inv-bg: #f5f5f7;
+  --c-inv-text: #000000;
+  --c-inv-muted: #48484a;
+  --c-bar: rgba(0, 0, 0, 0.72);
+  --c-glow: rgba(255, 255, 255, 0.08);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --lift: 0 26px 50px -22px rgba(0, 0, 0, 0.9);
+  --c-azure: #5aaeff;
+  --c-azure-bg: rgba(90, 174, 255, 0.16);
+  --c-aws: #ffab5e;
+  --c-aws-bg: rgba(255, 171, 94, 0.16);
+  --c-gcp: #63d48a;
+  --c-gcp-bg: rgba(99, 212, 138, 0.16);
+  --c-ok: #30d158;
+  --c-warn: #ffd60a;
+  --c-bad: #ff6961;
   --c-sev-security: #ff7b72;
   --c-sev-iam: #d2a8ff;
   --c-sev-networking: #79c0ff;
   --c-sev-cost: #e3b341;
   --c-sev-reliability: #ff9bce;
-  --c-sev-operations: #9198a1;
+  --c-sev-operations: #aeaeb2;
   color-scheme: dark;
+}
+
+@theme {
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
 }
 
 @theme inline {
@@ -83,8 +131,8 @@
   --color-ok: var(--c-ok);
   --color-warn: var(--c-warn);
   --color-bad: var(--c-bad);
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html {
@@ -96,11 +144,172 @@ html {
 body {
   background: var(--c-bg);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.47;
+  -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+:focus-visible {
+  outline: 3px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* Superficies: sin borde visible, sombra suave (la línea queda solo como hairline en dark). */
+.bg-surface.border {
+  border-color: transparent;
+  box-shadow: var(--shadow);
+}
+.bg-surface.rounded-xl {
+  border-radius: 28px;
+}
+@media (max-width: 520px) {
+  .bg-surface.rounded-xl {
+    border-radius: 22px;
+  }
+}
+
+/* Componentes del canvas: pills, segmentado, chips por nube, botón de acción. */
+.lc-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 24px;
+  border-radius: 980px;
+  background: var(--c-cta);
+  color: #fff;
+  font-size: 17px;
+  text-decoration: none;
+  transition: transform 0.3s cubic-bezier(0.3, 1.4, 0.4, 1), filter 0.2s, box-shadow 0.3s;
+}
+.lc-btn:hover {
+  filter: brightness(1.1);
+  transform: scale(1.04);
+  box-shadow: 0 10px 26px -10px var(--c-cta);
+  color: #fff;
+}
+.lc-btn:active {
+  transform: scale(0.95);
+}
+.lc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  font-size: 17px;
+  color: var(--c-accent);
+  text-decoration: none;
+}
+.lc-link i {
+  font-style: normal;
+  display: inline-flex;
+  transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.4, 1);
+}
+.lc-link:hover i {
+  transform: translateX(5px);
+}
+.lc-eyebrow {
+  color: var(--c-accent);
+  font-weight: 600;
+  font-size: 17px;
+  margin: 0 0 10px;
+}
+.lc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-muted);
+  background: var(--c-surface-2);
+  border-radius: 980px;
+  padding: 4px 11px;
+}
+.p-azure {
+  --pc: var(--c-azure);
+  --pb: var(--c-azure-bg);
+}
+.p-aws {
+  --pc: var(--c-aws);
+  --pb: var(--c-aws-bg);
+}
+.p-gcp {
+  --pc: var(--c-gcp);
+  --pb: var(--c-gcp-bg);
+}
+.lc-pchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 980px;
+  padding: 6px 13px;
+  background: var(--pb);
+  color: var(--pc);
+}
+.lc-pdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pc);
+  flex: none;
+}
+.lc-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-surface);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1), box-shadow 0.5s;
+}
+.lc-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), var(--c-glow), transparent 62%);
+  opacity: 0;
+  transition: opacity 0.45s;
+  pointer-events: none;
+}
+a.lc-card:hover,
+.lc-card.lift:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: var(--lift);
+}
+.lc-card:hover::after {
+  opacity: 1;
+}
+.lc-inv {
+  background: var(--c-inv-bg);
+  color: var(--c-inv-text);
+  border-radius: 32px;
+}
+.lc-inv p {
+  color: var(--c-inv-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 a {
   color: var(--c-accent);
+}
+a:hover {
+  text-decoration: underline;
 }
 
 /* Links dentro de texto: distinguibles sin depender solo del color (WCAG 1.4.1). */
@@ -177,4 +386,250 @@ main li a {
 :root[data-origin='aws'] .from-note[data-from='aws'],
 :root[data-origin='gcp'] .from-note[data-from='gcp'] {
   display: block;
+}
+
+/* Checklist de migración (F4-13): "Imprimir / PDF" deja solo el contenido. */
+@media print {
+  body > header,
+  body > footer,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  main {
+    padding: 0;
+  }
+}
+
+/* Header del canvas: barra translúcida, pestañas en pill, tema y idioma segmentados. */
+.lc-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--c-bar);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--c-border);
+}
+.lc-topin {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 8px 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  justify-content: space-between;
+}
+.lc-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  color: var(--c-text);
+  text-decoration: none;
+}
+.lc-logo:hover {
+  text-decoration: none;
+}
+.lc-tabs {
+  display: flex;
+  background: var(--c-seg);
+  border-radius: 980px;
+  padding: 3px;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.lc-tab {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 980px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text);
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.3s;
+}
+.lc-tab:hover {
+  opacity: 0.7;
+  text-decoration: none;
+}
+.lc-tab:active {
+  transform: scale(0.94);
+}
+.lc-tab.on {
+  background: var(--c-thumb);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.18);
+  opacity: 1;
+}
+.lc-topr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lc-seg {
+  display: inline-flex;
+  background: var(--c-seg);
+  border-radius: 980px;
+  padding: 2px;
+}
+.lc-seg button,
+.lc-seg a,
+.lc-seg span,
+.lc-iconbtn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  border-radius: 980px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.3s, transform 0.2s, background-color 0.3s;
+}
+.lc-seg a:hover,
+.lc-iconbtn:hover {
+  text-decoration: none;
+  color: var(--c-text);
+}
+.lc-seg .on,
+.lc-seg button[aria-pressed='true'] {
+  background: var(--c-thumb);
+  color: var(--c-text);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.18);
+}
+.lc-seg button:active,
+.lc-seg a:active {
+  transform: scale(0.9);
+}
+.lc-seg svg,
+.lc-iconbtn svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lc-seg svg .half {
+  fill: currentColor;
+  stroke: none;
+}
+.lc-iconbtn {
+  background: var(--c-seg);
+}
+.lc-origin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 6px 0 14px;
+  border-radius: 980px;
+  background: var(--c-seg);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-muted);
+}
+.lc-origin select {
+  min-height: 36px;
+  border: 0;
+  border-radius: 980px;
+  padding: 0 8px;
+  background: var(--c-thumb);
+  color: var(--c-text);
+  font: inherit;
+  font-weight: 600;
+}
+.lc-foot {
+  margin-top: 64px;
+  border-top: 1px solid var(--c-border);
+}
+.lc-foot a,
+.lc-foot button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  color: var(--c-muted);
+}
+.lc-foot a:hover {
+  color: var(--c-text);
+}
+@media (max-width: 860px) {
+  .lc-tabs {
+    order: 3;
+    width: 100%;
+  }
+  .lc-tab {
+    flex: 1 0 auto;
+  }
+}
+@media (max-width: 520px) {
+  .lc-top {
+    position: static;
+  }
+  .lc-topin {
+    padding: 8px 16px;
+  }
+  .lc-topr {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .lc-theme button,
+  .lc-lang a,
+  .lc-lang span,
+  .lc-iconbtn {
+    min-width: 38px;
+    min-height: 40px;
+  }
+  .lc-origin span {
+    display: none;
+  }
+  .lc-origin {
+    padding-left: 6px;
+  }
+}
+
+/* Encabezados de página: grandes, ajustados, como el canvas. */
+.lc-h1 {
+  font-size: clamp(34px, 5.4vw, 56px);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  margin: 8px 0 12px;
+  max-width: 22ch;
+}
+.lc-lead {
+  font-size: clamp(17px, 2vw, 21px);
+  line-height: 1.42;
+  color: var(--c-muted);
+  max-width: 40em;
+  margin: 0 0 32px;
+}
+/* Títulos de sección en mayúsculas → eyebrow del canvas. */
+main h2.uppercase,
+main h3.uppercase {
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-size: 13px;
+  color: var(--c-accent);
 }

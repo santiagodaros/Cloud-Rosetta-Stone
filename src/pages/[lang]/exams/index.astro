@@ -29,8 +29,8 @@ const byProvider = PROVIDERS.map((p) => ({
 ---
 
 <Base lang={lang} title={`${s.examsTitle} — ${BRAND.name}`} description={s.examsIntro} altPath="exams/">
-  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.examsTitle}</h1>
-  <p class="mb-4 max-w-3xl text-muted">{s.examsIntro}</p>
+  <h1 class="lc-h1">{s.examsTitle}</h1>
+  <p class="lc-lead">{s.examsIntro}</p>
   <div class="mb-8"><a class="inline-flex min-h-6 items-center rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium no-underline hover:bg-surface-2" href={practiceHref(lang)}>🃏 {s.practice}</a></div>
 
   <div class="grid gap-6 lg:grid-cols-3">

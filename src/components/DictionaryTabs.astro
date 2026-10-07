@@ -1,0 +1,29 @@
+---
+import { ui, type Locale } from '../lib/i18n.ts';
+import { capabilitiesHref, conceptsHref, terraformMapHref } from '../lib/paths.ts';
+
+interface Props {
+  lang: Locale;
+  current: 'services' | 'concepts' | 'terraform';
+}
+
+const { lang, current } = Astro.props;
+const s = ui(lang);
+const tabs = [
+  { id: 'services', label: s.dictServices, href: capabilitiesHref(lang) },
+  { id: 'concepts', label: s.dictConcepts, href: conceptsHref(lang) },
+  { id: 'terraform', label: s.dictTerraform, href: terraformMapHref(lang) },
+] as const;
+---
+
+<nav class="mb-6 flex flex-wrap gap-2 text-sm" aria-label={s.dictionary}>
+  {
+    tabs.map((tab) =>
+      tab.id === current ? (
+        <span class="rounded-full bg-fg px-3 py-1 font-medium text-bg" aria-current="page">{tab.label}</span>
+      ) : (
+        <a class="rounded-full border border-line px-3 py-1 text-fg no-underline hover:bg-surface-2" href={tab.href}>{tab.label}</a>
+      ),
+    )
+  }
+</nav>

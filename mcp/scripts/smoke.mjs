@@ -17,7 +17,7 @@ const expectText = async (name, args, pattern) => {
 };
 
 const tools = (await client.listTools()).tools.map((t) => t.name).sort();
-const expected = ['compare_pattern', 'exam_gotchas', 'get_gotcha', 'list_patterns', 'lookup_service', 'search_gotchas'];
+const expected = ['compare_pattern', 'cost_floor', 'decision_matrix', 'exam_gotchas', 'explain_concept', 'get_gotcha', 'list_patterns', 'lookup_service', 'search_gotchas', 'terraform_equivalent'];
 if (JSON.stringify(tools) !== JSON.stringify(expected)) throw new Error(`tools: ${tools}`);
 
 await expectText('search_gotchas', { query: 'private endpoint dns' }, /Sources: https:\/\//);
@@ -26,4 +26,8 @@ await expectText('list_patterns', {}, /hybrid-private-dns/);
 await expectText('compare_pattern', { pattern: 'ci-oidc-federation' }, /\| Role \| azure \| aws \| gcp \|/);
 await expectText('lookup_service', { query: 'message queue' }, /azure:/);
 await expectText('exam_gotchas', { code: 'AZ-500' }, /retired.*SC-500/);
+await expectText('explain_concept', { query: 'availability zones' }, /AZ ID/);
+await expectText('terraform_equivalent', { query: 'azurerm_private_endpoint' }, /aws_vpc_endpoint/);
+await expectText('cost_floor', { pattern: 'hybrid-private-dns' }, /aws \(prices as of/);
+await expectText('decision_matrix', { capability: 'message-queue', requirements: ['fifo', 'private-only'] }, /azure: Service Bus Premium/);
 await client.close();

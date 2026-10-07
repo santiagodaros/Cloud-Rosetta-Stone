@@ -1,9 +1,9 @@
 ---
 import type { Gotcha, Provider } from '../lib/schema.ts';
-import { gotchaMarkdown, staleIssueUrl } from '../lib/share.ts';
+import { embedSnippet, gotchaMarkdown, staleIssueUrl } from '../lib/share.ts';
 import { daysSince, STALE_AFTER_DAYS } from '../lib/content.ts';
 import { isFallback, t, ui, type Locale } from '../lib/i18n.ts';
-import { examsHref, patternHref } from '../lib/paths.ts';
+import { embedGotchaHref, examsHref, patternHref } from '../lib/paths.ts';
 
 interface Props {
   gotcha: Gotcha;
@@ -18,6 +18,7 @@ interface Props {
 const { gotcha: g, lang, anchor, level = 4, pattern, provider } = Astro.props;
 // Link canónico: la vista de las tres nubes, que es la que indexa la búsqueda.
 const ref = { pattern, provider, gotcha: g, url: `${new URL(patternHref(lang, pattern, 'all'), Astro.site).href}#${provider}-${g.id}` };
+const embed = embedSnippet(new URL(embedGotchaHref(lang, pattern, provider, g.id), Astro.site).href, t(g.title, lang), 320);
 const Heading = `h${level}` as 'h3' | 'h4';
 const s = ui(lang);
 const age = daysSince(g.verified_at);
@@ -82,6 +83,12 @@ const shortUrl = (u: string) => {
       data-md={gotchaMarkdown(ref, lang)}
       data-done={s.copiedMarkdown}
       title={s.copyMarkdownHint}>⧉ {s.copyMarkdown}</button>
+    <button
+      type="button"
+      class="gotcha-md inline-flex min-h-6 items-center rounded px-1.5 text-muted hover:bg-surface-2 hover:text-fg"
+      data-md={embed}
+      data-done={s.embedCopied}
+      title={s.embedHint}>⧈ {s.embed}</button>
     <a
       class="inline-flex min-h-6 items-center rounded px-1.5 text-muted no-underline! hover:bg-surface-2 hover:text-fg"
       href={staleIssueUrl(ref)}

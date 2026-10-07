@@ -10,7 +10,8 @@ están para proteger eso.
 2. **Reportar un gotcha incorrecto o desactualizado**: el botón "Reportar desactualizado" de cada gotcha
    abre el template con el gotcha ya identificado.
 3. **Agregar un gotcha** a un patrón existente.
-4. **Agregar una capability** al diccionario.
+4. **Agregar una capability, un concepto o una fila del mapa Terraform** al diccionario
+   (`content/capabilities/`, `content/concepts/`, `content/terraform-map.yaml`).
 5. **Proponer o escribir un patrón nuevo** (abrí primero un issue con el template "Proponer patrón").
 6. **Traducir** textos `es` → `en`.
 

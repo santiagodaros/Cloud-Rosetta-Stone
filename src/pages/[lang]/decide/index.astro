@@ -1,0 +1,33 @@
+---
+import { BRAND } from '../../../lib/brand.ts';
+import Base from '../../../layouts/Base.astro';
+import { LOCALES, t, ui, type Locale } from '../../../lib/i18n.ts';
+import { decideHref } from '../../../lib/paths.ts';
+import { site } from '../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const decisions = site.decisions ?? [];
+---
+
+<Base lang={lang} title={`${s.decideTitle} — ${BRAND.name}`} description={s.decideIntro} altPath="decide/">
+  <h1 class="lc-h1">{s.decideTitle}</h1>
+  <p class="lc-lead">{s.decideIntro}</p>
+  <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      decisions.map((d) => (
+        <li class="flex flex-col rounded-xl border border-line bg-surface p-5">
+          <h2 class="mb-2 text-lg leading-snug font-semibold">
+            <a class="text-fg no-underline hover:underline" href={decideHref(lang, d.id)}>{t(d.title, lang)}</a>
+          </h2>
+          <p class="mb-3 flex-1 text-sm text-muted">{t(d.intro, lang)}</p>
+          <p class="text-xs text-muted">{s.decideCount(d.options.length)}</p>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

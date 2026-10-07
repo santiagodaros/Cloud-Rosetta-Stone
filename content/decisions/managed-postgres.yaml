@@ -1,0 +1,185 @@
+id: managed-postgres
+capability: managed-postgres
+title:
+  es: PostgreSQL administrado
+  en: Managed PostgreSQL
+intro:
+  es: >-
+    Qué oferta y tier de PostgreSQL cumple cada requisito, con el piso mensual de la configuración más chica que
+    lo cumple. La alta disponibilidad entre zonas duplica cómputo y storage en las tres nubes.
+  en: >-
+    Which PostgreSQL offering and tier meets each requirement, with the monthly floor of the smallest
+    configuration that meets it. Cross-zone high availability doubles compute and storage on all three clouds.
+verified_at: 2026-10-06
+requirements:
+  - id: private-only
+    label: { es: 'Sin endpoint público', en: 'No public endpoint' }
+  - id: zone-ha
+    label: { es: 'Alta disponibilidad entre zonas', en: 'Cross-zone high availability' }
+  - id: passwordless
+    label: { es: 'Login con la identidad de la nube', en: 'Login with the cloud identity' }
+    hint:
+      es: Entra ID, IAM database authentication, IAM de Cloud SQL.
+      en: Entra ID, IAM database authentication, Cloud SQL IAM.
+  - id: scale-to-zero
+    label: { es: 'Escala a cero sola', en: 'Scales to zero on its own' }
+  - id: stop-indefinitely
+    label: { es: 'Se puede apagar sin que se prenda sola', en: 'Can be stopped without auto-restart' }
+options:
+  - id: azure-pg-burstable
+    provider: azure
+    name: Azure Database for PostgreSQL Flexible Server — Burstable B1ms
+    meets:
+      private-only: 'yes'
+      zone-ha:
+        value: 'no'
+        note: { es: 'Burstable no soporta alta disponibilidad.', en: 'Burstable doesn''t support high availability.' }
+      passwordless: 'yes'
+      scale-to-zero: 'no'
+      stop-indefinitely:
+        value: 'no'
+        note: { es: 'Se puede detener, pero el servicio la vuelve a prender a los 7 días.', en: 'It can be stopped, but the service restarts it after 7 days.' }
+    floor:
+      - { meter: azure-pg-b1ms, count: 1 }
+      - { meter: azure-pg-storage, count: 32 }
+    sources:
+      - https://learn.microsoft.com/azure/postgresql/network/concepts-networking-private-link
+      - https://learn.microsoft.com/azure/postgresql/high-availability/how-to-configure-high-availability
+      - https://learn.microsoft.com/azure/postgresql/security/security-entra-configure
+      - https://learn.microsoft.com/azure/postgresql/configure-maintain/concepts-limits
+  - id: azure-pg-gp-ha
+    provider: azure
+    name: Azure Database for PostgreSQL Flexible Server — General Purpose D2ds_v5, HA zone-redundant
+    meets:
+      private-only: 'yes'
+      zone-ha:
+        value: 'yes'
+        note:
+          es: Solo en regiones con zonas y con capacidad; si no, se puede caer a HA en la misma zona.
+          en: Only in regions with zones and capacity; otherwise it can fall back to same-zone HA.
+      passwordless: 'yes'
+      scale-to-zero: 'no'
+      stop-indefinitely:
+        value: 'no'
+        note: { es: 'Igual que cualquier Flexible Server, se vuelve a prender a los 7 días.', en: 'Like any Flexible Server, it restarts after 7 days.' }
+    notes:
+      es: Con HA en v5 se factura primario y standby (cómputo por 2); el piso también duplica el storage.
+      en: With HA on v5 both primary and standby are billed (compute times 2); the floor also doubles storage.
+    floor:
+      - { meter: azure-pg-d2ds-v5, count: 2 }
+      - { meter: azure-pg-storage, count: 64 }
+    sources:
+      - https://learn.microsoft.com/azure/postgresql/high-availability/concepts-high-availability
+      - https://learn.microsoft.com/azure/postgresql/high-availability/how-to-configure-high-availability
+      - https://learn.microsoft.com/azure/postgresql/configure-maintain/how-to-cost-optimization
+      - https://learn.microsoft.com/azure/postgresql/security/security-entra-configure
+  - id: aws-rds-single-az
+    provider: aws
+    name: Amazon RDS for PostgreSQL — db.t4g.micro, Single-AZ
+    meets:
+      private-only: 'yes'
+      zone-ha: 'no'
+      passwordless: 'yes'
+      scale-to-zero: 'no'
+      stop-indefinitely:
+        value: 'no'
+        note: { es: 'Se puede detener hasta 7 días; después RDS la vuelve a prender.', en: 'Can be stopped for up to 7 days; then RDS starts it again.' }
+    floor:
+      - { meter: aws-rds-t4g-micro, count: 1 }
+      - { meter: aws-rds-gp2-storage, count: 20 }
+    sources:
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_StopInstance.html
+  - id: aws-rds-multi-az
+    provider: aws
+    name: Amazon RDS for PostgreSQL — db.t4g.micro, Multi-AZ
+    meets:
+      private-only: 'yes'
+      zone-ha:
+        value: 'yes'
+        note: { es: 'Standby sincrónico en otra AZ, que no sirve lecturas.', en: 'Synchronous standby in another AZ that doesn''t serve reads.' }
+      passwordless: 'yes'
+      scale-to-zero: 'no'
+      stop-indefinitely: 'no'
+    floor:
+      - { meter: aws-rds-t4g-micro-multiaz, count: 1 }
+      - { meter: aws-rds-gp2-storage-multiaz, count: 20 }
+    sources:
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_StopInstance.html
+  - id: aws-aurora-serverless-v2
+    provider: aws
+    name: { es: 'Aurora PostgreSQL Serverless v2 (mínimo 0 ACU)', en: 'Aurora PostgreSQL Serverless v2 (0 ACU minimum)' }
+    meets:
+      private-only: 'yes'
+      zone-ha:
+        value: partial
+        note:
+          es: >-
+            El storage se replica en 3 AZ, pero el failover de cómputo necesita una réplica en otra AZ, que se
+            paga aparte.
+          en: >-
+            Storage is replicated across 3 AZs, but compute failover needs a replica in another AZ, billed
+            separately.
+      passwordless: 'yes'
+      scale-to-zero:
+        value: 'yes'
+        note:
+          es: Con mínimo de 0 ACU se pausa sola tras un período sin conexiones (Aurora PostgreSQL 13.15, 14.12, 15.7, 16.3 o más).
+          en: With a 0 ACU minimum it pauses itself after a period with no connections (Aurora PostgreSQL 13.15, 14.12, 15.7, 16.3 or later).
+      stop-indefinitely:
+        value: 'no'
+        note: { es: 'El cluster se puede detener hasta 7 días.', en: 'The cluster can be stopped for up to 7 days.' }
+    notes:
+      es: En pausa no hay cargo de cómputo; el storage (por GB usado) y los backups se siguen cobrando.
+      en: While paused there's no compute charge; storage (per GB used) and backups are still billed.
+    sources:
+      - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html
+      - https://aws.amazon.com/about-aws/whats-new/2024/11/amazon-aurora-serverless-v2-scaling-zero-capacity/
+      - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Concepts.AuroraHighAvailability.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.IAMDBAuth.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-cluster-stop-start.html
+  - id: gcp-cloudsql-zonal
+    provider: gcp
+    name: Cloud SQL for PostgreSQL Enterprise — db-custom-1-3840, zonal
+    meets:
+      private-only: 'yes'
+      zone-ha: 'no'
+      passwordless: 'yes'
+      scale-to-zero: 'no'
+      stop-indefinitely:
+        value: 'yes'
+        note:
+          es: Detenida no cobra cómputo (sí storage e IP) y no se vuelve a prender sola.
+          en: While stopped there's no compute charge (storage and IP still apply) and it doesn't restart on its own.
+    floor:
+      - { meter: gcp-cloudsql-vcpu, count: 1 }
+      - { meter: gcp-cloudsql-ram, count: 3.75 }
+      - { meter: gcp-cloudsql-storage, count: 10 }
+    sources:
+      - https://docs.cloud.google.com/sql/docs/postgres/configure-private-ip
+      - https://docs.cloud.google.com/sql/docs/postgres/iam-authentication
+      - https://docs.cloud.google.com/sql/docs/postgres/start-stop-restart-instance
+      - https://cloud.google.com/sql/pricing
+  - id: gcp-cloudsql-ha
+    provider: gcp
+    name: Cloud SQL for PostgreSQL Enterprise — db-custom-1-3840, HA regional
+    meets:
+      private-only: 'yes'
+      zone-ha:
+        value: 'yes'
+        note: { es: 'Primaria y standby en dos zonas, con disco regional sincrónico.', en: 'Primary and standby in two zones, with a synchronous regional disk.' }
+      passwordless: 'yes'
+      scale-to-zero: 'no'
+      stop-indefinitely: 'yes'
+    floor:
+      - { meter: gcp-cloudsql-vcpu-ha, count: 1 }
+      - { meter: gcp-cloudsql-ram-ha, count: 3.75 }
+      - { meter: gcp-cloudsql-storage-ha, count: 10 }
+    sources:
+      - https://docs.cloud.google.com/sql/docs/postgres/high-availability
+      - https://docs.cloud.google.com/sql/docs/postgres/iam-authentication
+      - https://docs.cloud.google.com/sql/docs/postgres/start-stop-restart-instance
+      - https://cloud.google.com/sql/pricing

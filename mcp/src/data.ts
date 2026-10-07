@@ -27,6 +27,9 @@ export async function loadDataset(base = process.env.LETRA_CHICA_DATA ?? DEFAULT
   if (cache && Date.now() - cache.at < TTL_MS) return cache.ds;
   const [gotchas, patterns, capabilities, exams] = await Promise.all(FILES.map((f) => readJson(base, f)));
   for (const part of [gotchas, patterns, capabilities, exams]) checkSchema(part as { schema_version?: number });
+  // Endpoints más nuevos: si el sitio todavía no los publica, las herramientas que los usan devuelven vacío.
+  const optional = (name: string) => readJson(base, name).catch(() => ({}) as Record<string, unknown>);
+  const [concepts, terraformMap, pricing, decisions] = await Promise.all([optional('concepts'), optional('terraform-map'), optional('pricing'), optional('decisions')]);
   const ds: Dataset = {
     schema_version: gotchas.schema_version as number,
     generated_at: gotchas.generated_at as string,
@@ -35,6 +38,10 @@ export async function loadDataset(base = process.env.LETRA_CHICA_DATA ?? DEFAULT
     patterns: patterns.patterns as Dataset['patterns'],
     capabilities: capabilities.capabilities as Dataset['capabilities'],
     exams: exams.exams as Dataset['exams'],
+    concepts: (concepts.concepts as Dataset['concepts']) ?? [],
+    terraformMap: (terraformMap.entries as Dataset['terraformMap']) ?? [],
+    pricing: pricing.floors ? (pricing as unknown as Dataset['pricing']) : undefined,
+    decisions: (decisions.decisions as Dataset['decisions']) ?? [],
   };
   cache = { at: Date.now(), ds };
   return ds;

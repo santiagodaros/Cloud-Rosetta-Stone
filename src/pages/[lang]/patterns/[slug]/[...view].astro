@@ -4,10 +4,10 @@ import Base from '../../../../layouts/Base.astro';
 import ImplementationColumn from '../../../../components/ImplementationColumn.astro';
 import { layoutPattern } from '../../../../lib/diagram.ts';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../../lib/i18n.ts';
-import { patternHref } from '../../../../lib/paths.ts';
+import { adrHref, embedCompareHref, migrateHref, patternHref } from '../../../../lib/paths.ts';
 import { PROVIDERS } from '../../../../lib/schema.ts';
 import { DEFAULT_VIEW, publishedPatterns, VIEWS } from '../../../../lib/site.ts';
-import { comparisonMarkdown } from '../../../../lib/share.ts';
+import { comparisonMarkdown, embedSnippet } from '../../../../lib/share.ts';
 import RoleExplorer from '../../../../components/RoleExplorer.astro';
 
 export function getStaticPaths() {
@@ -30,6 +30,7 @@ const layout = await layoutPattern(pattern, bundle.implementations, lang, s.gap)
 const title = t(pattern.title, lang);
 const providersLabel = view.providers.map((p) => PROVIDER_META[p].short).join(` ${s.vs} `);
 const comparisonMd = comparisonMarkdown(bundle, view.providers, lang, new URL(patternHref(lang, pattern.id, viewId), Astro.site).href);
+const embedMd = embedSnippet(new URL(embedCompareHref(lang, pattern.id, viewId), Astro.site).href, `${title} · ${providersLabel}`, 500);
 const gridCols = view.providers.length === 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2';
 
 // Un botón por par en orden canónico (azure, aws, gcp); si la vista actual es el
@@ -48,7 +49,7 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
 >
   <article data-pagefind-body={viewId === 'all' ? '' : undefined} data-pagefind-meta={`title:${title}`}>
     <header class="mb-8 max-w-4xl">
-      <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+      <h1 class="lc-h1">{title}</h1>
       <p class="mb-4 text-muted">{t(pattern.summary, lang)}</p>
       <details class="rounded-lg border border-line bg-surface p-4 text-sm">
         <summary class="cursor-pointer font-semibold">{s.problem}</summary>
@@ -85,6 +86,21 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
         data-md={comparisonMd}
         data-done={s.copiedMarkdown}
         data-pagefind-ignore>⧉ {s.copyComparison}</button>
+      <button
+        type="button"
+        class="copy-md inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs text-muted hover:bg-surface-2 hover:text-fg"
+        data-md={embedMd}
+        data-done={s.embedCopied}
+        title={s.embedHint}
+        data-pagefind-ignore>⧈ {s.embedCompare}</button>
+      <a
+        class="inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs text-muted no-underline hover:bg-surface-2 hover:text-fg"
+        href={migrateHref(lang, view.providers.length === 2 ? { from: view.providers[0], to: view.providers[1], p: pattern.id } : { p: pattern.id })}
+        data-pagefind-ignore>☑ {s.migrateThis}</a>
+      <a
+        class="inline-flex min-h-8 items-center rounded-full border border-line px-3 text-xs text-muted no-underline hover:bg-surface-2 hover:text-fg"
+        href={adrHref(lang, { p: pattern.id })}
+        data-pagefind-ignore>✎ {s.adrThis}</a>
     </nav>
 
     <RoleExplorer bundle={bundle} providers={view.providers} lang={lang} />
@@ -96,8 +112,7 @@ const navViews = VIEWS.filter((v) => v.providers.length === 2 && PROVIDERS.index
 </Base>
 
 <script>
-  const btn = document.getElementById('copy-comparison') as HTMLButtonElement | null;
-  if (btn) {
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('#copy-comparison, .copy-md')) {
     const label = btn.textContent;
     btn.addEventListener('click', async () => {
       try {

@@ -30,7 +30,7 @@ const newIssue = `${BRAND.repo}/issues/new?title=${encodeURIComponent(`[gotcha] 
     <p class="mb-1 text-xs font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[exam.provider].color}`}>
       {PROVIDER_META[exam.provider].name} · {s.level[exam.level]}
     </p>
-    <h1 class="mb-1 text-2xl font-bold tracking-tight sm:text-3xl"><span class="font-mono">{exam.code}</span> · {exam.name}</h1>
+    <h1 class="lc-h1"><span class="font-mono">{exam.code}</span> · {exam.name}</h1>
     <p class="mb-3 text-muted">{exam.certification}</p>
     <div class="flex flex-wrap items-center gap-3 text-sm">
       <ExamStatus exam={exam} lang={lang} />

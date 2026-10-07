@@ -1,0 +1,62 @@
+name: Precios de lista
+
+# Una vez por semana: re-resuelve los precios de content/pricing.yaml contra las APIs
+# públicas y, si cambió alguno (o pasaron 4 semanas), abre un PR con content/prices.json.
+# El sitio nunca consulta precios en runtime: lee el JSON versionado.
+#
+# Requisitos del mantenedor:
+# - Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests".
+# - Opcional: secret GCP_BILLING_API_KEY (Cloud Billing Catalog API). Sin él, GCP usa los
+#   precios manuales de pricing.yaml.
+# Los PR que abre GITHUB_TOKEN no disparan CI: cerralo y reabrilo (o aprobá el run) para validarlo.
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prices
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Resolver precios
+        run: pnpm prices:fetch
+        env:
+          GCP_BILLING_API_KEY: ${{ secrets.GCP_BILLING_API_KEY }}
+      - name: Abrir PR si cambió prices.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- content/prices.json; then
+            echo "Sin cambios de precio."
+            exit 0
+          fi
+          pnpm validate
+          day="$(date -u +%F)"
+          branch="bot/prices-${day}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add content/prices.json
+          git commit -m "chore(prices): precios de lista al ${day}"
+          git push --force -u origin "$branch"
+          if ! gh pr view "$branch" >/dev/null 2>&1; then
+            gh pr create --base main --head "$branch" \
+              --title "chore(prices): precios de lista al ${day}" \
+              --body "Generado por el workflow semanal \`prices.yml\` (\`pnpm prices:fetch\`). Revisá el diff de \`content/prices.json\`: cada entrada dice de qué SKU o meter salió."
+          fi

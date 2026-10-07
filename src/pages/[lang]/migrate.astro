@@ -1,0 +1,212 @@
+---
+import { BRAND } from '../../lib/brand.ts';
+import Base from '../../layouts/Base.astro';
+import ToolsData from '../../components/ToolsData.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
+import { PROVIDERS } from '../../lib/schema.ts';
+import { publishedPatterns } from '../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const s = ui(lang);
+const strings = {
+  same: s.migrateSame,
+  none: s.migrateNone,
+  progress: s.migrateProgress,
+  copied: s.copiedMarkdown,
+  sources: s.mdSources,
+  verified: s.mdVerified,
+  inPattern: s.examInPattern,
+};
+const select = 'min-h-9 rounded-md border border-line bg-surface px-2 text-fg';
+const btn = 'inline-flex min-h-9 items-center rounded-lg border border-line bg-surface px-3 text-sm font-medium hover:bg-surface-2';
+---
+
+<Base lang={lang} title={`${s.migrateTitle} — ${BRAND.name}`} description={s.migrateIntro} altPath="migrate/">
+  <h1 class="lc-h1">{s.migrateTitle}</h1>
+  <p class="lc-lead">{s.migrateIntro}</p>
+
+  <noscript><p class="text-muted">{s.toolsNoJs}</p><style>#migrate { display: none; }</style></noscript>
+
+  <div id="migrate" class="max-w-4xl">
+    <form id="mig-form" class="no-print mb-6 grid gap-4 rounded-xl border border-line bg-surface p-4 sm:grid-cols-[auto_auto_1fr]">
+      <label class="flex flex-col gap-1 text-sm text-muted">
+        {s.migrateFrom}
+        <select id="mig-from" class={select}>{PROVIDERS.map((p) => <option value={p}>{PROVIDER_META[p].short}</option>)}</select>
+      </label>
+      <label class="flex flex-col gap-1 text-sm text-muted">
+        {s.migrateTo}
+        <select id="mig-to" class={select}>{PROVIDERS.map((p) => <option value={p}>{PROVIDER_META[p].short}</option>)}</select>
+      </label>
+      <fieldset class="text-sm">
+        <legend class="mb-1 text-muted">{s.migratePatterns}</legend>
+        <div class="flex flex-col gap-1">
+          {
+            publishedPatterns.map(({ pattern }) => (
+              <label class="flex min-h-6 items-center gap-2">
+                <input type="checkbox" name="pattern" value={pattern.id} class="size-4" checked />
+                {t(pattern.title, lang)}
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="no-print mb-4 flex flex-wrap items-center gap-2">
+      <button type="button" id="mig-copy" class={btn}>⧉ {s.copyMd}</button>
+      <button type="button" id="mig-download" class={btn}>⤓ {s.downloadMd}</button>
+      <button type="button" id="mig-print" class={btn}>⎙ {s.printPdf}</button>
+      <button type="button" id="mig-reset" class={`${btn} text-muted`}>{s.migrateReset}</button>
+      <span id="mig-status" class="ml-auto text-sm text-muted" aria-live="polite"></span>
+    </div>
+
+    <!-- Alto reservado: el checklist se arma en el cliente y no debe empujar el footer (CLS). -->
+    <div id="mig-out" class="min-h-screen"></div>
+  </div>
+
+  <ToolsData lang={lang} extra={{ strings }} />
+</Base>
+
+<script>
+  import { buildChecklist, checklistKey, checklistMarkdown, fill, type Checklist, type ToolsData, type ToolStrings } from '../../lib/tools-md.ts';
+  import { copyText, downloadText, loadJson, saveJson } from '../../lib/tools-client.ts';
+  import type { Provider } from '../../lib/schema.ts';
+
+  const { data, S, strings } = JSON.parse(document.getElementById('tools-data')!.textContent!) as {
+    data: ToolsData;
+    S: ToolStrings;
+    strings: Record<string, string>;
+  };
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const fromSel = $<HTMLSelectElement>('mig-from');
+  const toSel = $<HTMLSelectElement>('mig-to');
+  const boxes = [...document.querySelectorAll<HTMLInputElement>('input[name="pattern"]')];
+  const out = $('mig-out');
+  const status = $('mig-status');
+  const actions = ['mig-copy', 'mig-download', 'mig-print', 'mig-reset'].map((id) => $<HTMLButtonElement>(id));
+
+  const STORAGE_KEY = 'letra-chica:migrate:v1';
+  let checked = new Set<string>(loadJson<string[]>(STORAGE_KEY, []));
+  let current: Checklist | null = null;
+
+  // Estado inicial: URL (link compartido) > "mi nube" (F4-09) > azure → aws.
+  const ids = data.providers.map((p) => p.id);
+  const params = new URLSearchParams(location.search);
+  const isProvider = (x: string | null | undefined): x is Provider => !!x && (ids as string[]).includes(x);
+  const origin = document.documentElement.dataset.origin;
+  fromSel.value = isProvider(params.get('from')) ? params.get('from')! : isProvider(origin) ? origin : 'azure';
+  toSel.value = isProvider(params.get('to')) ? params.get('to')! : ids.find((p) => p !== fromSel.value)!;
+  const fromUrl = params.get('p')?.split(',').filter(Boolean);
+  if (fromUrl?.length) boxes.forEach((b) => (b.checked = fromUrl.includes(b.value)));
+
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
+
+  function allIds(c: Checklist) {
+    return c.patterns.flatMap((p) => p.sections.flatMap((s) => s.items.map((i) => i.id)));
+  }
+
+  function updateStatus() {
+    if (!current) return;
+    const all = allIds(current);
+    status.textContent = fill(strings.progress, { done: all.filter((id) => checked.has(id)).length, n: all.length });
+  }
+
+  function render() {
+    const from = fromSel.value as Provider;
+    const to = toSel.value as Provider;
+    const patterns = boxes.filter((b) => b.checked).map((b) => b.value);
+    const url = new URL(location.href);
+    url.search = new URLSearchParams({ from, to, p: patterns.join(',') }).toString();
+    history.replaceState(null, '', url);
+
+    const problem = from === to ? strings.same : patterns.length === 0 ? strings.none : '';
+    actions.forEach((b) => (b.disabled = !!problem));
+    if (problem) {
+      current = null;
+      status.textContent = '';
+      out.replaceChildren(el('p', 'text-muted', problem));
+      return;
+    }
+    current = buildChecklist(data, { from, to, patterns }, S);
+    const nodes: HTMLElement[] = [el('h2', 'mb-4 text-xl font-bold', current.title)];
+    for (const p of current.patterns) {
+      const sec = el('section', 'mb-8 break-inside-avoid-page');
+      const h = el('h3', 'mb-3 text-lg font-semibold');
+      const a = el('a', '', p.title) as HTMLAnchorElement;
+      a.href = p.url;
+      h.append(a);
+      sec.append(h);
+      for (const s of p.sections) {
+        sec.append(el('h4', 'mt-4 mb-2 text-xs font-semibold tracking-wide text-muted uppercase', s.title));
+        const ul = el('ul', 'flex flex-col gap-2');
+        for (const it of s.items) {
+          const li = el('li', 'rounded-lg border border-line bg-surface p-3 text-sm');
+          const label = el('label', 'flex cursor-pointer items-start gap-2');
+          const box = el('input', 'mt-0.5 size-4 shrink-0') as HTMLInputElement;
+          box.type = 'checkbox';
+          box.checked = checked.has(it.id);
+          box.addEventListener('change', () => {
+            if (box.checked) checked.add(it.id);
+            else checked.delete(it.id);
+            saveJson(STORAGE_KEY, [...checked]);
+            updateStatus();
+          });
+          const text = el('span', 'font-medium');
+          if (it.tag) text.append(el('span', 'mr-1 rounded bg-surface-2 px-1.5 py-0.5 text-xs font-semibold', it.tag));
+          text.append(it.text);
+          label.append(box, text);
+          li.append(label);
+          if (it.detail) li.append(el('p', 'mt-1 ml-6 leading-relaxed text-muted', it.detail));
+          if (it.sources?.length || it.href) {
+            const meta = el('p', 'mt-1 ml-6 flex flex-wrap gap-3 text-xs');
+            for (const src of it.sources ?? []) {
+              const s = el('a', 'inline-flex min-h-6 items-center', `↗ ${host(src)}`) as HTMLAnchorElement;
+              s.href = src;
+              s.target = '_blank';
+              s.rel = 'noopener';
+              meta.append(s);
+            }
+            if (it.verified) meta.append(el('span', 'inline-flex min-h-6 items-center text-muted', `${strings.verified} ${it.verified}`));
+            if (it.href) {
+              const l = el('a', 'no-print inline-flex min-h-6 items-center', `${strings.inPattern} →`) as HTMLAnchorElement;
+              l.href = it.href;
+              meta.append(l);
+            }
+            li.append(meta);
+          }
+          ul.append(li);
+        }
+        sec.append(ul);
+      }
+      nodes.push(sec);
+    }
+    out.replaceChildren(...nodes);
+    updateStatus();
+  }
+
+  const markdown = () => (current ? checklistMarkdown(current, checked, S) : '');
+  $<HTMLButtonElement>('mig-copy').addEventListener('click', (e) => copyText(e.currentTarget as HTMLButtonElement, markdown(), strings.copied));
+  $<HTMLButtonElement>('mig-download').addEventListener('click', () =>
+    downloadText(`migration-${fromSel.value}-to-${toSel.value}.md`, markdown()),
+  );
+  $<HTMLButtonElement>('mig-print').addEventListener('click', () => window.print());
+  $<HTMLButtonElement>('mig-reset').addEventListener('click', () => {
+    // Solo desmarca el par actual: otros planes guardados quedan intactos.
+    const prefix = `${checklistKey(fromSel.value as Provider, toSel.value as Provider)}/`;
+    checked = new Set([...checked].filter((id) => !id.startsWith(prefix)));
+    saveJson(STORAGE_KEY, [...checked]);
+    render();
+  });
+  $('mig-form').addEventListener('change', render);
+  render();
+</script>

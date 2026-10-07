@@ -216,3 +216,164 @@ export const Implementation = z.strictObject({
   cost: Cost,
 });
 export type Implementation = z.infer<typeof Implementation>;
+
+// ---------------------------------------------------------------------------
+// Conceptos (content/concepts/*.yaml): estructura de cada nube, no servicios
+// ---------------------------------------------------------------------------
+
+export const CONCEPT_CATEGORIES = ['organization', 'identity', 'networking', 'operations'] as const;
+
+export const ConceptTerm = z.strictObject({
+  term: Text,
+  docs: SourceUrl,
+});
+
+export const ConceptProviderEntry = z.strictObject({
+  /** Los nombres que usa esa nube, de mayor a menor alcance si es una jerarquía. */
+  terms: z.array(ConceptTerm).min(1),
+  explanation: Localized,
+});
+
+export const Concept = z.strictObject({
+  id: slug,
+  category: z.enum(CONCEPT_CATEGORIES),
+  name: Localized,
+  description: Localized,
+  providers: z.strictObject({ azure: ConceptProviderEntry, aws: ConceptProviderEntry, gcp: ConceptProviderEntry }),
+  /** Dónde se rompe la analogía. Cada una con fuente oficial. */
+  caveats: z.array(z.strictObject({ text: Localized, sources: z.array(SourceUrl).min(1) })).default([]),
+  verified_at: z.iso.date(),
+});
+export type Concept = z.infer<typeof Concept>;
+
+// ---------------------------------------------------------------------------
+// Mapa de recursos Terraform (content/terraform-map.yaml)
+// ---------------------------------------------------------------------------
+
+/** `tipo_de_recurso` o `tipo_de_recurso.bloque` (cuando en una nube es un bloque, no un recurso). */
+export const TerraformRef = z.string().regex(/^(azurerm|aws|google)_[a-z0-9_]+(\.[a-z0-9_]+)?$/, 'recurso de Terraform (azurerm_*, aws_*, google_*) o recurso.bloque');
+
+export const TF_PREFIX = { azure: 'azurerm_', aws: 'aws_', gcp: 'google_' } as const satisfies Record<Provider, string>;
+
+export const TerraformMapEntry = z.strictObject({
+  id: slug,
+  title: Localized,
+  /** Capability o concepto del sitio con el que se relaciona (opcional). */
+  capability: slug.optional(),
+  concept: slug.optional(),
+  /** one-to-one: mismo alcance y forma; partial: hay que pensar distinto; gap: alguna nube no tiene recurso. */
+  match: z.enum(['one-to-one', 'partial', 'gap']),
+  resources: z.strictObject({ azure: z.array(TerraformRef), aws: z.array(TerraformRef), gcp: z.array(TerraformRef) }),
+  notes: Localized.optional(),
+  sources: z.array(SourceUrl).default([]),
+});
+export type TerraformMapEntry = z.infer<typeof TerraformMapEntry>;
+
+export const TerraformMap = z.strictObject({
+  /** Versiones de provider contra las que se validaron los nombres (las mismas de los módulos). */
+  providers: z.strictObject({ azurerm: z.string(), aws: z.string(), google: z.string() }),
+  verified_at: z.iso.date(),
+  entries: z.array(TerraformMapEntry).min(1),
+});
+export type TerraformMap = z.infer<typeof TerraformMap>;
+
+// ---------------------------------------------------------------------------
+// Precios de lista (content/pricing.yaml + content/prices.json)
+// ---------------------------------------------------------------------------
+
+/** Unidad normalizada de un precio. `hour` se lleva a mes con 730 h. */
+export const PRICE_UNITS = ['hour', 'month', 'gb-month'] as const;
+export const PriceUnit = z.enum(PRICE_UNITS);
+export type PriceUnit = z.infer<typeof PriceUnit>;
+export const HOURS_PER_MONTH = 730;
+
+/** Igualdad exacta sobre campos de la API (Azure Retail Prices / atributos del Price List de AWS). */
+const MatchFields = z.record(z.string().min(1), z.string().min(1));
+
+export const PriceMeter = z.strictObject({
+  id: slug,
+  provider: Provider,
+  label: Localized,
+  unit: PriceUnit,
+  /** Cómo encontrarlo en la API de precios de su nube. Debe resolver a exactamente un precio. */
+  /**
+   * `region`: armRegionName si no es la región del patrón (ej. "Global" o "Zone 1" para servicios no regionales).
+   * `per`: unidad de facturación cuando la API la da como un número pelado ("1"), como en Azure DNS.
+   */
+  azure: z.strictObject({ service: z.string().min(1), region: z.string().optional(), per: PriceUnit.optional(), match: MatchFields }).optional(),
+  aws: z.strictObject({ offer: z.string().min(1), match: MatchFields }).optional(),
+  gcp: z.strictObject({ service: z.string().min(1), description: z.string().min(1) }).optional(),
+  /**
+   * Precio cargado a mano desde la página oficial, para cuando la API no está disponible
+   * (el Billing Catalog de GCP pide API key). Si la API responde, gana la API.
+   */
+  manual: z.strictObject({ unit_price: z.number().nonnegative(), verified_at: z.iso.date(), source: SourceUrl }).optional(),
+  /** Página oficial de precios del servicio. */
+  docs: SourceUrl,
+});
+export type PriceMeter = z.infer<typeof PriceMeter>;
+
+/** Un componente del piso mensual: `count` instancias (o GB, si la unidad es gb-month) del meter. */
+export const FloorItem = z.strictObject({ meter: slug, count: z.number().positive() });
+export type FloorItem = z.infer<typeof FloorItem>;
+
+export const Pricing = z.strictObject({
+  /** Una región comparable por nube: los pisos solo se comparan en estas. */
+  regions: z.strictObject({ azure: z.string(), aws: z.string(), gcp: z.string() }),
+  meters: z.array(PriceMeter).min(1),
+  /**
+   * Piso mensual por patrón y nube: lo que se paga con cero tráfico, con la configuración
+   * por default del módulo Terraform. Lista vacía = sin costo fijo.
+   */
+  floors: z.record(slug, z.strictObject({ azure: z.array(FloorItem), aws: z.array(FloorItem), gcp: z.array(FloorItem) })),
+});
+export type Pricing = z.infer<typeof Pricing>;
+
+/** Salida del job de precios (`pnpm prices:fetch`). No se edita a mano. */
+export const PriceEntry = z.strictObject({
+  unit_price: z.number().nonnegative(),
+  unit: PriceUnit,
+  source: z.enum(['api', 'manual']),
+  as_of: z.iso.date(),
+  /** Qué devolvió la API, para auditar (SKU, meter, unidad original). */
+  ref: z.string(),
+});
+export type PriceEntry = z.infer<typeof PriceEntry>;
+
+export const Prices = z.strictObject({
+  generated_at: z.iso.datetime(),
+  currency: z.literal('USD'),
+  prices: z.record(slug, PriceEntry),
+});
+export type Prices = z.infer<typeof Prices>;
+
+// ---------------------------------------------------------------------------
+// Matriz de decisión (content/decisions/*.yaml)
+// ---------------------------------------------------------------------------
+
+export const MEETS = ['yes', 'no', 'partial'] as const;
+
+export const DecisionOption = z.strictObject({
+  id: slug,
+  provider: Provider,
+  /** Servicio + SKU/tier/modo concreto ("Service Bus Premium", "SQS FIFO"). */
+  name: Text,
+  /** Qué cumple. `partial` exige nota. */
+  meets: z.record(slug, z.union([z.enum(['yes', 'no']), z.strictObject({ value: z.enum(MEETS), note: Localized })])),
+  notes: Localized.optional(),
+  /** Piso mensual de esta opción (meters de content/pricing.yaml). Vacío = sin costo fijo. */
+  floor: z.array(FloorItem).default([]),
+  sources: z.array(SourceUrl).min(1),
+});
+export type DecisionOption = z.infer<typeof DecisionOption>;
+
+export const Decision = z.strictObject({
+  id: slug,
+  capability: slug,
+  title: Localized,
+  intro: Localized,
+  requirements: z.array(z.strictObject({ id: slug, label: Localized, hint: Localized.optional() })).min(2),
+  options: z.array(DecisionOption).min(3),
+  verified_at: z.iso.date(),
+});
+export type Decision = z.infer<typeof Decision>;

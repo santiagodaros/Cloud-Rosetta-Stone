@@ -8,7 +8,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { findCapabilities, formatCapability, formatGotcha, formatPattern, searchGotchas, t, type Locale } from './core.ts';
+import { findCapabilities, findConcepts, findDecision, findTerraform, formatCapability, formatConcept, formatDecision, formatFloors, formatGotcha, formatPattern, formatTerraform, searchGotchas, t, type Locale } from './core.ts';
 import { loadDataset } from './data.ts';
 
 const PROVIDERS = ['azure', 'aws', 'gcp'] as const;
@@ -132,6 +132,75 @@ server.registerTool(
       : `No gotchas are tagged with ${exam.code} yet.`;
     const body = gotchas.length ? gotchas.map((g) => formatGotcha(g, lang as Locale)).join('\n\n') : empty;
     return text(withFooter(`${head}\n\n${body}`, ds.attribution, ds.generated_at));
+  },
+);
+
+server.registerTool(
+  'explain_concept',
+  {
+    title: 'Explain a structural concept across clouds',
+    description:
+      'How each cloud names and scopes a structural concept: resource hierarchy, billing boundary, network scope, availability zones, tags/labels, resource identifiers, workforce identity. Includes where the analogy breaks, with sources.',
+    inputSchema: { query: z.string().describe('e.g. "resource group", "availability zone", "labels", "vpc scope"'), lang },
+    annotations: readOnly,
+  },
+  async ({ query, lang }) => {
+    const ds = await loadDataset();
+    const hits = findConcepts(ds, query);
+    return text(hits.length ? hits.map((c) => formatConcept(c, lang as Locale)).join('\n\n') : `No concept matches "${query}". Known: ${ds.concepts.map((c) => c.id).join(', ')}.`);
+  },
+);
+
+server.registerTool(
+  'terraform_equivalent',
+  {
+    title: 'Terraform resource equivalents',
+    description:
+      'Given a Terraform resource type (azurerm_*, aws_*, google_*) or keywords, return the equivalent resources in the other providers, whether the mapping is 1:1, and what changes when it is not. Names are validated against the pinned provider schemas.',
+    inputSchema: { query: z.string().describe('e.g. "azurerm_private_endpoint", "aws_s3_bucket_lifecycle_configuration", "peering"'), lang },
+    annotations: readOnly,
+  },
+  async ({ query, lang }) => {
+    const ds = await loadDataset();
+    const hits = findTerraform(ds, query);
+    return text(hits.length ? hits.map((e) => formatTerraform(e, lang as Locale)).join('\n\n') : `No mapping for "${query}" yet.`);
+  },
+);
+
+server.registerTool(
+  'cost_floor',
+  {
+    title: 'Monthly list-price floor per pattern',
+    description:
+      'What each published pattern costs per month with zero traffic on each cloud (list prices in USD, comparable regions, default module configuration), with the per-component breakdown when a pattern is given. Prices come from the official pricing APIs, refreshed weekly.',
+    inputSchema: { pattern: z.string().optional().describe('Pattern id, e.g. "hybrid-private-dns". Omit for all patterns.'), lang },
+    annotations: readOnly,
+  },
+  async ({ pattern, lang }) => {
+    const ds = await loadDataset();
+    return text(withFooter(formatFloors(ds, lang as Locale, pattern), ds.attribution, ds.generated_at));
+  },
+);
+
+server.registerTool(
+  'decision_matrix',
+  {
+    title: 'Which SKU meets my requirements',
+    description:
+      'Requirement → SKU matrix for a capability (message queue, managed PostgreSQL, hybrid DNS): which tier or mode on each cloud meets each requirement (yes / no / partial with the caveat), with official sources and the monthly floor. Pass requirement ids to get the cheapest option per cloud that meets all of them.',
+    inputSchema: {
+      capability: z.string().describe('Decision id or capability, e.g. "message-queue", "managed-postgres", "hybrid-dns"'),
+      requirements: z.array(z.string()).optional().describe('Requirement ids, e.g. ["fifo", "private-only"]. Omit to list them.'),
+      count_caveats_as_met: z.boolean().optional().describe('Treat "partial" (with caveats) as meeting a requirement.'),
+      lang,
+    },
+    annotations: readOnly,
+  },
+  async ({ capability, requirements, count_caveats_as_met, lang }) => {
+    const ds = await loadDataset();
+    const d = findDecision(ds, capability);
+    if (!d) return text(`No decision matrix for "${capability}". Known: ${ds.decisions.map((x) => x.id).join(', ') || 'none published yet'}.`);
+    return text(withFooter(formatDecision(d, lang as Locale, requirements, count_caveats_as_met), ds.attribution, ds.generated_at));
   },
 );
 

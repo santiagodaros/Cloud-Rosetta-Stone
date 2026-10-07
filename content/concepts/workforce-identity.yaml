@@ -1,0 +1,43 @@
+id: workforce-identity
+category: identity
+name: { es: Identidad de las personas, en: Workforce identity }
+description:
+  es: Dónde viven los usuarios humanos y cómo obtienen acceso a varias cuentas, suscripciones o proyectos.
+  en: Where human users live and how they get access to several accounts, subscriptions or projects.
+providers:
+  azure:
+    terms:
+      - { term: Microsoft Entra ID (tenant), docs: "https://learn.microsoft.com/entra/fundamentals/how-subscriptions-associated-directory" }
+    explanation:
+      es: Cada suscripción confía en un único tenant de Entra ID; los usuarios del tenant reciben roles sobre management groups, suscripciones o recursos.
+      en: Each subscription trusts a single Entra ID tenant; tenant users get roles on management groups, subscriptions or resources.
+  aws:
+    terms:
+      - { term: IAM Identity Center, docs: "https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-identity-management/workforce-iam-identity-center.html" }
+    explanation:
+      es: >-
+        IAM es por cuenta. Para personas, AWS recomienda IAM Identity Center, que da acceso a varias cuentas con
+        permission sets, en lugar de crear usuarios IAM en cada cuenta.
+      en: >-
+        IAM is per account. For people, AWS recommends IAM Identity Center, which grants access to several accounts
+        with permission sets, instead of creating IAM users in each account.
+  gcp:
+    terms:
+      - { term: Cloud Identity / Google Workspace, docs: "https://docs.cloud.google.com/resource-manager/docs/creating-managing-organization" }
+    explanation:
+      es: La organización de Google Cloud está vinculada a una cuenta de Cloud Identity o Workspace; las personas reciben roles de IAM en la jerarquía.
+      en: The Google Cloud organization is linked to a Cloud Identity or Workspace account; people get IAM roles in the hierarchy.
+caveats:
+  - text:
+      es: >-
+        En Azure el directorio es uno solo para todas las suscripciones que confían en él. En AWS cada cuenta tiene
+        su propio IAM y el acceso de personas se centraliza con Identity Center: un usuario IAM creado en una cuenta
+        no existe en las demás.
+      en: >-
+        In Azure there's one directory for every subscription that trusts it. In AWS each account has its own IAM and
+        workforce access is centralized with Identity Center: an IAM user created in one account doesn't exist in the
+        others.
+    sources:
+      - https://learn.microsoft.com/entra/fundamentals/how-subscriptions-associated-directory
+      - https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-identity-management/workforce-iam-identity-center.html
+verified_at: 2026-10-06

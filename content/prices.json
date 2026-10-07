@@ -1,0 +1,174 @@
+{
+  "generated_at": "2026-10-06T22:56:35Z",
+  "currency": "USD",
+  "prices": {
+    "aws-alb": {
+      "unit_price": 0.0225,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AWSELB 37CUWUT8GSNQEPUV: $0.0225 per Application LoadBalancer-hour (or partial hour)"
+    },
+    "aws-rds-gp2-storage": {
+      "unit_price": 0.115,
+      "unit": "gb-month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AmazonRDS G2TQUMAQNSQ7H65X: $0.115 per GB-month of provisioned gp2 storage running PostgreSQL"
+    },
+    "aws-rds-gp2-storage-multiaz": {
+      "unit_price": 0.23,
+      "unit": "gb-month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AmazonRDS Z9Q8SM928PDNNACV: $0.23 per GB-month of provisioned gp2 storage for Multi-AZ deployments running PostgreSQL"
+    },
+    "aws-rds-t4g-micro": {
+      "unit_price": 0.016,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AmazonRDS 9HPEGXQTDDGH53C9: $ 0.016 per RDS db.t4g.micro Single-AZ instance hour (or partial hour) running PostgreSQL"
+    },
+    "aws-rds-t4g-micro-multiaz": {
+      "unit_price": 0.032,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AmazonRDS RGZ43Q28J3F87JYA: $ 0.032 per RDS db.t4g.micro Multi-AZ instance hour (or partial hour) running PostgreSQL"
+    },
+    "aws-resolver-eni": {
+      "unit_price": 0.125,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AmazonRoute53 GZT83HBHCE5EGFNH: $0.125 per hour per Resolver Network Interface"
+    },
+    "aws-vpce-interface": {
+      "unit_price": 0.01,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "AmazonVPC EN2N5TATXE673A3B: $0.01 per VPC Endpoint Hour"
+    },
+    "azure-dns-resolver-inbound": {
+      "unit_price": 180,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private Resolver / Private Resolver Inbound Endpoint (1)"
+    },
+    "azure-dns-resolver-outbound": {
+      "unit_price": 180,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private Resolver / Private Resolver Outbound Endpoint (1)"
+    },
+    "azure-dns-resolver-ruleset": {
+      "unit_price": 2.5,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private Resolver / Private Resolver DNS Forwarding Ruleset (1)"
+    },
+    "azure-pg-b1ms": {
+      "unit_price": 0.017,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute / B1MS / B1MS (1 Hour)"
+    },
+    "azure-pg-d2ds-v5": {
+      "unit_price": 0.178,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure Database for PostgreSQL Flexible Server General Purpose Ddsv5 Series Compute / 2 vCore / vCore (1 Hour)"
+    },
+    "azure-pg-storage": {
+      "unit_price": 0.115,
+      "unit": "gb-month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure Database for PostgreSQL Flex Server Storage / Storage / Storage Data Stored (1 GB/Month)"
+    },
+    "azure-private-dns-zone": {
+      "unit_price": 0.5,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Azure DNS / Private / Private Zone (1)"
+    },
+    "azure-private-endpoint": {
+      "unit_price": 0.01,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Virtual Network Private Link / Standard / Standard Private Endpoint (1 Hour)"
+    },
+    "azure-servicebus-premium-mu": {
+      "unit_price": 0.9275,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Service Bus / Premium / Premium Messaging Unit (1/Hour)"
+    },
+    "azure-servicebus-standard-base": {
+      "unit_price": 0.013441,
+      "unit": "hour",
+      "source": "api",
+      "as_of": "2026-10-06",
+      "ref": "Service Bus / Standard / Standard Base Unit (1/Hour)"
+    },
+    "gcp-cloudsql-ram": {
+      "unit_price": 0.007,
+      "unit": "hour",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/sql/pricing"
+    },
+    "gcp-cloudsql-ram-ha": {
+      "unit_price": 0.014,
+      "unit": "hour",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/sql/pricing"
+    },
+    "gcp-cloudsql-storage": {
+      "unit_price": 0.17,
+      "unit": "gb-month",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/sql/pricing"
+    },
+    "gcp-cloudsql-storage-ha": {
+      "unit_price": 0.34,
+      "unit": "gb-month",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/sql/pricing"
+    },
+    "gcp-cloudsql-vcpu": {
+      "unit_price": 0.0413,
+      "unit": "hour",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/sql/pricing"
+    },
+    "gcp-cloudsql-vcpu-ha": {
+      "unit_price": 0.0826,
+      "unit": "hour",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/sql/pricing"
+    },
+    "gcp-dns-managed-zone": {
+      "unit_price": 0.2,
+      "unit": "month",
+      "source": "manual",
+      "as_of": "2026-10-06",
+      "ref": "https://cloud.google.com/dns/pricing"
+    }
+  }
+}

@@ -1,0 +1,219 @@
+# Precios de lista (F4-03).
+#
+# Cada meter dice cómo encontrar UN precio en la API pública de su nube. `pnpm prices:fetch`
+# los resuelve y escribe content/prices.json (lo corre un workflow semanal; no se edita a mano).
+# `floors` es el piso mensual de cada patrón con la configuración por default de su módulo
+# Terraform y cero tráfico: la versión con números de `fixed_cost_drivers`.
+#
+# Son precios de lista, en USD, sin descuentos, reservas ni impuestos, en una región comparable
+# por nube. Sirven para comparar órdenes de magnitud, no para presupuestar.
+regions:
+  azure: eastus
+  aws: us-east-1
+  gcp: us-east1
+
+meters:
+  # --- Azure (Retail Prices API: https://learn.microsoft.com/rest/api/cost-management/retail-prices/azure-retail-prices)
+  - id: azure-servicebus-standard-base
+    provider: azure
+    label: { es: 'Service Bus Standard (cargo base)', en: 'Service Bus Standard (base charge)' }
+    unit: hour
+    azure: { service: Service Bus, match: { skuName: Standard, meterName: Standard Base Unit, unitOfMeasure: 1/Hour } }
+    docs: https://azure.microsoft.com/pricing/details/service-bus/
+  - id: azure-servicebus-premium-mu
+    provider: azure
+    label: { es: 'Service Bus Premium (1 messaging unit)', en: 'Service Bus Premium (1 messaging unit)' }
+    unit: hour
+    azure: { service: Service Bus, match: { skuName: Premium, meterName: Premium Messaging Unit } }
+    docs: https://azure.microsoft.com/pricing/details/service-bus/
+  - id: azure-private-endpoint
+    provider: azure
+    label: { es: 'Private Endpoint', en: 'Private Endpoint' }
+    unit: hour
+    azure: { service: Virtual Network, region: Global, match: { productName: Virtual Network Private Link, meterName: Standard Private Endpoint } }
+    docs: https://azure.microsoft.com/pricing/details/private-link/
+  - id: azure-private-dns-zone
+    provider: azure
+    label: { es: 'Zona DNS privada', en: 'Private DNS zone' }
+    unit: month
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private, meterName: Private Zone } }
+    docs: https://azure.microsoft.com/pricing/details/dns/
+  - id: azure-dns-resolver-inbound
+    provider: azure
+    label: { es: 'DNS Private Resolver — inbound endpoint', en: 'DNS Private Resolver — inbound endpoint' }
+    unit: month
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private Resolver, meterName: Private Resolver Inbound Endpoint } }
+    docs: https://azure.microsoft.com/pricing/details/dns/
+  - id: azure-dns-resolver-outbound
+    provider: azure
+    label: { es: 'DNS Private Resolver — outbound endpoint', en: 'DNS Private Resolver — outbound endpoint' }
+    unit: month
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private Resolver, meterName: Private Resolver Outbound Endpoint } }
+    docs: https://azure.microsoft.com/pricing/details/dns/
+  - id: azure-dns-resolver-ruleset
+    provider: azure
+    label: { es: 'DNS Private Resolver — forwarding ruleset', en: 'DNS Private Resolver — forwarding ruleset' }
+    unit: month
+    azure: { service: Azure DNS, region: Zone 1, per: month, match: { skuName: Private Resolver, meterName: Private Resolver DNS Forwarding Ruleset } }
+    docs: https://azure.microsoft.com/pricing/details/dns/
+  - id: azure-pg-b1ms
+    provider: azure
+    label: { es: 'PostgreSQL Flexible Server B1ms (Burstable)', en: 'PostgreSQL Flexible Server B1ms (Burstable)' }
+    unit: hour
+    azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute, meterName: B1MS } }
+    docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
+  - id: azure-pg-d2ds-v5
+    provider: azure
+    label: { es: 'PostgreSQL Flexible Server D2ds_v5 (General Purpose, 2 vCores)', en: 'PostgreSQL Flexible Server D2ds_v5 (General Purpose, 2 vCores)' }
+    unit: hour
+    azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flexible Server General Purpose Ddsv5 Series Compute, skuName: 2 vCore } }
+    docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
+  - id: azure-pg-storage
+    provider: azure
+    label: { es: 'Storage de PostgreSQL Flexible Server (GB)', en: 'PostgreSQL Flexible Server storage (GB)' }
+    unit: gb-month
+    azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flex Server Storage, meterName: Storage Data Stored } }
+    docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
+
+  # --- AWS (Price List bulk API: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html)
+  - id: aws-resolver-eni
+    provider: aws
+    label: { es: 'Route 53 Resolver — IP de endpoint (ENI)', en: 'Route 53 Resolver — endpoint IP (ENI)' }
+    unit: hour
+    aws: { offer: AmazonRoute53, match: { usagetype: USE1-ResolverNetworkInterface } }
+    docs: https://aws.amazon.com/route53/pricing/
+  - id: aws-alb
+    provider: aws
+    label: { es: 'Application Load Balancer (hora, sin LCU)', en: 'Application Load Balancer (hourly, no LCU)' }
+    unit: hour
+    aws: { offer: AWSELB, match: { usagetype: LoadBalancerUsage, operation: 'LoadBalancing:Application' } }
+    docs: https://aws.amazon.com/elasticloadbalancing/pricing/
+  - id: aws-vpce-interface
+    provider: aws
+    label: { es: 'Interface VPC endpoint (por AZ)', en: 'Interface VPC endpoint (per AZ)' }
+    unit: hour
+    aws: { offer: AmazonVPC, match: { usagetype: USE1-VpcEndpoint-Hours } }
+    docs: https://aws.amazon.com/privatelink/pricing/
+  - id: aws-rds-t4g-micro
+    provider: aws
+    label: { es: 'RDS PostgreSQL db.t4g.micro (Single-AZ)', en: 'RDS PostgreSQL db.t4g.micro (Single-AZ)' }
+    unit: hour
+    aws: { offer: AmazonRDS, match: { usagetype: 'InstanceUsage:db.t4g.micro', databaseEngine: PostgreSQL, deploymentOption: Single-AZ } }
+    docs: https://aws.amazon.com/rds/postgresql/pricing/
+  - id: aws-rds-t4g-micro-multiaz
+    provider: aws
+    label: { es: 'RDS PostgreSQL db.t4g.micro (Multi-AZ)', en: 'RDS PostgreSQL db.t4g.micro (Multi-AZ)' }
+    unit: hour
+    aws: { offer: AmazonRDS, match: { usagetype: 'Multi-AZUsage:db.t4g.micro', databaseEngine: PostgreSQL, deploymentOption: Multi-AZ } }
+    docs: https://aws.amazon.com/rds/postgresql/pricing/
+  - id: aws-rds-gp2-storage
+    provider: aws
+    label: { es: 'Storage gp2 de RDS PostgreSQL (GB, Single-AZ)', en: 'RDS PostgreSQL gp2 storage (GB, Single-AZ)' }
+    unit: gb-month
+    aws: { offer: AmazonRDS, match: { usagetype: 'RDS:GP2-Storage', databaseEngine: PostgreSQL, deploymentOption: Single-AZ } }
+    docs: https://aws.amazon.com/rds/postgresql/pricing/
+  - id: aws-rds-gp2-storage-multiaz
+    provider: aws
+    label: { es: 'Storage gp2 de RDS PostgreSQL (GB, Multi-AZ)', en: 'RDS PostgreSQL gp2 storage (GB, Multi-AZ)' }
+    unit: gb-month
+    aws: { offer: AmazonRDS, match: { usagetype: 'RDS:Multi-AZ-GP2-Storage', databaseEngine: PostgreSQL, deploymentOption: Multi-AZ } }
+    docs: https://aws.amazon.com/rds/postgresql/pricing/
+
+  # --- GCP (Cloud Billing Catalog API: https://docs.cloud.google.com/billing/docs/how-to/get-pricing-information-api)
+  # La API pide key (secret GCP_BILLING_API_KEY). Sin key, el job usa `manual`, tomado del
+  # SKU explorer oficial (https://cloud.google.com/skus) con el mismo SKU.
+  - id: gcp-cloudsql-vcpu
+    provider: gcp
+    label: { es: 'Cloud SQL PostgreSQL Enterprise, zonal (por vCPU)', en: 'Cloud SQL PostgreSQL Enterprise, zonal (per vCPU)' }
+    unit: hour
+    gcp: { service: Cloud SQL, description: 'Cloud SQL for PostgreSQL: Zonal - vCPU in Americas' }
+    manual: { unit_price: 0.0413, verified_at: 2026-10-06, source: 'https://cloud.google.com/sql/pricing' }
+    docs: https://cloud.google.com/sql/pricing
+  - id: gcp-cloudsql-ram
+    provider: gcp
+    label: { es: 'Cloud SQL PostgreSQL Enterprise, zonal (por GiB de RAM)', en: 'Cloud SQL PostgreSQL Enterprise, zonal (per GiB of RAM)' }
+    unit: hour
+    gcp: { service: Cloud SQL, description: 'Cloud SQL for PostgreSQL: Zonal - RAM in Americas' }
+    manual: { unit_price: 0.007, verified_at: 2026-10-06, source: 'https://cloud.google.com/sql/pricing' }
+    docs: https://cloud.google.com/sql/pricing
+  - id: gcp-cloudsql-storage
+    provider: gcp
+    label: { es: 'Storage SSD de Cloud SQL, zonal (GiB)', en: 'Cloud SQL SSD storage, zonal (GiB)' }
+    unit: gb-month
+    gcp: { service: Cloud SQL, description: 'Cloud SQL for PostgreSQL: Zonal - Standard storage in Americas' }
+    manual: { unit_price: 0.17, verified_at: 2026-10-06, source: 'https://cloud.google.com/sql/pricing' }
+    docs: https://cloud.google.com/sql/pricing
+  - id: gcp-cloudsql-vcpu-ha
+    provider: gcp
+    label: { es: 'Cloud SQL PostgreSQL Enterprise, HA regional (por vCPU)', en: 'Cloud SQL PostgreSQL Enterprise, regional HA (per vCPU)' }
+    unit: hour
+    gcp: { service: Cloud SQL, description: 'Cloud SQL for PostgreSQL: Regional - vCPU in Americas' }
+    manual: { unit_price: 0.0826, verified_at: 2026-10-06, source: 'https://cloud.google.com/sql/pricing' }
+    docs: https://cloud.google.com/sql/pricing
+  - id: gcp-cloudsql-ram-ha
+    provider: gcp
+    label: { es: 'Cloud SQL PostgreSQL Enterprise, HA regional (por GiB de RAM)', en: 'Cloud SQL PostgreSQL Enterprise, regional HA (per GiB of RAM)' }
+    unit: hour
+    gcp: { service: Cloud SQL, description: 'Cloud SQL for PostgreSQL: Regional - RAM in Americas' }
+    manual: { unit_price: 0.014, verified_at: 2026-10-06, source: 'https://cloud.google.com/sql/pricing' }
+    docs: https://cloud.google.com/sql/pricing
+  - id: gcp-cloudsql-storage-ha
+    provider: gcp
+    label: { es: 'Storage SSD de Cloud SQL, HA regional (GiB)', en: 'Cloud SQL SSD storage, regional HA (GiB)' }
+    unit: gb-month
+    gcp: { service: Cloud SQL, description: 'Cloud SQL for PostgreSQL: Regional - Standard storage in Americas' }
+    manual: { unit_price: 0.34, verified_at: 2026-10-06, source: 'https://cloud.google.com/sql/pricing' }
+    docs: https://cloud.google.com/sql/pricing
+  - id: gcp-dns-managed-zone
+    provider: gcp
+    label: { es: 'Zona administrada de Cloud DNS (privada o de forwarding)', en: 'Cloud DNS managed zone (private or forwarding)' }
+    unit: month
+    gcp: { service: Cloud DNS, description: ManagedZone }
+    manual: { unit_price: 0.2, verified_at: 2026-10-06, source: 'https://cloud.google.com/dns/pricing' }
+    docs: https://cloud.google.com/dns/pricing
+
+floors:
+  object-storage-ttl:
+    azure:
+      - { meter: azure-private-endpoint, count: 1 }
+      - { meter: azure-private-dns-zone, count: 1 }
+    aws: []
+    gcp: []
+  private-web-api:
+    azure:
+      - { meter: azure-pg-b1ms, count: 1 }
+      - { meter: azure-pg-storage, count: 32 }
+      - { meter: azure-private-endpoint, count: 1 }
+      - { meter: azure-private-dns-zone, count: 2 }
+    aws:
+      - { meter: aws-alb, count: 1 }
+      # ecr.api, ecr.dkr y logs, cada uno en las 2 AZ por default.
+      - { meter: aws-vpce-interface, count: 6 }
+      - { meter: aws-rds-t4g-micro, count: 1 }
+      - { meter: aws-rds-gp2-storage, count: 20 }
+    # db-custom-1-3840 (1 vCPU, 3.75 GiB) con el disco default de 10 GiB.
+    gcp:
+      - { meter: gcp-cloudsql-vcpu, count: 1 }
+      - { meter: gcp-cloudsql-ram, count: 3.75 }
+      - { meter: gcp-cloudsql-storage, count: 10 }
+  async-worker:
+    azure:
+      - { meter: azure-servicebus-standard-base, count: 1 }
+    aws: []
+    gcp: []
+  ci-oidc-federation:
+    azure: []
+    aws: []
+    gcp: []
+  hybrid-private-dns:
+    azure:
+      - { meter: azure-dns-resolver-inbound, count: 1 }
+      - { meter: azure-dns-resolver-outbound, count: 1 }
+      - { meter: azure-dns-resolver-ruleset, count: 1 }
+      - { meter: azure-private-dns-zone, count: 1 }
+    # Dos IPs por endpoint (mínimo de Resolver), inbound + outbound.
+    aws:
+      - { meter: aws-resolver-eni, count: 4 }
+    # La server policy de inbound no tiene cargo: se paga la zona privada y la de forwarding.
+    gcp:
+      - { meter: gcp-dns-managed-zone, count: 2 }

@@ -58,12 +58,13 @@ const providers = PROVIDERS.map((p) => ({ id: p, name: PROVIDER_META[p].short, c
 ---
 
 <Base lang={lang} title={`${s.practiceTitle} — ${BRAND.name}`} description={s.practiceIntro} altPath="practice/">
-  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.practiceTitle}</h1>
-  <p class="mb-6 max-w-3xl text-muted">{s.practiceIntro}</p>
+  <h1 class="lc-h1">{s.practiceTitle}</h1>
+  <p class="lc-lead">{s.practiceIntro}</p>
 
-  <noscript><p class="text-muted">{s.noJs}</p></noscript>
+  <noscript><p class="text-muted">{s.noJs}</p><style>#practice { display: none; }</style></noscript>
 
-  <div id="practice" class="max-w-3xl" hidden>
+  <!-- Visible desde el HTML: revelarlo con JS empujaba el footer (CLS). -->
+  <div id="practice" class="min-h-[640px] max-w-3xl">
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <div role="tablist" class="inline-flex rounded-lg border border-line bg-surface p-1 text-sm">
         <button type="button" role="tab" data-mode="quiz" class="mode-tab min-h-9 rounded-md px-3 font-medium">{s.modeQuiz}</button>

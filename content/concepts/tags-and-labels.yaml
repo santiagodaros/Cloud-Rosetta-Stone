@@ -1,0 +1,55 @@
+id: tags-and-labels
+category: operations
+name: { es: Tags y labels, en: Tags and labels }
+description:
+  es: Metadatos clave-valor para costos, organización y políticas, y si se heredan.
+  en: Key-value metadata for cost, organization and policy, and whether it's inherited.
+providers:
+  azure:
+    terms:
+      - { term: Tags, docs: "https://learn.microsoft.com/azure/azure-resource-manager/management/tag-resources" }
+    explanation:
+      es: >-
+        Hasta 50 por recurso, resource group o suscripción. Los recursos no heredan los tags del resource group ni
+        de la suscripción; para eso hay políticas "Inherit a tag" con efecto modify.
+      en: >-
+        Up to 50 per resource, resource group or subscription. Resources don't inherit tags from the resource group
+        or subscription; there are "Inherit a tag" policies with the modify effect for that.
+  aws:
+    terms:
+      - { term: Tags, docs: "https://docs.aws.amazon.com/tag-editor/latest/userguide/best-practices-and-strats.html" }
+      - { term: Tag policies, docs: "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_tag-policies.html" }
+    explanation:
+      es: >-
+        Hasta 50 tags creados por el usuario por recurso, sensibles a mayúsculas. No hay herencia general: se
+        propagan con CloudFormation, Auto Scaling o automatización propia. Las tag policies estandarizan claves y
+        valores en la organización.
+      en: >-
+        Up to 50 user-created tags per resource, case-sensitive. There's no general inheritance: they're propagated
+        through CloudFormation, Auto Scaling or your own automation. Tag policies standardize keys and values across
+        the organization.
+  gcp:
+    terms:
+      - { term: Labels, docs: "https://docs.cloud.google.com/resource-manager/docs/labels-overview" }
+      - { term: Tags, docs: "https://docs.cloud.google.com/resource-manager/docs/tags/tags-overview" }
+    explanation:
+      es: >-
+        Dos cosas distintas. Labels: metadatos para organizar y para costos, hasta 64 por recurso, sin herencia.
+        Tags: recursos propios que se heredan hacia abajo en la jerarquía y son los únicos que se pueden usar en
+        condiciones de IAM y en org policies.
+      en: >-
+        Two different things. Labels: metadata for organization and cost, up to 64 per resource, not inherited.
+        Tags: resources of their own that are inherited down the hierarchy and are the only ones usable in IAM
+        conditions and org policies.
+caveats:
+  - text:
+      es: >-
+        Lo que en Azure y AWS se llama "tag" en GCP se parece más a un "label". El "tag" de GCP es un objeto de
+        gobierno con herencia, más cercano a usar tags en condiciones de Azure Policy o ABAC.
+      en: >-
+        What Azure and AWS call a "tag" is closer to a GCP "label". The GCP "tag" is a governance object with
+        inheritance, closer to using tags in Azure Policy conditions or ABAC.
+    sources:
+      - https://docs.cloud.google.com/resource-manager/docs/tags/tags-overview
+      - https://learn.microsoft.com/azure/azure-resource-manager/management/tag-resources
+verified_at: 2026-10-06

@@ -1,0 +1,42 @@
+---
+/**
+ * Layout de los widgets embebibles (F4-18): sin header ni footer del sitio, noindex
+ * (el canónico es la página original) y todos los links abren afuera del iframe.
+ */
+import '../styles/global.css';
+import { BRAND } from '../lib/brand.ts';
+import { ui, type Locale } from '../lib/i18n.ts';
+import { href } from '../lib/paths.ts';
+
+interface Props {
+  lang: Locale;
+  title: string;
+  /** URL absoluta de la página original (canónico y link de vuelta). */
+  canonical: string;
+}
+const { lang, title, canonical } = Astro.props;
+const s = ui(lang);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={title} />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <base target="_blank" />
+  </head>
+  <body class="bg-surface p-3 antialiased">
+    <main>
+      <slot />
+    </main>
+    <footer class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2 text-xs text-muted">
+      <a href={canonical} rel="noopener">{s.embedOpen} →</a>
+      <span>{s.embedVia(BRAND.name)}</span>
+    </footer>
+  </body>
+</html>

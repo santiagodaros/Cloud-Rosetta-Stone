@@ -1,0 +1,477 @@
+# Mapa de recursos Terraform entre azurerm, aws y google (F4-15).
+#
+# - Cada nombre se valida en CI contra el schema real de los providers pinneados
+#   (scripts/check-terraform-map.ts): un recurso renombrado o eliminado rompe el build.
+# - `match`: one-to-one (mismo alcance y forma), partial (hay que pensar distinto) o
+#   gap (alguna nube no tiene recurso). partial y gap exigen `notes`.
+# - `recurso.bloque` cuando en una nube es un bloque dentro de otro recurso.
+providers:
+  azurerm: "~> 5.8"
+  aws: "~> 6.67"
+  google: "~> 8.6"
+verified_at: 2026-10-06
+entries:
+  # --- Organización ------------------------------------------------------------
+  - id: hierarchy-folder
+    title: { es: Agrupador de cuentas/suscripciones/proyectos, en: Grouping of accounts/subscriptions/projects }
+    concept: resource-hierarchy
+    match: one-to-one
+    resources:
+      azure: [azurerm_management_group]
+      aws: [aws_organizations_organizational_unit]
+      gcp: [google_folder]
+  - id: hierarchy-account
+    title: { es: Cuenta / suscripción / proyecto, en: Account / subscription / project }
+    concept: resource-hierarchy
+    match: partial
+    resources:
+      azure: [azurerm_subscription]
+      aws: [aws_organizations_account]
+      gcp: [google_project]
+    notes:
+      es: >-
+        azurerm_subscription crea un alias para una suscripción y necesita un billing scope; el recurso no
+        "crea" la relación con el tenant. En GCP, además de crear el proyecto, cada API se habilita aparte
+        (google_project_service).
+      en: >-
+        azurerm_subscription creates an alias for a subscription and needs a billing scope; the resource doesn't
+        "create" the tenant relationship. In GCP, besides creating the project, each API is enabled separately
+        (google_project_service).
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subscription
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_service
+  - id: resource-group
+    title: { es: Contenedor de recursos dentro de la cuenta, en: Resource container inside the account }
+    concept: resource-hierarchy
+    match: gap
+    resources:
+      azure: [azurerm_resource_group]
+      aws: []
+      gcp: []
+    notes:
+      es: >-
+        El resource group de Azure es dueño del ciclo de vida de sus recursos (borrarlo los borra). En AWS,
+        aws_resourcegroups_group es una consulta por tags o por stack, no un contenedor; en GCP el contenedor
+        más cercano es el propio proyecto.
+      en: >-
+        An Azure resource group owns the lifecycle of its resources (deleting it deletes them). In AWS,
+        aws_resourcegroups_group is a tag- or stack-based query, not a container; in GCP the closest container
+        is the project itself.
+    sources:
+      - https://learn.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal
+      - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/resourcegroups_group
+  - id: api-enablement
+    title: { es: Habilitar servicios antes de usarlos, en: Enabling services before use }
+    match: gap
+    resources:
+      azure: [azurerm_resource_provider_registration]
+      aws: []
+      gcp: [google_project_service]
+    notes:
+      es: >-
+        En GCP cada API se habilita por proyecto y un terraform apply sobre un proyecto nuevo falla hasta que
+        está habilitada. En Azure el provider registra los resource providers que necesita de forma
+        automática salvo que lo desactives. En AWS no hay un paso equivalente por servicio.
+      en: >-
+        In GCP each API is enabled per project and a terraform apply on a new project fails until it is. In
+        Azure the provider registers the resource providers it needs automatically unless you turn that off.
+        AWS has no per-service equivalent step.
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_service
+      - https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_provider_registration
+  - id: guardrails
+    title: { es: Guardrails a nivel organización, en: Organization-level guardrails }
+    capability: governance-guardrails
+    match: partial
+    resources:
+      azure: [azurerm_policy_definition, azurerm_management_group_policy_assignment]
+      aws: [aws_organizations_policy, aws_organizations_policy_attachment]
+      gcp: [google_org_policy_policy]
+    notes:
+      es: >-
+        Limitan cosas distintas: Azure Policy evalúa propiedades de los recursos (y puede auditar, denegar o
+        modificar), las SCP de AWS ponen un techo a las acciones de IAM, y las org policies de GCP aplican
+        constraints predefinidos o custom. Definición y asignación son recursos separados en Azure y AWS.
+      en: >-
+        They limit different things: Azure Policy evaluates resource properties (and can audit, deny or modify),
+        AWS SCPs cap IAM actions, and GCP org policies apply predefined or custom constraints. Definition and
+        assignment are separate resources in Azure and AWS.
+    sources:
+      - https://learn.microsoft.com/azure/governance/policy/overview
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+      - https://docs.cloud.google.com/resource-manager/docs/organization-policy/overview
+
+  # --- Identidad -------------------------------------------------------------------
+  - id: workload-identity
+    title: { es: Identidad de un workload, en: Workload identity }
+    capability: workload-identity
+    match: partial
+    resources:
+      azure: [azurerm_user_assigned_identity]
+      aws: [aws_iam_role]
+      gcp: [google_service_account]
+    notes:
+      es: >-
+        aws_iam_role junta identidad, trust policy y (con policies adjuntas) permisos. En Azure y GCP la
+        identidad es un recurso y los permisos son role assignments o bindings aparte.
+      en: >-
+        aws_iam_role bundles identity, trust policy and (with attached policies) permissions. In Azure and GCP
+        the identity is one resource and permissions are separate role assignments or bindings.
+  - id: role-assignment
+    title: { es: Asignar permisos, en: Granting permissions }
+    capability: access-control
+    match: partial
+    resources:
+      azure: [azurerm_role_assignment]
+      aws: [aws_iam_role_policy_attachment, aws_iam_role_policy]
+      gcp: [google_project_iam_member, google_storage_bucket_iam_member]
+    notes:
+      es: >-
+        En GCP cada recurso tiene tres variantes: _iam_policy (autoritativa sobre toda la policy), _iam_binding
+        (autoritativa por rol) y _iam_member (aditiva). Mezclar una autoritativa con _iam_member sobre el mismo
+        recurso hace que se pisen en cada apply. En Azure el scope va en el propio role assignment.
+      en: >-
+        In GCP every resource has three variants: _iam_policy (authoritative for the whole policy), _iam_binding
+        (authoritative per role) and _iam_member (additive). Mixing an authoritative one with _iam_member on the
+        same resource makes them fight on every apply. In Azure the scope lives on the role assignment itself.
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+  - id: custom-role
+    title: { es: Rol o policy custom, en: Custom role or policy }
+    capability: access-control
+    match: partial
+    resources:
+      azure: [azurerm_role_definition]
+      aws: [aws_iam_policy]
+      gcp: [google_project_iam_custom_role]
+    notes:
+      es: >-
+        Un rol custom de Azure o GCP es una lista de acciones que después se asigna sobre un scope. Una policy
+        de AWS es un documento que puede incluir condiciones y recursos concretos, y se adjunta a una identidad.
+      en: >-
+        An Azure or GCP custom role is a list of actions later assigned on a scope. An AWS policy is a document
+        that can include conditions and specific resources, and it's attached to an identity.
+  - id: oidc-federation
+    title: { es: "Federación OIDC (CI/CD, otra nube)", en: "OIDC federation (CI/CD, another cloud)" }
+    capability: external-identity-federation
+    match: partial
+    resources:
+      azure: [azurerm_federated_identity_credential]
+      aws: [aws_iam_openid_connect_provider]
+      gcp: [google_iam_workload_identity_pool, google_iam_workload_identity_pool_provider]
+    notes:
+      es: >-
+        En Azure cada credencial es un par issuer + subject exacto sobre una identidad. En AWS el provider es
+        uno por URL y por cuenta, y la confianza vive en la trust policy del rol. En GCP pool y provider llevan
+        la condición CEL, y el acceso se da con bindings sobre principalSet.
+      en: >-
+        In Azure each credential is an exact issuer + subject pair on an identity. In AWS the provider is one per
+        URL per account, and trust lives in the role's trust policy. In GCP the pool and provider carry the CEL
+        condition, and access is granted with bindings on a principalSet.
+
+  # --- Red ---------------------------------------------------------------------------
+  - id: network
+    title: { es: Red virtual, en: Virtual network }
+    capability: virtual-network
+    concept: network-scope
+    match: partial
+    resources:
+      azure: [azurerm_virtual_network]
+      aws: [aws_vpc]
+      gcp: [google_compute_network]
+    notes:
+      es: La VNet y la VPC de AWS son regionales; la VPC de GCP es global y sus subnets son regionales.
+      en: The VNet and the AWS VPC are regional; the GCP VPC is global and its subnets are regional.
+  - id: subnet
+    title: { es: Subnet, en: Subnet }
+    capability: virtual-network
+    concept: network-scope
+    match: partial
+    resources:
+      azure: [azurerm_subnet]
+      aws: [aws_subnet]
+      gcp: [google_compute_subnetwork]
+    notes:
+      es: >-
+        aws_subnet vive en una sola zona de disponibilidad (availability_zone); la subnet de Azure abarca la
+        región y la de GCP también es regional. Alta disponibilidad en AWS = una subnet por AZ.
+      en: >-
+        aws_subnet lives in a single availability zone (availability_zone); the Azure subnet spans the region
+        and the GCP one is regional too. High availability in AWS = one subnet per AZ.
+  - id: network-filtering
+    title: { es: Filtrado de tráfico, en: Traffic filtering }
+    capability: network-filtering
+    match: partial
+    resources:
+      azure: [azurerm_network_security_group, azurerm_subnet_network_security_group_association]
+      aws: [aws_security_group, aws_vpc_security_group_ingress_rule, aws_network_acl]
+      gcp: [google_compute_firewall, google_compute_network_firewall_policy]
+    notes:
+      es: >-
+        El NSG se asocia a subnets o NICs. El security group de AWS se adjunta a interfaces de red y es
+        stateful (las NACL son por subnet y stateless). En GCP las reglas son de la VPC y apuntan a instancias
+        por network tags o service accounts.
+      en: >-
+        The NSG is associated with subnets or NICs. The AWS security group attaches to network interfaces and is
+        stateful (NACLs are per subnet and stateless). In GCP rules belong to the VPC and target instances by
+        network tags or service accounts.
+  - id: routing
+    title: { es: Rutas, en: Routes }
+    capability: virtual-network
+    match: partial
+    resources:
+      azure: [azurerm_route_table, azurerm_subnet_route_table_association]
+      aws: [aws_route_table, aws_route_table_association]
+      gcp: [google_compute_route]
+    notes:
+      es: >-
+        Azure y AWS asocian una tabla de rutas a cada subnet. En GCP no hay tabla por subnet: cada ruta es un
+        recurso de la VPC y se puede aplicar a instancias por network tags.
+      en: >-
+        Azure and AWS associate a route table with each subnet. GCP has no per-subnet table: each route is a VPC
+        resource and can target instances by network tags.
+  - id: peering
+    title: { es: Peering entre redes, en: Network peering }
+    capability: virtual-network
+    match: partial
+    resources:
+      azure: [azurerm_virtual_network_peering]
+      aws: [aws_vpc_peering_connection, aws_vpc_peering_connection_accepter]
+      gcp: [google_compute_network_peering]
+    notes:
+      es: >-
+        En Azure y GCP hace falta un recurso por cada lado del peering. En AWS es una conexión que el otro
+        lado acepta (aws_vpc_peering_connection_accepter cuando es otra cuenta o región).
+      en: >-
+        In Azure and GCP you need one resource per side of the peering. In AWS it's one connection the other side
+        accepts (aws_vpc_peering_connection_accepter for another account or region).
+  - id: nat
+    title: { es: Salida a internet con NAT, en: Internet egress with NAT }
+    capability: virtual-network
+    match: partial
+    resources:
+      azure: [azurerm_nat_gateway, azurerm_public_ip, azurerm_subnet_nat_gateway_association]
+      aws: [aws_nat_gateway, aws_eip, aws_route_table]
+      gcp: [google_compute_router, google_compute_router_nat]
+    notes:
+      es: >-
+        En Azure el NAT gateway se asocia a la subnet. En AWS vive en una subnet pública y las privadas llegan
+        con una ruta. En GCP Cloud NAT es una configuración de un Cloud Router.
+      en: >-
+        In Azure the NAT gateway is associated with the subnet. In AWS it lives in a public subnet and private
+        subnets reach it via a route. In GCP Cloud NAT is a configuration on a Cloud Router.
+  - id: private-endpoint
+    title: { es: Acceso privado a un servicio administrado, en: Private access to a managed service }
+    capability: private-service-access
+    match: partial
+    resources:
+      azure: [azurerm_private_endpoint]
+      aws: [aws_vpc_endpoint]
+      gcp: [google_compute_forwarding_rule, google_service_networking_connection]
+    notes:
+      es: >-
+        aws_vpc_endpoint cubre los tipos Interface y Gateway (vpc_endpoint_type). En GCP depende del servicio:
+        un endpoint de Private Service Connect es una forwarding rule, y la IP privada de Cloud SQL usa
+        private services access (google_service_networking_connection).
+      en: >-
+        aws_vpc_endpoint covers the Interface and Gateway types (vpc_endpoint_type). In GCP it depends on the
+        service: a Private Service Connect endpoint is a forwarding rule, and Cloud SQL's private IP uses private
+        services access (google_service_networking_connection).
+  - id: private-dns-zone
+    title: { es: Zona DNS privada, en: Private DNS zone }
+    capability: private-dns
+    match: partial
+    resources:
+      azure: [azurerm_private_dns_zone, azurerm_private_dns_zone_virtual_network_link]
+      aws: [aws_route53_zone, aws_route53_zone_association]
+      gcp: [google_dns_managed_zone]
+    notes:
+      es: >-
+        En Azure la zona privada es un tipo de recurso propio y se vincula a cada VNet. En AWS y GCP es el mismo
+        recurso que una zona pública, con un bloque vpc (AWS) o visibility = private (GCP).
+      en: >-
+        In Azure the private zone is its own resource type and is linked to each VNet. In AWS and GCP it's the same
+        resource as a public zone, with a vpc block (AWS) or visibility = private (GCP).
+  - id: dns-forwarding
+    title: { es: Reenvío DNS híbrido, en: Hybrid DNS forwarding }
+    capability: dns-forwarding
+    match: partial
+    resources:
+      azure: [azurerm_private_dns_resolver, azurerm_private_dns_resolver_inbound_endpoint, azurerm_private_dns_resolver_outbound_endpoint, azurerm_private_dns_resolver_forwarding_rule]
+      aws: [aws_route53_resolver_endpoint, aws_route53_resolver_rule, aws_route53_resolver_rule_association]
+      gcp: [google_dns_policy, google_dns_managed_zone.forwarding_config]
+    notes:
+      es: >-
+        Azure y AWS modelan endpoints de entrada y salida. En GCP la entrada es una server policy y la salida
+        es un bloque forwarding_config dentro de una managed zone.
+      en: >-
+        Azure and AWS model inbound and outbound endpoints. In GCP inbound is a server policy and outbound is a
+        forwarding_config block inside a managed zone.
+
+  # --- Datos -------------------------------------------------------------------------
+  - id: object-storage
+    title: { es: Almacenamiento de objetos, en: Object storage }
+    capability: object-storage
+    match: partial
+    resources:
+      azure: [azurerm_storage_account, azurerm_storage_container]
+      aws: [aws_s3_bucket, aws_s3_bucket_public_access_block, aws_s3_bucket_versioning]
+      gcp: [google_storage_bucket]
+    notes:
+      es: >-
+        Azure tiene un nivel más: la storage account (red, Shared Key, cifrado) y adentro los contenedores. En
+        el provider de AWS la configuración del bucket está repartida en recursos separados
+        (aws_s3_bucket_versioning, _public_access_block, _lifecycle_configuration…). En GCP casi todo es un
+        bloque del bucket.
+      en: >-
+        Azure has one more level: the storage account (network, Shared Key, encryption) with containers inside.
+        In the AWS provider bucket configuration is split into separate resources (aws_s3_bucket_versioning,
+        _public_access_block, _lifecycle_configuration…). In GCP almost everything is a block on the bucket.
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket
+  - id: object-lifecycle
+    title: { es: Expiración de objetos, en: Object expiration }
+    capability: object-lifecycle
+    match: partial
+    resources:
+      azure: [azurerm_storage_management_policy]
+      aws: [aws_s3_bucket_lifecycle_configuration]
+      gcp: [google_storage_bucket.lifecycle_rule]
+    notes:
+      es: En GCP no es un recurso aparte sino un bloque lifecycle_rule dentro de google_storage_bucket.
+      en: In GCP it isn't a separate resource but a lifecycle_rule block inside google_storage_bucket.
+  - id: managed-postgres
+    title: { es: PostgreSQL administrado, en: Managed PostgreSQL }
+    capability: managed-postgres
+    match: one-to-one
+    resources:
+      azure: [azurerm_postgresql_flexible_server]
+      aws: [aws_db_instance]
+      gcp: [google_sql_database_instance]
+    notes:
+      es: Para Aurora PostgreSQL en AWS el recurso es aws_rds_cluster (con aws_rds_cluster_instance).
+      en: For Aurora PostgreSQL on AWS the resource is aws_rds_cluster (with aws_rds_cluster_instance).
+  - id: secrets
+    title: { es: Secretos, en: Secrets }
+    capability: secrets-store
+    match: partial
+    resources:
+      azure: [azurerm_key_vault, azurerm_key_vault_secret]
+      aws: [aws_secretsmanager_secret, aws_secretsmanager_secret_version]
+      gcp: [google_secret_manager_secret, google_secret_manager_secret_version]
+    notes:
+      es: >-
+        Key Vault es un contenedor con su propio modelo de acceso, y los secretos viven adentro. En AWS y GCP
+        cada secreto es un recurso de primer nivel y el valor es una versión aparte.
+      en: >-
+        Key Vault is a container with its own access model, and secrets live inside it. In AWS and GCP each secret
+        is a top-level resource and the value is a separate version.
+  - id: kms
+    title: { es: Claves de cifrado, en: Encryption keys }
+    capability: key-management
+    match: partial
+    resources:
+      azure: [azurerm_key_vault_key]
+      aws: [aws_kms_key]
+      gcp: [google_kms_key_ring, google_kms_crypto_key]
+    notes:
+      es: >-
+        En GCP los key rings y las crypto keys no se pueden borrar: un terraform destroy las saca del state y
+        destruye sus versiones, pero el nombre queda tomado.
+      en: >-
+        In GCP key rings and crypto keys can't be deleted: a terraform destroy removes them from state and destroys
+        their versions, but the name stays taken.
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key
+
+  # --- Cómputo y mensajería -----------------------------------------------------------
+  - id: message-queue
+    title: { es: Cola de mensajes, en: Message queue }
+    capability: message-queue
+    match: partial
+    resources:
+      azure: [azurerm_servicebus_namespace, azurerm_servicebus_queue]
+      aws: [aws_sqs_queue]
+      gcp: [google_pubsub_topic, google_pubsub_subscription]
+    notes:
+      es: >-
+        Service Bus tiene un namespace (tier, red, autenticación) con colas adentro. SQS es un recurso por cola.
+        Pub/Sub separa topic y suscripción, y los mensajes se retienen por suscripción.
+      en: >-
+        Service Bus has a namespace (tier, network, authentication) with queues inside. SQS is one resource per
+        queue. Pub/Sub separates topic and subscription, and messages are retained per subscription.
+  - id: functions
+    title: { es: Funciones, en: Functions }
+    capability: event-driven-compute
+    match: partial
+    resources:
+      azure: [azurerm_linux_function_app, azurerm_service_plan, azurerm_storage_account]
+      aws: [aws_lambda_function]
+      gcp: [google_cloudfunctions2_function]
+    notes:
+      es: Una Function App de Azure necesita un plan y una storage account propios; Lambda y Cloud Functions son un solo recurso.
+      en: An Azure Function App needs its own plan and storage account; Lambda and Cloud Functions are a single resource.
+  - id: containers
+    title: { es: Contenedores serverless, en: Serverless containers }
+    capability: container-platform
+    match: partial
+    resources:
+      azure: [azurerm_container_app_environment, azurerm_container_app]
+      aws: [aws_ecs_cluster, aws_ecs_task_definition, aws_ecs_service]
+      gcp: [google_cloud_run_v2_service]
+    notes:
+      es: >-
+        Container Apps separa environment (red, logs) y app. ECS separa cluster, task definition y service.
+        Cloud Run es un único recurso por servicio.
+      en: >-
+        Container Apps separates environment (network, logs) and app. ECS separates cluster, task definition and
+        service. Cloud Run is a single resource per service.
+  - id: kubernetes
+    title: { es: Kubernetes administrado, en: Managed Kubernetes }
+    capability: managed-kubernetes
+    match: partial
+    resources:
+      azure: [azurerm_kubernetes_cluster, azurerm_kubernetes_cluster_node_pool]
+      aws: [aws_eks_cluster, aws_eks_node_group]
+      gcp: [google_container_cluster, google_container_node_pool]
+    notes:
+      es: >-
+        AKS exige un default node pool como bloque dentro del cluster. En GKE la documentación del provider
+        recomienda borrar el pool por defecto (remove_default_node_pool) y manejar los pools como recursos
+        aparte. En EKS los node groups siempre son recursos aparte.
+      en: >-
+        AKS requires a default node pool as a block inside the cluster. For GKE the provider docs recommend
+        removing the default pool (remove_default_node_pool) and managing pools as separate resources. In EKS
+        node groups are always separate resources.
+    sources:
+      - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster
+  - id: vm
+    title: { es: Máquina virtual Linux, en: Linux virtual machine }
+    match: partial
+    resources:
+      azure: [azurerm_linux_virtual_machine, azurerm_network_interface]
+      aws: [aws_instance]
+      gcp: [google_compute_instance]
+    notes:
+      es: En Azure la NIC es un recurso aparte que la VM referencia; en AWS y GCP la interfaz principal se declara dentro de la instancia.
+      en: In Azure the NIC is a separate resource the VM references; in AWS and GCP the primary interface is declared inside the instance.
+
+  # --- Observabilidad -------------------------------------------------------------------
+  - id: logs
+    title: { es: Logs centralizados, en: Centralized logs }
+    capability: centralized-logging
+    match: partial
+    resources:
+      azure: [azurerm_log_analytics_workspace, azurerm_monitor_diagnostic_setting]
+      aws: [aws_cloudwatch_log_group]
+      gcp: [google_logging_project_bucket_config, google_logging_project_sink]
+    notes:
+      es: >-
+        En Azure los logs de recursos no llegan al workspace hasta que creás un diagnostic setting por recurso.
+        En GCP los logs ya entran al proyecto; los sinks los enrutan a otro bucket o destino.
+      en: >-
+        In Azure resource logs don't reach the workspace until you create a diagnostic setting per resource. In GCP
+        logs already land in the project; sinks route them to another bucket or destination.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings
+      - https://docs.cloud.google.com/logging/docs/routing/overview
