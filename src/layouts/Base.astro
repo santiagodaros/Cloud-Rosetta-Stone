@@ -86,7 +86,7 @@ const tabs = [
           <a class="lc-iconbtn" href={href(`${lang}/search/`)} aria-label={s.search} title={s.search}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
           </a>
-          <label id="origin-picker" class="lc-origin" title={s.originHint} hidden>
+          <label id="origin-picker" class="lc-origin" title={s.originHint} style="visibility: hidden">
             <span>{s.originLabel}</span>
             <select id="origin-select">
               <option value="">{s.originNone}</option>
@@ -151,7 +151,8 @@ const tabs = [
       const picker = document.getElementById('origin-picker');
       const select = document.getElementById('origin-select') as HTMLSelectElement | null;
       if (picker && select) {
-        picker.hidden = false;
+        // Ocupa su lugar desde el HTML (visibility, no hidden): mostrarlo no mueve el header (CLS).
+        picker.style.visibility = "";
         select.value = document.documentElement.dataset.origin ?? '';
         select.addEventListener('change', () => {
           try {
