@@ -63,7 +63,7 @@ claude mcp add letra-chica -- node "$(pwd)/dist/index.js"
 
 ## Fuente de datos
 
-Por defecto lee `https://santiagodaros.github.io/Cloud-Rosetta-Stone/api/v1/`. Con `LETRA_CHICA_DATA`
+Por defecto lee `https://cloud-rosetta-stone.vercel.app/api/v1/`. Con `LETRA_CHICA_DATA`
 podés apuntarlo a otra URL o a una carpeta local. Por ejemplo, para probar contenido propio antes de
 publicarlo:
 

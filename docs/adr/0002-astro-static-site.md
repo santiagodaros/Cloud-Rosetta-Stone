@@ -1,6 +1,6 @@
 # ADR 0002 — Astro, salida 100 % estática, GitHub Pages
 
-- **Estado:** aceptada (2026-10-06)
+- **Estado:** aceptada (2026-10-06). El hosting pasó a Vercel: ver [ADR 0006](0006-hosting-vercel.md)
 - **Reemplaza:** Next.js 15 + Vercel Hobby del spec original
 
 ## Contexto

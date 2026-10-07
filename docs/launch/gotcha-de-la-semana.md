@@ -1,13 +1,13 @@
 # Gotcha de la semana — borradores
 
-> Generado con `pnpm launch:weekly` desde el contenido publicado. Sitio: https://santiagodaros.github.io/Cloud-Rosetta-Stone
+> Generado con `pnpm launch:weekly` desde el contenido publicado. Sitio: https://cloud-rosetta-stone.vercel.app
 > Antes de publicar: abrí el link, confirmá que el gotcha sigue igual y que la imagen OG se ve bien al pegar el link.
 
 ## Semana 1 — Google Cloud: Soft delete viene activo por default (7 días) y encarece los datos efímeros
 
-- Patrón: **Ingesta privada de objetos con expiración (TTL)** · severidad `cost` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/object-storage-ttl/gcp-vs-aws/#gcp-soft-delete-default-7-days
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/object-storage-ttl/gcp-vs-aws.png
+- Patrón: **Ingesta privada de objetos con expiración (TTL)** · severidad `cost` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/object-storage-ttl/gcp-vs-aws/#gcp-soft-delete-default-7-days
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/object-storage-ttl/gcp-vs-aws.png
 
 ```text
 Letra chica de Google Cloud #1: Soft delete viene activo por default (7 días) y encarece los datos efímeros
@@ -24,9 +24,9 @@ Fuentes:
 
 ## Semana 2 — Azure: En Azure el prefijo del filtro incluye el nombre del contenedor
 
-- Patrón: **Ingesta privada de objetos con expiración (TTL)** · severidad `reliability` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/object-storage-ttl/azure-vs-aws/#azure-prefix-includes-container
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/object-storage-ttl/azure-vs-aws.png
+- Patrón: **Ingesta privada de objetos con expiración (TTL)** · severidad `reliability` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/object-storage-ttl/azure-vs-aws/#azure-prefix-includes-container
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/object-storage-ttl/azure-vs-aws.png
 
 ```text
 Letra chica de Azure #2: En Azure el prefijo del filtro incluye el nombre del contenedor
@@ -43,9 +43,9 @@ Fuentes:
 
 ## Semana 3 — Azure: Peek-lock es at-least-once, no exactly-once
 
-- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `reliability` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/async-worker/azure-vs-aws/#azure-peek-lock-is-at-least-once
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/async-worker/azure-vs-aws.png
+- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `reliability` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/async-worker/azure-vs-aws/#azure-peek-lock-is-at-least-once
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/async-worker/azure-vs-aws.png
 
 ```text
 Letra chica de Azure #3: Peek-lock es at-least-once, no exactly-once
@@ -62,9 +62,9 @@ Fuentes:
 
 ## Semana 4 — Google Cloud: En Postgres, el usuario IAM de una Service Account va sin ".gserviceaccount.com"
 
-- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `iam` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/private-web-api/gcp-vs-aws/#gcp-iam-sa-username-trim
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/private-web-api/gcp-vs-aws.png
+- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `iam` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/private-web-api/gcp-vs-aws/#gcp-iam-sa-username-trim
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/private-web-api/gcp-vs-aws.png
 
 ```text
 Letra chica de Google Cloud #4: En Postgres, el usuario IAM de una Service Account va sin ".gserviceaccount.com"
@@ -82,9 +82,9 @@ Fuentes:
 
 ## Semana 5 — Azure: Por ARM solo podés crear administradores Entra; el rol de la app se crea con SQL
 
-- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `iam` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/private-web-api/azure-vs-aws/#azure-pg-entra-app-role-needs-sql
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/private-web-api/azure-vs-aws.png
+- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `iam` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/private-web-api/azure-vs-aws/#azure-pg-entra-app-role-needs-sql
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/private-web-api/azure-vs-aws.png
 
 ```text
 Letra chica de Azure #5: Por ARM solo podés crear administradores Entra; el rol de la app se crea con SQL
@@ -101,9 +101,9 @@ Fuentes:
 
 ## Semana 6 — AWS: El visibility timeout de la cola tiene que ser al menos 6 veces el timeout de la Lambda
 
-- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `reliability` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/async-worker/aws-vs-azure/#aws-visibility-timeout-6x
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/async-worker/aws-vs-azure.png
+- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `reliability` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/async-worker/aws-vs-azure/#aws-visibility-timeout-6x
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/async-worker/aws-vs-azure.png
 
 ```text
 Letra chica de AWS #6: El visibility timeout de la cola tiene que ser al menos 6 veces el timeout de la Lambda
@@ -121,9 +121,9 @@ Fuentes:
 
 ## Semana 7 — AWS: Un Deny por aws:SourceVpce también te deja afuera a vos
 
-- Patrón: **Ingesta privada de objetos con expiración (TTL)** · severidad `iam` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/object-storage-ttl/aws-vs-azure/#aws-sourcevpce-lockout
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/object-storage-ttl/aws-vs-azure.png
+- Patrón: **Ingesta privada de objetos con expiración (TTL)** · severidad `iam` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/object-storage-ttl/aws-vs-azure/#aws-sourcevpce-lockout
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/object-storage-ttl/aws-vs-azure.png
 
 ```text
 Letra chica de AWS #7: Un Deny por aws:SourceVpce también te deja afuera a vos
@@ -140,9 +140,9 @@ Fuentes:
 
 ## Semana 8 — AWS: Fargate en subnet privada sin NAT necesita varios VPC endpoints pagos
 
-- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `cost` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/private-web-api/aws-vs-azure/#aws-fargate-private-needs-endpoints
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/private-web-api/aws-vs-azure.png
+- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `cost` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/private-web-api/aws-vs-azure/#aws-fargate-private-needs-endpoints
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/private-web-api/aws-vs-azure.png
 
 ```text
 Letra chica de AWS #8: Fargate en subnet privada sin NAT necesita varios VPC endpoints pagos
@@ -160,9 +160,9 @@ Fuentes:
 
 ## Semana 9 — Google Cloud: Un dead-letter topic sin suscripción descarta los mensajes
 
-- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `reliability` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/async-worker/gcp-vs-aws/#gcp-dead-letter-topic-needs-subscription
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/async-worker/gcp-vs-aws.png
+- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `reliability` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/async-worker/gcp-vs-aws/#gcp-dead-letter-topic-needs-subscription
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/async-worker/gcp-vs-aws.png
 
 ```text
 Letra chica de Google Cloud #9: Un dead-letter topic sin suscripción descarta los mensajes
@@ -180,9 +180,9 @@ Fuentes:
 
 ## Semana 10 — Azure: Un environment interno no resuelve su propio dominio desde la VNet
 
-- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `networking` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/private-web-api/azure-vs-aws/#azure-aca-internal-needs-private-dns
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/private-web-api/azure-vs-aws.png
+- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `networking` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/private-web-api/azure-vs-aws/#azure-aca-internal-needs-private-dns
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/private-web-api/azure-vs-aws.png
 
 ```text
 Letra chica de Azure #10: Un environment interno no resuelve su propio dominio desde la VNet
@@ -200,9 +200,9 @@ Fuentes:
 
 ## Semana 11 — Azure: Red privada en Service Bus exige Premium, que tiene costo fijo alto
 
-- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `cost` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/async-worker/azure-vs-aws/#azure-sb-private-endpoint-premium
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/async-worker/azure-vs-aws.png
+- Patrón: **Worker asíncrono con escala a cero y dead-letter** · severidad `cost` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/async-worker/azure-vs-aws/#azure-sb-private-endpoint-premium
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/async-worker/azure-vs-aws.png
 
 ```text
 Letra chica de Azure #11: Red privada en Service Bus exige Premium, que tiene costo fijo alto
@@ -221,9 +221,9 @@ Fuentes:
 
 ## Semana 12 — Google Cloud: "Internal" es un control de red; la autenticación es IAM aparte
 
-- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `iam` · verificado hace 0 días
-- Link (primer comentario): https://santiagodaros.github.io/Cloud-Rosetta-Stone/es/patterns/private-web-api/gcp-vs-aws/#gcp-run-internal-is-not-auth
-- Imagen: https://santiagodaros.github.io/Cloud-Rosetta-Stone/og/es/private-web-api/gcp-vs-aws.png
+- Patrón: **Web API privada Zero Trust con PostgreSQL sin contraseñas** · severidad `iam` · verificado hace 1 días
+- Link (primer comentario): https://cloud-rosetta-stone.vercel.app/es/patterns/private-web-api/gcp-vs-aws/#gcp-run-internal-is-not-auth
+- Imagen: https://cloud-rosetta-stone.vercel.app/og/es/private-web-api/gcp-vs-aws.png
 
 ```text
 Letra chica de Google Cloud #12: "Internal" es un control de red; la autenticación es IAM aparte

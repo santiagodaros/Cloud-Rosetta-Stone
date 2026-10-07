@@ -24,7 +24,7 @@ equivalente → Terraform verificado → piso de costo._ Las tablas 1:1 ya exist
 | D5 | **Neutral** | Guía editorial "sin ganador"; CODEOWNERS por nube (ver §6) |
 | D6 | **Español primero, bilingüe** | `Localized.es` obligatorio; `en` con fallback visible |
 | D7 | **Abierto y reutilizable** | Código MIT, contenido CC BY-SA, dataset `/api/v1/*.json` |
-| D8 | **$0 y sin credenciales** | Sitio 100% estático en GitHub Pages; nada se conecta a nubes |
+| D8 | **$0 y sin credenciales** | Sitio 100% estático en Vercel (antes GitHub Pages, ver ADR 0006); nada se conecta a nubes |
 
 ---
 
@@ -38,7 +38,7 @@ content/ (YAML + .tf)  ──►  src/lib/schema.ts (Zod)  ──►  src/lib/co
            pnpm validate (CI)                 Astro build (SSG, ELK → SVG)     /api/v1/*.json
                                                              │
                                                              ▼
-                                                   GitHub Pages (estático)
+                                                   Vercel (estático)
 ```
 
 Decisiones registradas en [`docs/adr/`](./adr/):
@@ -245,7 +245,7 @@ una feature chica por mes junto con el patrón mensual, en lugar de lanzar todo 
 |---|---|---|
 | Primera corrida de CI en GitHub | Mantenedor | ✅ Verde en PR #1 |
 | Versiones de plugins de tflint | CI / Renovate | ✅ Pasaron en la primera corrida; Renovate las mantiene |
-| Habilitar GitHub Pages | Mantenedor | Settings → Pages → Source: **GitHub Actions** |
+| Hosting en Vercel | Mantenedor | ✅ Proyecto creado (`cloud-rosetta-stone.vercel.app`). Falta: env `VERCEL_DEEP_CLONE=true` y secret `VERCEL_DEPLOY_HOOK_URL` para el rebuild semanal |
 | Instalar la GitHub App de Renovate | Mantenedor | https://github.com/apps/renovate |
 | Crear labels `freshness`, `good first issue`, `dependencies`, `terraform` | Mantenedor | El workflow de frescura usa `freshness` |
 | Habilitar *private vulnerability reporting* | Mantenedor | Settings → Security (lo referencia SECURITY.md) |

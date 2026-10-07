@@ -1,0 +1,28 @@
+name: Rebuild semanal
+
+# El sitio se publica en Vercel en cada push a main. Esto además lo re-publica una vez por
+# semana aunque no haya cambios, para que "verificado hace N días" y el gotcha del día no
+# queden congelados (se calculan en build).
+# Requiere el secret VERCEL_DEPLOY_HOOK_URL (Vercel → Settings → Git → Deploy Hooks, rama main).
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar el deploy hook de Vercel
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::Falta el secret VERCEL_DEPLOY_HOOK_URL; no se re-publica."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Deploy disparado."
