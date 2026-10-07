@@ -64,3 +64,9 @@ export function comparisonMarkdown(bundle: PatternBundle, providers: Provider[],
   lines.push('', `${s.mdVia} [${BRAND.name}](${url}) · CC BY-SA 4.0`);
   return lines.join('\n');
 }
+
+/** Snippet `<iframe>` para embeber un widget (F4-18). El widget trae su propia atribución. */
+export function embedSnippet(src: string, title: string, height: number): string {
+  const esc = (x: string) => x.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `<iframe src="${esc(src)}" title="${esc(title)}" width="100%" height="${height}" style="border:0;max-width:720px" loading="lazy"></iframe>`;
+}

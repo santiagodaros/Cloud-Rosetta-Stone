@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { checkSchema, findCapabilities, findConcepts, findTerraform, formatGotcha, formatPattern, formatTerraform, searchGotchas, type Dataset } from '../mcp/src/core.ts';
+import { checkSchema, findCapabilities, findConcepts, findDecision, findTerraform, formatDecision, formatFloors, formatGotcha, formatPattern, formatTerraform, searchGotchas, type Dataset } from '../mcp/src/core.ts';
+import { computeFloor, patternFloor } from '../src/lib/pricing.ts';
 import { flatGotchas } from '../src/lib/dataset.ts';
 import { publishedPatterns, site } from '../src/lib/site.ts';
 
@@ -14,6 +15,24 @@ const ds = {
   exams: site.exams.map((e) => ({ ...e, status: 'active', gotchas: [] })),
   concepts: site.concepts,
   terraformMap: site.terraformMap?.entries ?? [],
+  pricing: {
+    regions: site.pricing!.regions,
+    meters: site.pricing!.meters.map((m) => ({ ...m, price: site.prices?.prices[m.id] ?? null })),
+    floors: publishedPatterns.map(({ pattern }) => ({
+      pattern: pattern.id,
+      ...Object.fromEntries((['azure', 'aws', 'gcp'] as const).map((p) => {
+        const f = patternFloor(pattern.id, p, site.pricing, site.prices)!;
+        return [p, { monthly_usd: f.total, complete: f.complete, as_of: f.asOf ?? null, items: f.lines.map((l) => ({ meter: l.meter.id, count: l.count, monthly_usd: l.monthly ?? null })) }];
+      })),
+    })),
+  },
+  decisions: (site.decisions ?? []).map((d) => ({
+    ...d,
+    options: d.options.map((o) => {
+      const f = computeFloor(o.floor, o.provider, site.pricing!, site.prices);
+      return { ...o, floor_monthly_usd: f.total, floor_complete: f.complete };
+    }),
+  })),
 } as unknown as Dataset;
 
 describe('mcp core', () => {
@@ -67,5 +86,23 @@ describe('mcp core', () => {
 
   it('rechaza un dataset con otra schema_version', () => {
     expect(() => checkSchema({ schema_version: 2 })).toThrow(/schema_version/);
+  });
+
+  it('piso mensual: tabla general y desglose por patrón', () => {
+    const all = formatFloors(ds, 'en');
+    expect(all).toMatch(/\| hybrid-private-dns \| USD 363 \| USD 365 \| USD 0\.40 \|/);
+    const one = formatFloors(ds, 'en', 'private-web-api');
+    expect(one).toMatch(/aws \(prices as of \d{4}-\d{2}-\d{2}\):/);
+    expect(one).toContain('(manual price)');
+  });
+
+  it('matriz de decisión: busca por id o capability y elige la más barata que cumple', () => {
+    expect(findDecision(ds, 'dns-forwarding')?.id).toBe('hybrid-dns');
+    const d = findDecision(ds, 'message-queue')!;
+    const out = formatDecision(d, 'en', ['fifo', 'private-only']);
+    expect(out).toMatch(/- azure: Service Bus Premium/);
+    expect(out).toMatch(/- aws: no option meets all of them/);
+    expect(formatDecision(d, 'en', ['fifo', 'private-only'], true)).toMatch(/- aws: Amazon SQS FIFO/);
+    expect(formatDecision(d, 'en', ['nope'])).toContain('Unknown requirement ids ignored: nope');
   });
 });

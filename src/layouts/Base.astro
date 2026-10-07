@@ -42,6 +42,9 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={ogImageUrl} />
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <link rel="manifest" href={href('manifest.webmanifest')} />
+    <link rel="apple-touch-icon" href={href('icons/192.png')} />
+    <meta name="theme-color" content="#4338ca" />
     <script is:inline>
       // "Mi nube" (F4-09) se aplica antes de pintar para que las notas no parpadeen.
       try {
@@ -96,11 +99,13 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
       <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-muted sm:flex-row sm:justify-between">
         <p class="max-w-2xl">{s.disclaimer}</p>
         <p class="flex flex-wrap gap-4">
+          <span id="offline-status" class="w-full" aria-live="polite" hidden></span>
           <a href={decideHref(lang)}>{s.decideNav}</a>
           <a href={migrateHref(lang)}>{s.migrateNav}</a>
           <a href={adrHref(lang)}>{s.adrNav}</a>
           <a href={href(`${lang}/changes/`)}>{s.changesNav}</a>
           <a href={href('api/v1/index.json')}>{s.openData}</a>
+          <button type="button" id="offline-save" class="text-accent underline underline-offset-2" data-saving={s.offlineSaving} data-saved={s.offlineSaved} data-error={s.offlineError} hidden>{s.offlineSave}</button>
           <a href={repo}>GitHub</a>
           <span>{s.license}</span>
         </p>
@@ -124,6 +129,33 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
           applyOrigin(select.value);
         });
         applyOrigin(select.value);
+      }
+
+      // PWA (F4-19): solo en el build publicado, para no cachear el servidor de desarrollo.
+      const saveBtn = document.getElementById('offline-save') as HTMLButtonElement | null;
+      const status = document.getElementById('offline-status');
+      if (import.meta.env.PROD && 'serviceWorker' in navigator && saveBtn && status) {
+        const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+        navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).then(() => (saveBtn.hidden = false)).catch(() => {});
+        const fill = (tpl: string, v: Record<string, number>) => tpl.replace(/\{(\w+)\}/g, (_, k) => String(v[k]));
+        navigator.serviceWorker.addEventListener('message', (e) => {
+          const d = e.data ?? {};
+          if (d.type === 'offline-progress') status.textContent = fill(saveBtn.dataset.saving!, d);
+          if (d.type === 'offline-done') {
+            status.textContent = fill(saveBtn.dataset.saved!, d);
+            saveBtn.disabled = false;
+          }
+        });
+        saveBtn.addEventListener('click', async () => {
+          status.hidden = false;
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            saveBtn.disabled = true;
+            reg.active?.postMessage({ type: 'save-offline' });
+          } catch {
+            status.textContent = saveBtn.dataset.error!;
+          }
+        });
       }
     </script>
   </body>

@@ -147,6 +147,12 @@ oficial; workflow semanal que abre PR; piso mensual por patrón y nube en la sec
 checklist) · F4-05 matriz de decisión (`/decide/`: cola, PostgreSQL y DNS híbrido; 16 opciones con
 cumplimiento por requisito, fuente y piso mensual).
 
+**Sexta entrega (✅):** F4-18 widgets embebibles (`/embed/gotcha/…` y `/embed/compare/…`: sin JS, noindex,
+atribución CC BY-SA y link de vuelta; botón "Embeber" que copia el `<iframe>`) · F4-19 PWA (manifest, íconos
+generados del favicon, service worker sin dependencias: red primero para páginas, caché para assets con hash
+y "Guardar para usar sin conexión", que baja patrones, práctica, exámenes, diccionario y decisiones con sus
+CSS/JS). El MCP server suma `cost_floor` y `decision_matrix`.
+
 **Segunda entrega (✅):** F4-22 isla interactiva del diagrama · F4-09 "Mi nube". Schema nuevo: `roles` por
 gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por patrón. F4-09 usa solo
 `localStorage`: no agrega medición, así que F4-21 sigue abierta como decisión independiente.
@@ -157,7 +163,9 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 2. ~~**F4-16** + **F4-15**~~ (hechos).
 3. ~~**F4-13** + **F4-14**~~ (hechos).
 4. ~~**F4-03** + **F4-05**~~ (hechos).
-5. **F4-18** widgets, **F4-19** PWA.
+5. ~~**F4-18** + **F4-19**~~ (hechos).
+
+Lo que sigue depende de las decisiones de abajo.
 
 **Decisiones del mantenedor (bloquean su ítem):**
 
@@ -188,8 +196,8 @@ gotcha (los 74 etiquetados), `equivalence` y `from` por binding, `paths` por pat
 | F4-15 ✅ | **Mapa de recursos Terraform** `azurerm_*` ↔ `aws_*` ↔ `google_*`, curado, con marca "no es 1:1" | Nuevo tipo de contenido con schema y fuente obligatoria; es la alternativa verificada a F4-07 |
 | F4-16 ✅ | **Diccionario de conceptos** (no servicios): jerarquía de recursos (tenant/MG/subscription/RG · org/OU/account · org/folder/project), regiones y zonas, modelo de identidad | Donde más se confunde quien salta de nube; mismo formato hub-and-spoke que capabilities |
 | F4-17 ✅ | **Repetición espaciada** (Leitner) + "gotcha del día" sobre las flashcards de F3-02 | Progreso en `localStorage`; genera hábito diario sin login |
-| F4-18 | **Widgets embebibles**: card de gotcha o comparación para blogs y Notion | Snippet `<iframe>`/HTML estático con link de vuelta; respeta CC BY-SA (atribución incluida) |
-| F4-19 | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
+| F4-18 ✅ | **Widgets embebibles**: card de gotcha o comparación para blogs y Notion | Snippet `<iframe>`/HTML estático con link de vuelta; respeta CC BY-SA (atribución incluida) |
+| F4-19 ✅ | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
 | F4-20 | **Votación del próximo patrón** con reacciones en GitHub Discussions, visible en el sitio | El ranking se lee en build time; la comunidad empuja el roadmap |
 | F4-21 | **Decisión: medir retención** sin romper "sin trackers": Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores RSS, tráfico de GitHub, descargas del dataset) | Decide el mantenedor antes de F4-09; si se adopta, actualizar README y D8 |
 | F4-22 ✅ | **Isla interactiva sobre el diagrama ELK**: hover/foco traza rol o conexión; click fija un panel con bindings por nube y gotchas del tramo; recorridos predefinidos (escritura, token, expiración, perímetro); contador de gotchas por rol; equivalentes parciales punteados. En mobile: tap expande el rol inline | Encima del mismo layout de ADR-0003, sin LLM ni dependencia nueva. Requiere schema: `role` opcional por gotcha y `equivalence: full \| partial \| none` por binding (validación cruzada en `content.ts`) |

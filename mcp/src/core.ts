@@ -59,6 +59,22 @@ export type TerraformMapEntry = {
   registry?: Record<string, string>;
 };
 
+export type PriceMeter = { id: string; provider: string; label: Localized; unit: string; docs: string; price: { unit_price: number; unit: string; source: string; as_of: string } | null };
+export type FloorEntry = { monthly_usd: number; complete: boolean; as_of: string | null; items: { meter: string; count: number; monthly_usd: number | null }[] } | null;
+export type Pricing = { regions?: Record<string, string>; meters: PriceMeter[]; floors: ({ pattern: string } & Record<string, FloorEntry | string>)[] };
+
+export type DecisionOption = {
+  id: string;
+  provider: string;
+  name: Text;
+  meets: Record<string, 'yes' | 'no' | { value: 'yes' | 'no' | 'partial'; note: Localized }>;
+  notes?: Localized;
+  sources: string[];
+  floor_monthly_usd: number | null;
+  floor_complete: boolean;
+};
+export type Decision = { id: string; capability: string; title: Localized; intro: Localized; requirements: { id: string; label: Localized; hint?: Localized }[]; options: DecisionOption[]; verified_at: string };
+
 export type Dataset = {
   schema_version: number;
   generated_at: string;
@@ -69,6 +85,8 @@ export type Dataset = {
   exams: Exam[];
   concepts: Concept[];
   terraformMap: TerraformMapEntry[];
+  pricing?: Pricing;
+  decisions: Decision[];
 };
 
 /** Versión del dataset que entiende este server. */
@@ -218,5 +236,72 @@ export function formatTerraform(e: TerraformMapEntry, lang: Locale): string {
     lines.push(`- ${provider}: ${refs.length ? refs.map((r) => (e.registry?.[r] ? `${r} <${e.registry[r]}>` : r)).join(', ') : 'no equivalent resource'}`);
   }
   if (e.notes) lines.push('', t(e.notes, lang));
+  return lines.join('\n');
+}
+
+const usd = (n: number) => `USD ${n.toFixed(n < 100 ? 2 : 0)}`;
+
+/** Piso mensual de lista sin tráfico, por patrón y nube (de /api/v1/pricing.json). */
+export function formatFloors(ds: Dataset, lang: Locale, pattern?: string): string {
+  if (!ds.pricing) return 'No pricing data published yet.';
+  const meters = new Map(ds.pricing.meters.map((m) => [m.id, m]));
+  const rows = ds.pricing.floors.filter((f) => !pattern || f.pattern === pattern);
+  if (!rows.length) return `No price floor for "${pattern}". Known: ${ds.pricing.floors.map((f) => f.pattern).join(', ')}.`;
+  const providers = ['azure', 'aws', 'gcp'];
+  const regions = ds.pricing.regions ? providers.map((p) => `${p} ${ds.pricing!.regions![p]}`).join(', ') : '';
+  const lines = [`Monthly list-price floor with zero traffic, USD, no discounts or taxes (${regions}).`, '', `| Pattern | ${providers.join(' | ')} |`, `|---|${providers.map(() => '---|').join('')}`];
+  for (const f of rows) {
+    lines.push(`| ${f.pattern} | ${providers.map((p) => { const e = f[p] as FloorEntry; return e ? `${e.complete ? '' : '≥ '}${usd(e.monthly_usd)}` : '—'; }).join(' | ')} |`);
+  }
+  if (pattern) {
+    for (const p of providers) {
+      const e = rows[0][p] as FloorEntry;
+      if (!e || !e.items.length) continue;
+      lines.push('', `${p} (prices as of ${e.as_of}):`);
+      for (const it of e.items) {
+        const m = meters.get(it.meter);
+        lines.push(`- ${m ? t(m.label, lang) : it.meter} × ${it.count}: ${it.monthly_usd === null ? 'no price' : usd(it.monthly_usd)}${m?.price?.source === 'manual' ? ' (manual price)' : ''}${m ? ` <${m.docs}>` : ''}`);
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
+export function findDecision(ds: Dataset, query: string): Decision | undefined {
+  const q = normalize(query.trim());
+  const exact = ds.decisions.find((d) => d.id === q || d.capability === q);
+  if (exact) return exact;
+  const terms = tokens(query);
+  return ds.decisions.find((d) => {
+    const hay = normalize(`${d.id} ${d.capability} ${t(d.title, 'es')} ${t(d.title, 'en')}`);
+    return terms.length > 0 && terms.every((term) => hay.includes(term));
+  });
+}
+
+const meetsValue = (m: DecisionOption['meets'][string]) => (typeof m === 'string' ? m : m.value);
+
+/** Matriz requisito → opción, filtrada por los requisitos pedidos; marca la más barata que cumple por nube. */
+export function formatDecision(d: Decision, lang: Locale, wanted: string[] = [], lenient = false): string {
+  const unknown = wanted.filter((w) => !d.requirements.some((r) => r.id === w));
+  const reqs = d.requirements.filter((r) => wanted.includes(r.id));
+  const ok = (o: DecisionOption) => reqs.every((r) => { const v = meetsValue(o.meets[r.id]); return v === 'yes' || (lenient && v === 'partial'); });
+  const lines = [`### ${t(d.title, lang)} (${d.id}, verified ${d.verified_at})`, t(d.intro, lang), '', `Requirements: ${d.requirements.map((r) => `${r.id} = ${t(r.label, lang)}`).join('; ')}`];
+  if (unknown.length) lines.push(`Unknown requirement ids ignored: ${unknown.join(', ')}`);
+  if (reqs.length) {
+    lines.push('', `Cheapest option per cloud meeting ${reqs.map((r) => r.id).join(' + ')}${lenient ? ' (caveats count as met)' : ''}:`);
+    for (const p of ['azure', 'aws', 'gcp']) {
+      const best = d.options.filter((o) => o.provider === p && ok(o)).sort((a, b) => (a.floor_monthly_usd ?? Infinity) - (b.floor_monthly_usd ?? Infinity))[0];
+      lines.push(`- ${p}: ${best ? `${t(best.name, lang)} — floor ${best.floor_monthly_usd === null ? 'n/a' : `${best.floor_complete ? '' : '≥ '}${usd(best.floor_monthly_usd)}/month`}` : 'no option meets all of them'}`);
+    }
+  }
+  lines.push('', 'All options:');
+  for (const o of d.options) {
+    const cells = d.requirements.map((r) => {
+      const m = o.meets[r.id];
+      return `${r.id}: ${meetsValue(m)}${typeof m === 'string' ? '' : ` (${t(m.note, lang)})`}`;
+    });
+    lines.push(`- [${o.provider}] ${t(o.name, lang)}${reqs.length && !ok(o) ? ' — does not meet the request' : ''}`, `  ${cells.join('; ')}`);
+    lines.push(`  Floor: ${o.floor_monthly_usd === null ? 'n/a' : `${usd(o.floor_monthly_usd)}/month`}. Sources: ${o.sources.join(' ')}`);
+  }
   return lines.join('\n');
 }

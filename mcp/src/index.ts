@@ -8,7 +8,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { findCapabilities, findConcepts, findTerraform, formatCapability, formatConcept, formatGotcha, formatPattern, formatTerraform, searchGotchas, t, type Locale } from './core.ts';
+import { findCapabilities, findConcepts, findDecision, findTerraform, formatCapability, formatConcept, formatDecision, formatFloors, formatGotcha, formatPattern, formatTerraform, searchGotchas, t, type Locale } from './core.ts';
 import { loadDataset } from './data.ts';
 
 const PROVIDERS = ['azure', 'aws', 'gcp'] as const;
@@ -164,6 +164,43 @@ server.registerTool(
     const ds = await loadDataset();
     const hits = findTerraform(ds, query);
     return text(hits.length ? hits.map((e) => formatTerraform(e, lang as Locale)).join('\n\n') : `No mapping for "${query}" yet.`);
+  },
+);
+
+server.registerTool(
+  'cost_floor',
+  {
+    title: 'Monthly list-price floor per pattern',
+    description:
+      'What each published pattern costs per month with zero traffic on each cloud (list prices in USD, comparable regions, default module configuration), with the per-component breakdown when a pattern is given. Prices come from the official pricing APIs, refreshed weekly.',
+    inputSchema: { pattern: z.string().optional().describe('Pattern id, e.g. "hybrid-private-dns". Omit for all patterns.'), lang },
+    annotations: readOnly,
+  },
+  async ({ pattern, lang }) => {
+    const ds = await loadDataset();
+    return text(withFooter(formatFloors(ds, lang as Locale, pattern), ds.attribution, ds.generated_at));
+  },
+);
+
+server.registerTool(
+  'decision_matrix',
+  {
+    title: 'Which SKU meets my requirements',
+    description:
+      'Requirement → SKU matrix for a capability (message queue, managed PostgreSQL, hybrid DNS): which tier or mode on each cloud meets each requirement (yes / no / partial with the caveat), with official sources and the monthly floor. Pass requirement ids to get the cheapest option per cloud that meets all of them.',
+    inputSchema: {
+      capability: z.string().describe('Decision id or capability, e.g. "message-queue", "managed-postgres", "hybrid-dns"'),
+      requirements: z.array(z.string()).optional().describe('Requirement ids, e.g. ["fifo", "private-only"]. Omit to list them.'),
+      count_caveats_as_met: z.boolean().optional().describe('Treat "partial" (with caveats) as meeting a requirement.'),
+      lang,
+    },
+    annotations: readOnly,
+  },
+  async ({ capability, requirements, count_caveats_as_met, lang }) => {
+    const ds = await loadDataset();
+    const d = findDecision(ds, capability);
+    if (!d) return text(`No decision matrix for "${capability}". Known: ${ds.decisions.map((x) => x.id).join(', ') || 'none published yet'}.`);
+    return text(withFooter(formatDecision(d, lang as Locale, requirements, count_caveats_as_met), ds.attribution, ds.generated_at));
   },
 );
 

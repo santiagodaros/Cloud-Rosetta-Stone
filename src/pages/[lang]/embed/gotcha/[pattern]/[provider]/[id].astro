@@ -1,0 +1,36 @@
+---
+/** Widget embebible de un gotcha (F4-18). */
+import Embed from '../../../../../../layouts/Embed.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../../../../lib/i18n.ts';
+import { patternHref } from '../../../../../../lib/paths.ts';
+import { allGotchas, type GotchaEntry } from '../../../../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) =>
+    allGotchas.map((entry) => ({ params: { lang, pattern: entry.pattern.id, provider: entry.provider, id: entry.gotcha.id }, props: { entry } })),
+  );
+}
+
+const lang = Astro.params.lang as Locale;
+const { entry } = Astro.props as { entry: GotchaEntry };
+const { pattern, provider, gotcha: g, anchor } = entry;
+const s = ui(lang);
+const canonical = `${new URL(patternHref(lang, pattern.id, 'all'), Astro.site).href}#${anchor}`;
+const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
+---
+
+<Embed lang={lang} title={`${t(g.title, lang)} — ${PROVIDER_META[provider].short}`} canonical={canonical}>
+  <p class="mb-2 flex flex-wrap items-center gap-2 text-xs">
+    <span class="font-bold tracking-wide uppercase" style={`color: ${PROVIDER_META[provider].color}`}>{PROVIDER_META[provider].short}</span>
+    <span class="rounded-full px-2 py-0.5 font-semibold" style={`color: var(--c-sev-${g.severity}); background: color-mix(in srgb, var(--c-sev-${g.severity}) 12%, transparent)`}>
+      {s.severity[g.severity]}
+    </span>
+    <span class="text-muted">{t(pattern.title, lang)}</span>
+  </p>
+  <h1 class="mb-1.5 text-base leading-snug font-semibold">{t(g.title, lang)}</h1>
+  <p class="text-sm leading-relaxed text-muted">{t(g.body, lang)}</p>
+  <p class="mt-2 flex flex-wrap gap-x-3 text-xs">
+    {g.sources.map((u) => <a class="inline-flex min-h-6 items-center" href={u} rel="noopener">↗ {host(u)}</a>)}
+    <span class="inline-flex min-h-6 items-center text-muted">{s.mdVerified} {g.verified_at}</span>
+  </p>
+</Embed>

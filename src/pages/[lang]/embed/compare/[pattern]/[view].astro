@@ -1,0 +1,63 @@
+---
+/** Widget embebible de una comparación (F4-18): roles × nubes, gotchas y piso mensual. */
+import Embed from '../../../../../layouts/Embed.astro';
+import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../../../../lib/i18n.ts';
+import { patternHref } from '../../../../../lib/paths.ts';
+import { formatUsd, patternFloor } from '../../../../../lib/pricing.ts';
+import type { PatternBundle } from '../../../../../lib/content.ts';
+import { publishedPatterns, site, VIEWS } from '../../../../../lib/site.ts';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) =>
+    publishedPatterns.flatMap((bundle) => VIEWS.map((view) => ({ params: { lang, pattern: bundle.pattern.id, view: view.id }, props: { bundle, view } }))),
+  );
+}
+
+const lang = Astro.params.lang as Locale;
+const { bundle, view } = Astro.props as { bundle: PatternBundle; view: (typeof VIEWS)[number] };
+const { pattern, implementations } = bundle;
+const s = ui(lang);
+const canonical = new URL(patternHref(lang, pattern.id, view.id), Astro.site).href;
+const roles = pattern.roles.filter((r) => r.kind === 'capability');
+const cell = (p: (typeof view.providers)[number], roleId: string) => {
+  const b = implementations[p]?.bindings[roleId];
+  return !b ? '—' : 'gap' in b ? s.gap : `${t(b.service, lang)}${b.equivalence === 'partial' ? ' ≈' : ''}`;
+};
+const floor = (p: (typeof view.providers)[number]) => {
+  const f = patternFloor(pattern.id, p, site.pricing, site.prices);
+  return f ? `${f.complete ? '' : '≥ '}${formatUsd(f.total, lang)}` : '—';
+};
+---
+
+<Embed lang={lang} title={`${t(pattern.title, lang)} — ${view.providers.map((p) => PROVIDER_META[p].short).join(` ${s.vs} `)}`} canonical={canonical}>
+  <h1 class="mb-1 text-base leading-snug font-semibold">{t(pattern.title, lang)}</h1>
+  <p class="mb-3 text-xs text-muted">{t(pattern.summary, lang)}</p>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-xs">
+      <thead>
+        <tr class="border-b border-line text-left">
+          <th scope="col" class="py-1.5 pr-2 font-semibold text-muted">{s.role}</th>
+          {view.providers.map((p) => <th scope="col" class="py-1.5 pr-2 font-bold" style={`color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {
+          roles.map((r) => (
+            <tr class="border-b border-line align-top">
+              <th scope="row" class="py-1.5 pr-2 text-left font-medium">{t(r.label, lang)}</th>
+              {view.providers.map((p) => <td class="py-1.5 pr-2">{cell(p, r.id)}</td>)}
+            </tr>
+          ))
+        }
+        <tr class="border-b border-line align-top">
+          <th scope="row" class="py-1.5 pr-2 text-left font-medium">{s.gotchas}</th>
+          {view.providers.map((p) => <td class="py-1.5 pr-2">{implementations[p]?.gotchas.length ?? 0}</td>)}
+        </tr>
+        <tr class="align-top">
+          <th scope="row" class="py-1.5 pr-2 text-left font-medium">{s.floorTitle}</th>
+          {view.providers.map((p) => <td class="py-1.5 pr-2 tabular-nums">{floor(p)}</td>)}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</Embed>

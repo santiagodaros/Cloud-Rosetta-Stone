@@ -29,7 +29,7 @@ export async function loadDataset(base = process.env.LETRA_CHICA_DATA ?? DEFAULT
   for (const part of [gotchas, patterns, capabilities, exams]) checkSchema(part as { schema_version?: number });
   // Endpoints más nuevos: si el sitio todavía no los publica, las herramientas que los usan devuelven vacío.
   const optional = (name: string) => readJson(base, name).catch(() => ({}) as Record<string, unknown>);
-  const [concepts, terraformMap] = await Promise.all([optional('concepts'), optional('terraform-map')]);
+  const [concepts, terraformMap, pricing, decisions] = await Promise.all([optional('concepts'), optional('terraform-map'), optional('pricing'), optional('decisions')]);
   const ds: Dataset = {
     schema_version: gotchas.schema_version as number,
     generated_at: gotchas.generated_at as string,
@@ -40,6 +40,8 @@ export async function loadDataset(base = process.env.LETRA_CHICA_DATA ?? DEFAULT
     exams: exams.exams as Dataset['exams'],
     concepts: (concepts.concepts as Dataset['concepts']) ?? [],
     terraformMap: (terraformMap.entries as Dataset['terraformMap']) ?? [],
+    pricing: pricing.floors ? (pricing as unknown as Dataset['pricing']) : undefined,
+    decisions: (decisions.decisions as Dataset['decisions']) ?? [],
   };
   cache = { at: Date.now(), ds };
   return ds;
