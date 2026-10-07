@@ -16,9 +16,9 @@ const caps = [...site.capabilities].sort((a, b) => a.category.localeCompare(b.ca
 ---
 
 <Base lang={lang} title={`${s.dictionary} — ${BRAND.name}`} description={s.tagline} altPath="capabilities/">
-  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
+  <h1 class="lc-h1">{s.dictionary}</h1>
   <DictionaryTabs lang={lang} current="services" />
-  <p class="mb-8 max-w-3xl text-muted">{s.tagline}</p>
+  <p class="lc-lead">{s.tagline}</p>
 
   <div class="flex flex-col gap-6" data-pagefind-body>
     {

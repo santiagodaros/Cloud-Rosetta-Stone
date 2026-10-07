@@ -2,8 +2,9 @@
 import { BRAND } from '../../lib/brand.ts';
 import Base from '../../layouts/Base.astro';
 import { LOCALES, PROVIDER_META, t, ui, type Locale } from '../../lib/i18n.ts';
-import { adrHref, capabilitiesHref, decideHref, migrateHref, patternHref, practiceHref } from '../../lib/paths.ts';
-import { PROVIDERS } from '../../lib/schema.ts';
+import { adrHref, capabilitiesHref, decideHref, href, migrateHref, patternHref, practiceHref } from '../../lib/paths.ts';
+import { formatUsd, patternFloor } from '../../lib/pricing.ts';
+import { PROVIDERS, SEVERITIES, type Provider } from '../../lib/schema.ts';
 import { allGotchas, DEFAULT_VIEW, publishedPatterns, site } from '../../lib/site.ts';
 
 export function getStaticPaths() {
@@ -12,89 +13,405 @@ export function getStaticPaths() {
 
 const lang = Astro.params.lang as Locale;
 const s = ui(lang);
-// Gotcha del día: se elige en el cliente con la fecha local (el build es semanal).
-const daily = allGotchas.map(({ pattern, provider, gotcha: g, anchor }) => ({
-  title: t(g.title, lang),
-  body: t(g.body, lang),
-  cloud: PROVIDER_META[provider].short,
-  color: PROVIDER_META[provider].color,
-  pattern: t(pattern.title, lang),
-  href: `${patternHref(lang, pattern.id, 'all')}#${anchor}`,
-}));
-const totalGotchas = publishedPatterns.reduce(
-  (n, p) => n + PROVIDERS.reduce((m, pr) => m + (p.implementations[pr]?.gotchas.length ?? 0), 0),
-  0,
-);
+const h = s.home;
+const pclass = (p: Provider) => `p-${p}`;
+
+// Equivalencias para la cinta: capabilities con servicio en las tres nubes.
+const ribbon = site.capabilities
+  .filter((c) => PROVIDERS.every((p) => 'services' in c.providers[p]))
+  .slice(0, 9)
+  .map((c) => PROVIDERS.map((p) => {
+    const e = c.providers[p];
+    return 'services' in e ? t(e.services[0].service, lang) : '';
+  }));
+
+// Letra chica de hoy: una por nube. El servidor deja la primera; el cliente rota por fecha local.
+const byCloud = Object.fromEntries(
+  PROVIDERS.map((p) => [
+    p,
+    allGotchas
+      .filter((g) => g.provider === p)
+      .sort((a, b) => SEVERITIES.indexOf(a.gotcha.severity) - SEVERITIES.indexOf(b.gotcha.severity))
+      .map(({ pattern, gotcha: g, anchor }) => ({
+        title: t(g.title, lang),
+        body: t(g.body, lang),
+        pattern: t(pattern.title, lang),
+        href: `${patternHref(lang, pattern.id, 'all')}#${anchor}`,
+      })),
+  ]),
+) as Record<Provider, { title: string; body: string; pattern: string; href: string }[]>;
+
+const featureHref: Record<string, string> = {
+  compare: '#patterns',
+  decide: decideHref(lang),
+  migrate: migrateHref(lang),
+  practice: practiceHref(lang),
+  dictionary: capabilitiesHref(lang),
+  data: href('api/v1/index.json'),
+};
+const featureIcon: Record<string, string> = {
+  compare: '<rect x="3" y="4" width="7" height="16" rx="2"></rect><rect x="14" y="4" width="7" height="16" rx="2"></rect>',
+  decide: '<path d="M12 4v16M5 8h14M5 8l-2.5 6a3 3 0 005 0zM19 8l-2.5 6a3 3 0 005 0z"></path>',
+  migrate: '<path d="M4 7h12l-3-3M20 17H8l3 3"></path>',
+  practice: '<rect x="4" y="5" width="13" height="15" rx="2"></rect><path d="M8 3h11a2 2 0 012 2v13"></path>',
+  dictionary: '<path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"></path><path d="M4 16a3 3 0 013-3h11"></path>',
+  data: '<path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"></path><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>',
+};
+const floorText = (id: string) =>
+  PROVIDERS.map((p) => {
+    const f = patternFloor(id, p, site.pricing, site.prices);
+    return f ? `${PROVIDER_META[p].short} ${f.complete ? '' : '≥ '}${formatUsd(f.total, lang)}` : null;
+  })
+    .filter(Boolean)
+    .join(' · ');
+const chev = '<svg class="lc-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>';
 ---
 
 <Base lang={lang} title={`${BRAND.name} — ${s.patterns}`} description={s.tagline}>
-  <section class="mb-10 max-w-3xl">
-    <h1 class="mb-3 text-3xl font-bold tracking-tight sm:text-4xl">{BRAND.name}</h1>
-    <p class="text-lg text-muted">{s.tagline}</p>
-    <div class="mt-4 flex flex-wrap gap-2 text-sm">
-      {PROVIDERS.map((p) => <span class="rounded-full border px-3 py-0.5 font-medium" style={`border-color: ${PROVIDER_META[p].color}; color: ${PROVIDER_META[p].color}`}>{PROVIDER_META[p].short}</span>)}
-      <span class="px-2 py-0.5 text-muted">· {s.patternCount(publishedPatterns.length)} · {s.gotchaCount(totalGotchas)} · <a class="underline underline-offset-2" href={capabilitiesHref(lang)}>{s.capabilityCount(site.capabilities.length)}</a></span>
+  <section class="home-hero">
+    <div class="flex flex-wrap justify-center gap-2">
+      {PROVIDERS.map((p) => <span class={`lc-pchip ${pclass(p)}`}><span class="lc-pdot"></span>{PROVIDER_META[p].short}</span>)}
     </div>
-    <p class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-      <a class="inline-flex min-h-6 items-center" href={decideHref(lang)}>⚖ {s.decideNav} →</a>
-      <a class="inline-flex min-h-6 items-center" href={migrateHref(lang)}>☑ {s.migrateNav} →</a>
-      <a class="inline-flex min-h-6 items-center" href={adrHref(lang)}>✎ {s.adrNav} →</a>
-    </p>
-  </section>
+    <h1 class="home-h1">{h.title.map((w, i) => <span class="hw" style={`animation-delay: ${i * 0.07}s`}>{w}</span>)}</h1>
+    <p class="home-lead">{h.lead}</p>
+    <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+      <a class="lc-btn" href="#patterns">{h.cta}</a>
+      <a class="lc-link" href={capabilitiesHref(lang)}>{h.secondary} <i set:html={chev} /></a>
+    </div>
 
-  <section id="daily" class="mb-10 max-w-3xl rounded-xl border border-line bg-surface p-5" hidden aria-labelledby="daily-title">
-    <p class="mb-2 flex items-center gap-2 text-xs">
-      <span id="daily-title" class="font-semibold tracking-wide text-muted uppercase">{s.dailyTitle}</span>
-      <span id="daily-cloud" class="font-bold"></span>
-      <span id="daily-pattern" class="text-muted"></span>
-    </p>
-    <p class="mb-2 text-lg leading-snug font-semibold"><a id="daily-link" class="text-fg no-underline hover:underline"></a></p>
-    <p id="daily-body" class="mb-3 text-sm leading-relaxed text-muted"></p>
-    <a class="text-sm" href={practiceHref(lang)}>🃏 {s.dailyMore} →</a>
-  </section>
-  <script is:inline type="application/json" id="daily-data" set:html={JSON.stringify(daily)} />
+    <div class="home-mq" aria-hidden="true">
+      <div class="home-mqin">
+        {
+          [0, 1].map(() => (
+            <div class="home-mqg">
+              {ribbon.map(([az, aws, gcp]) => (
+                <span class="home-pill"><b>{az}</b> ≈ {aws} ≈ {gcp}</span>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </div>
 
-  <section>
-    <h2 class="mb-4 text-sm font-semibold tracking-wide text-muted uppercase">{s.patterns}</h2>
-    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <h2 class="sr-only">{h.today}</h2>
+    <div class="home-trio" id="today">
       {
-        publishedPatterns.map(({ pattern, implementations }) => {
-          const n = PROVIDERS.reduce((m, p) => m + (implementations[p]?.gotchas.length ?? 0), 0);
+        PROVIDERS.map((p) => {
+          const g = byCloud[p][0];
           return (
-            <li class="flex flex-col rounded-xl border border-line bg-surface p-5">
-              <h3 class="mb-2 text-lg leading-snug font-semibold">
-                <a class="text-fg no-underline hover:underline" href={patternHref(lang, pattern.id, DEFAULT_VIEW)} data-pattern-link data-default-view={DEFAULT_VIEW}>{t(pattern.title, lang)}</a>
-              </h3>
-              <p class="mb-4 flex-1 text-sm text-muted">{t(pattern.summary, lang)}</p>
-              <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
-                {pattern.tags.map((tag) => (
-                  <span class="rounded bg-surface-2 px-1.5 py-0.5">{tag}</span>
-                ))}
-                <span class="ml-auto">{s.gotchaCount(n)}</span>
-              </div>
-            </li>
+            <a class={`lc-card home-mini ${pclass(p)}`} href={g.href} data-today={p}>
+              <span class="flex items-center gap-2 text-[13px] font-semibold" style="color: var(--pc)"><span class="lc-pdot"></span>{PROVIDER_META[p].short}</span>
+              <span class="today-pattern -mt-1 text-xs text-muted">{g.pattern}</span>
+              <span class="today-title text-xl leading-snug font-bold tracking-tight text-fg">{g.title}</span>
+              <span class="today-body line-clamp-4 text-[15px] text-muted">{g.body}</span>
+            </a>
           );
         })
       }
-    </ul>
+    </div>
+    <p class="mt-4 text-sm"><a class="lc-link" href={practiceHref(lang)}>{s.dailyMore} <i set:html={chev} /></a></p>
   </section>
+
+  <section class="py-6 pb-24">
+    <p class="lc-eyebrow">{h.whyEyebrow}</p>
+    <h2 class="home-h2">{h.whyTitle} <span class="text-muted">{h.whyTitleMuted}</span></h2>
+    <div class="mt-10 grid gap-5 md:grid-cols-3">
+      {
+        h.features.map((f) => (
+          <a class="lc-card home-feat" href={featureHref[f.key]} data-glow>
+            <span class="home-ico"><svg viewBox="0 0 24 24" aria-hidden="true" set:html={featureIcon[f.key]} /></span>
+            <span class="text-2xl font-bold tracking-tight text-fg">{f.title}</span>
+            <span class="text-muted">{f.body}</span>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <section id="patterns" class="scroll-mt-24 pb-24">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="lc-eyebrow">{h.patternsEyebrow}</p>
+        <h2 class="home-h2 m-0">{h.patternsTitle(publishedPatterns.length)}</h2>
+      </div>
+      <a class="lc-link" href={decideHref(lang)}>{s.decideNav} <i set:html={chev} /></a>
+    </div>
+    <div class="home-list">
+      {
+        publishedPatterns.map(({ pattern, implementations }) => {
+          const n = PROVIDERS.reduce((m, p) => m + (implementations[p]?.gotchas.length ?? 0), 0);
+          const floor = floorText(pattern.id);
+          return (
+            <a class="home-row" href={patternHref(lang, pattern.id, DEFAULT_VIEW)} data-pattern-link data-default-view={DEFAULT_VIEW}>
+              <span class="flex min-w-0 flex-col gap-1">
+                <span class="flex flex-wrap items-center gap-2">
+                  <span class="home-live" aria-hidden="true"></span>
+                  <span class="lc-chip">{h.published}</span>
+                  {pattern.tags.slice(0, 2).map((tag) => <span class="lc-chip">{tag}</span>)}
+                  <span class="lc-chip">{s.gotchaCount(n)}</span>
+                </span>
+                <span class="mt-1 text-xl font-semibold tracking-tight text-fg">{t(pattern.title, lang)}</span>
+                <span class="text-[15px] text-muted">{t(pattern.summary, lang)}</span>
+                {floor && <span class="text-[13px] text-muted tabular-nums">{h.floor}: {floor}</span>}
+              </span>
+              <span class="flex flex-wrap items-center gap-2">
+                {PROVIDERS.map((p) => <span class={`lc-pchip ${pclass(p)}`}>{PROVIDER_META[p].short}</span>)}
+                <span class="home-rarr" set:html={chev} />
+              </span>
+            </a>
+          );
+        })
+      }
+    </div>
+  </section>
+
+  <section class="pb-16">
+    <div class="lc-inv flex flex-col gap-4 p-9 sm:p-16">
+      <p class="lc-eyebrow m-0" style="color: var(--c-inv-muted)">{h.contribEyebrow}</p>
+      <h2 class="home-h2 m-0">{h.contribTitle}</h2>
+      <p class="m-0 max-w-[34em] text-lg">{h.contribBody}</p>
+      <div class="mt-2 flex flex-wrap gap-3">
+        <a class="lc-btn" href={`${BRAND.repo}/blob/main/CONTRIBUTING.md`}>{h.contribCta}</a>
+        <a class="lc-btn" style="background: transparent; color: var(--c-inv-text); box-shadow: inset 0 0 0 1px var(--c-inv-muted)" href={adrHref(lang)}>{s.adrNav}</a>
+      </div>
+    </div>
+  </section>
+  <script is:inline type="application/json" id="today-data" set:html={JSON.stringify(byCloud).replace(/</g, '\\u003c')} />
 </Base>
+
+<style>
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 56px 0 88px;
+  }
+  .home-h1 {
+    font-size: clamp(40px, 7.2vw, 80px);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    margin: 18px 0;
+    max-width: 15ch;
+  }
+  .hw {
+    display: inline-block;
+    margin: 0 0.12em;
+    animation: hw 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  @keyframes hw {
+    from {
+      transform: translateY(0.3em);
+      filter: blur(8px);
+    }
+  }
+  .home-lead {
+    font-size: clamp(18px, 2.2vw, 22px);
+    color: var(--c-muted);
+    max-width: 34em;
+    margin: 0 0 28px;
+    line-height: 1.4;
+  }
+  .home-h2 {
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.07;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    margin: 0 0 12px;
+    max-width: 20ch;
+  }
+  .home-mq {
+    width: 100%;
+    overflow: hidden;
+    margin-top: 56px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  }
+  .home-mqin {
+    display: flex;
+    width: max-content;
+    animation: mq 50s linear infinite;
+  }
+  .home-mq:hover .home-mqin {
+    animation-play-state: paused;
+  }
+  .home-mqg {
+    display: flex;
+    gap: 12px;
+    padding-right: 12px;
+  }
+  .home-pill {
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--c-muted);
+    background: var(--c-surface);
+    border-radius: 980px;
+    padding: 9px 18px;
+    box-shadow: var(--shadow);
+  }
+  .home-pill b {
+    font-weight: 600;
+    color: var(--c-text);
+  }
+  @keyframes mq {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .home-trio {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 56px;
+    width: 100%;
+    text-align: left;
+  }
+  .home-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px;
+    border-radius: 22px;
+    text-decoration: none;
+  }
+  .home-mini:hover,
+  .home-feat:hover,
+  .home-row:hover {
+    text-decoration: none;
+  }
+  .home-feat {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 32px;
+    text-decoration: none;
+  }
+  .home-ico {
+    width: 56px;
+    height: 56px;
+    border-radius: 15px;
+    background: var(--c-inv-bg);
+    color: var(--c-inv-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    transition: transform 0.5s cubic-bezier(0.3, 1.5, 0.4, 1);
+  }
+  .home-feat:hover .home-ico {
+    transform: rotate(-6deg) scale(1.08);
+  }
+  .home-ico svg,
+  :global(.lc-chev) {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  :global(.lc-link .lc-chev) {
+    width: 0.95em;
+    height: 0.95em;
+    stroke-width: 2.2;
+  }
+  .home-list {
+    background: var(--c-surface);
+    border-radius: 28px;
+    padding: 8px 28px;
+    margin-top: 36px;
+    box-shadow: var(--shadow);
+  }
+  .home-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px 28px;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--c-border);
+    color: var(--c-text);
+    text-decoration: none;
+  }
+  .home-row:last-child {
+    border-bottom: 0;
+  }
+  .home-rarr {
+    display: inline-flex;
+    color: var(--c-muted);
+    transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.4, 1);
+  }
+  .home-rarr :global(svg) {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+  }
+  .home-row:hover .home-rarr {
+    transform: translateX(5px);
+  }
+  .home-live {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c-ok);
+    animation: ring 1.8s infinite;
+    flex: none;
+  }
+  @keyframes ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(48, 209, 88, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+    }
+  }
+  @media (max-width: 900px) {
+    .home-trio {
+      grid-template-columns: 1fr;
+    }
+    .home-row {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 520px) {
+    .home-list {
+      padding: 4px 20px;
+      border-radius: 22px;
+    }
+    .home-feat {
+      padding: 24px;
+      border-radius: 22px;
+    }
+  }
+</style>
 
 <script>
   import { dailyIndex, localDay } from '../../lib/leitner.ts';
 
-  type Daily = { title: string; body: string; cloud: string; color: string; pattern: string; href: string };
-  const items: Daily[] = JSON.parse(document.getElementById('daily-data')!.textContent!);
-  if (items.length) {
-    const g = items[dailyIndex(localDay(), items.length)];
-    const link = document.getElementById('daily-link') as HTMLAnchorElement;
-    link.textContent = g.title;
-    link.href = g.href;
-    const cloud = document.getElementById('daily-cloud')!;
-    cloud.textContent = g.cloud;
-    cloud.style.color = g.color;
-    document.getElementById('daily-pattern')!.textContent = `· ${g.pattern}`;
-    document.getElementById('daily-body')!.textContent = g.body;
-    document.getElementById('daily')!.hidden = false;
-  }
+  type G = { title: string; body: string; pattern: string; href: string };
+  const data = JSON.parse(document.getElementById('today-data')!.textContent!) as Record<string, G[]>;
+  const day = localDay();
+  document.querySelectorAll<HTMLAnchorElement>('[data-today]').forEach((card, i) => {
+    const list = data[card.dataset.today!] ?? [];
+    if (!list.length) return;
+    // Desfasado por nube para que no roten las tres juntas.
+    const g = list[dailyIndex(`${day}:${i}`, list.length)];
+    card.href = g.href;
+    card.querySelector('.today-title')!.textContent = g.title;
+    card.querySelector('.today-body')!.textContent = g.body;
+    card.querySelector('.today-pattern')!.textContent = g.pattern;
+  });
+  // Brillo que sigue al mouse en las tarjetas.
+  document.querySelectorAll<HTMLElement>('.lc-card').forEach((el) =>
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    }),
+  );
 </script>

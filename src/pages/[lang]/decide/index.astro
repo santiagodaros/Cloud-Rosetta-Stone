@@ -15,8 +15,8 @@ const decisions = site.decisions ?? [];
 ---
 
 <Base lang={lang} title={`${s.decideTitle} — ${BRAND.name}`} description={s.decideIntro} altPath="decide/">
-  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.decideTitle}</h1>
-  <p class="mb-8 max-w-3xl text-muted">{s.decideIntro}</p>
+  <h1 class="lc-h1">{s.decideTitle}</h1>
+  <p class="lc-lead">{s.decideIntro}</p>
   <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {
       decisions.map((d) => (

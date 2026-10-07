@@ -26,8 +26,8 @@ const kindClass = { added: 'text-ok', updated: 'text-warn', reverified: 'text-mu
 ---
 
 <Base lang={lang} title={`${s.changesTitle} — ${BRAND.name}`} description={s.changesIntro} altPath="changes/">
-  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.changesTitle}</h1>
-  <p class="mb-3 max-w-3xl text-muted">{s.changesIntro}</p>
+  <h1 class="lc-h1">{s.changesTitle}</h1>
+  <p class="lc-lead">{s.changesIntro}</p>
   <div class="mb-8"><a class="inline-flex min-h-8 items-center rounded-full border border-line px-3 text-sm no-underline hover:bg-surface-2" href={href(`${lang}/feed.xml`)}>⌁ {s.changesFeed}</a></div>
 
   {events.length === 0 && <p class="text-muted">{s.changesEmpty}</p>}

@@ -19,9 +19,9 @@ const host = (u: string) => new URL(u).hostname.replace(/^docs\./, '');
 ---
 
 <Base lang={lang} title={`${s.conceptsTitle} — ${BRAND.name}`} description={s.conceptsIntro} altPath="concepts/">
-  <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{s.dictionary}</h1>
+  <h1 class="lc-h1">{s.dictionary}</h1>
   <DictionaryTabs lang={lang} current="concepts" />
-  <p class="mb-8 max-w-3xl text-muted">{s.conceptsIntro}</p>
+  <p class="lc-lead">{s.conceptsIntro}</p>
 
   <div class="flex flex-col gap-6" data-pagefind-body>
     {

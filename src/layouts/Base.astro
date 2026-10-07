@@ -20,6 +20,16 @@ const s = ui(lang);
 const repo = BRAND.repo;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL(href(ogImage), Astro.site).href;
+// Pestaña activa según la sección de la URL (sin prefijo de idioma).
+const rest = Astro.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ''), '').replace(/^\/(es|en)\//, '');
+const section = /^patterns\//.test(rest) ? 'patterns' : /^(capabilities|concepts|terraform)\//.test(rest) ? 'dictionary' : /^decide\//.test(rest) ? 'decide' : /^practice\//.test(rest) ? 'practice' : /^exams\//.test(rest) ? 'exams' : '';
+const tabs = [
+  { id: 'patterns', label: s.patterns, href: `${homeHref(lang)}#patterns` },
+  { id: 'dictionary', label: s.dictionary, href: capabilitiesHref(lang) },
+  { id: 'decide', label: s.decideTab, href: decideHref(lang) },
+  { id: 'practice', label: s.practice, href: practiceHref(lang) },
+  { id: 'exams', label: s.examsNav, href: examsHref(lang) },
+];
 ---
 
 <!doctype html>
@@ -50,65 +60,89 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
       try {
         var o = localStorage.getItem('letra-chica:origin');
         if (o === 'azure' || o === 'aws' || o === 'gcp') document.documentElement.dataset.origin = o;
+        var th = localStorage.getItem('letra-chica:theme');
+        if (th === 'light' || th === 'dark') document.documentElement.dataset.theme = th;
       } catch (e) {}
     </script>
     <link rel="alternate" type="application/atom+xml" title={`${BRAND.name} — ${s.changesTitle}`} href={href(`${lang}/feed.xml`)} />
   </head>
-  <body class="min-h-screen antialiased">
-    <header class="border-b border-line bg-surface">
-      <nav class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <a href={homeHref(lang)} class="flex flex-1 items-center gap-2 font-semibold text-fg no-underline sm:flex-none">
-          <img src={href('favicon.svg')} alt="" width="22" height="22" />
+  <body class="min-h-screen">
+    <header class="lc-top">
+      <div class="lc-topin">
+        <a href={homeHref(lang)} class="lc-logo">
+          <img src={href('favicon.svg')} alt="" width="24" height="24" />
           {BRAND.name}
         </a>
-        <div class="order-last flex w-full flex-wrap items-center gap-x-5 gap-y-1 text-sm sm:order-none sm:w-auto sm:flex-1">
-          <a class="text-muted hover:text-fg" href={homeHref(lang)}>{s.patterns}</a>
-          <a class="text-muted hover:text-fg" href={capabilitiesHref(lang)}>{s.dictionary}</a>
-          <a class="text-muted hover:text-fg" href={examsHref(lang)}>{s.examsNav}</a>
-          <a class="text-muted hover:text-fg" href={practiceHref(lang)}>{s.practice}</a>
-          <a class="text-muted hover:text-fg" href={href(`${lang}/methodology/`)}>{s.methodology}</a>
-          <a class="text-muted hover:text-fg" href={href(`${lang}/search/`)}>{s.search}</a>
-          <a class="text-muted hover:text-fg" href={`${repo}/blob/main/CONTRIBUTING.md`}>{s.contribute}</a>
-        </div>
-        <label id="origin-picker" class="flex items-center gap-1 text-sm text-muted" title={s.originHint} hidden>
-          {s.originLabel}
-          <select id="origin-select" class="min-h-8 rounded-md border border-line bg-surface px-1 text-fg">
-            <option value="">{s.originNone}</option>
-            {PROVIDERS.map((p) => <option value={p}>{PROVIDER_META[p].short}</option>)}
-          </select>
-        </label>
-        <div class="flex items-center gap-1 text-sm" aria-label="Idioma / Language">
+        <nav class="lc-tabs" aria-label={s.navSections}>
           {
-            LOCALES.map((l) =>
-              l === lang ? (
-                <span class="rounded bg-surface-2 px-2 py-0.5 font-medium">{l.toUpperCase()}</span>
-              ) : (
-                <a class="rounded px-2 py-0.5 text-muted hover:text-fg" href={href(`${l}/${altPath}`)} hreflang={l}>
-                  {l.toUpperCase()}
-                </a>
-              ),
-            )
+            tabs.map((tb) => (
+              <a class:list={['lc-tab', { on: tb.id === section }]} href={tb.href} aria-current={tb.id === section ? 'page' : undefined}>
+                {tb.label}
+              </a>
+            ))
           }
+        </nav>
+        <div class="lc-topr">
+          <a class="lc-iconbtn" href={href(`${lang}/search/`)} aria-label={s.search} title={s.search}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+          </a>
+          <label id="origin-picker" class="lc-origin" title={s.originHint} hidden>
+            <span>{s.originLabel}</span>
+            <select id="origin-select">
+              <option value="">{s.originNone}</option>
+              {PROVIDERS.map((p) => <option value={p}>{PROVIDER_META[p].short}</option>)}
+            </select>
+          </label>
+          <div class="lc-seg lc-theme" role="group" aria-label={s.themeGroup}>
+            <button type="button" data-theme-set="light" aria-label={s.themeLight} title={s.themeLight}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"></path></svg>
+            </button>
+            <button type="button" data-theme-set="auto" aria-label={s.themeAuto} title={s.themeAuto}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path class="half" d="M12 3.5a8.5 8.5 0 0 1 0 17z"></path></svg>
+            </button>
+            <button type="button" data-theme-set="dark" aria-label={s.themeDark} title={s.themeDark}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2z"></path></svg>
+            </button>
+          </div>
+          <div class="lc-seg lc-lang" role="group" aria-label="Idioma / Language">
+            {
+              LOCALES.map((l) =>
+                l === lang ? (
+                  <span class="on" aria-current="page">{l.toUpperCase()}</span>
+                ) : (
+                  <a href={href(`${l}/${altPath}`)} hreflang={l} lang={l}>{l.toUpperCase()}</a>
+                ),
+              )
+            }
+          </div>
         </div>
-      </nav>
+      </div>
     </header>
-    <main class="mx-auto max-w-7xl px-4 py-8">
+    <main class="mx-auto max-w-[1180px] px-4 py-10 sm:px-[22px]">
       <slot />
     </main>
-    <footer class="mt-16 border-t border-line">
-      <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-muted sm:flex-row sm:justify-between">
-        <p class="max-w-2xl">{s.disclaimer}</p>
-        <p class="flex flex-wrap gap-4">
-          <span id="offline-status" class="w-full" aria-live="polite" hidden></span>
+    <footer class="lc-foot">
+      <div class="mx-auto grid max-w-[1180px] gap-6 px-4 py-8 text-xs text-muted sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] sm:px-[22px]">
+        <div class="flex flex-col gap-2">
+          <p class="max-w-xl">{s.disclaimer}</p>
+          <p>{s.license}</p>
+          <p id="offline-status" aria-live="polite" hidden></p>
+        </div>
+        <nav class="flex flex-col gap-1.5" aria-label={s.footTools}>
+          <p class="font-semibold text-fg">{s.footTools}</p>
           <a href={decideHref(lang)}>{s.decideNav}</a>
           <a href={migrateHref(lang)}>{s.migrateNav}</a>
           <a href={adrHref(lang)}>{s.adrNav}</a>
+          <button type="button" id="offline-save" class="w-fit text-left text-accent" data-saving={s.offlineSaving} data-saved={s.offlineSaved} data-error={s.offlineError} hidden>{s.offlineSave}</button>
+        </nav>
+        <nav class="flex flex-col gap-1.5" aria-label={s.footProject}>
+          <p class="font-semibold text-fg">{s.footProject}</p>
+          <a href={href(`${lang}/methodology/`)}>{s.methodology}</a>
           <a href={href(`${lang}/changes/`)}>{s.changesNav}</a>
           <a href={href('api/v1/index.json')}>{s.openData}</a>
-          <button type="button" id="offline-save" class="text-accent underline underline-offset-2" data-saving={s.offlineSaving} data-saved={s.offlineSaved} data-error={s.offlineError} hidden>{s.offlineSave}</button>
+          <a href={`${repo}/blob/main/CONTRIBUTING.md`}>{s.contribute}</a>
           <a href={repo}>GitHub</a>
-          <span>{s.license}</span>
-        </p>
+        </nav>
       </div>
     </footer>
     <script>
@@ -130,6 +164,29 @@ const ogImageUrl = new URL(href(ogImage), Astro.site).href;
         });
         applyOrigin(select.value);
       }
+
+      // Tema claro / automático / oscuro (persistido; "auto" sigue al sistema).
+      const THEME_KEY = 'letra-chica:theme';
+      const themeBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-set]')];
+      const paintTheme = () => {
+        const cur = document.documentElement.dataset.theme ?? 'auto';
+        themeBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeSet === cur)));
+      };
+      themeBtns.forEach((b) =>
+        b.addEventListener('click', () => {
+          const v = b.dataset.themeSet!;
+          if (v === 'auto') delete document.documentElement.dataset.theme;
+          else document.documentElement.dataset.theme = v;
+          try {
+            if (v === 'auto') localStorage.removeItem(THEME_KEY);
+            else localStorage.setItem(THEME_KEY, v);
+          } catch {
+            /* sin storage: vale para esta página */
+          }
+          paintTheme();
+        }),
+      );
+      paintTheme();
 
       // PWA (F4-19): solo en el build publicado, para no cachear el servidor de desarrollo.
       const saveBtn = document.getElementById('offline-save') as HTMLButtonElement | null;

@@ -44,7 +44,7 @@ const region = (p: (typeof PROVIDERS)[number]) => site.pricing?.regions[p];
 <Base lang={lang} title={`${t(decision.title, lang)} · ${s.decideTitle} — ${BRAND.name}`} description={t(decision.intro, lang)} altPath={`decide/${decision.id}/`}>
   <p class="mb-2 text-sm"><a href={decideHref(lang)}>← {s.decideAll}</a></p>
   <header class="mb-6 max-w-3xl" data-pagefind-body>
-    <h1 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">{t(decision.title, lang)}</h1>
+    <h1 class="lc-h1">{t(decision.title, lang)}</h1>
     <p class="text-muted">{t(decision.intro, lang)}</p>
   </header>
 
