@@ -1,0 +1,24 @@
+id: egress-fqdn-filtering
+category: networking
+name:
+  es: "Filtrado de salida por dominio (FQDN)"
+  en: "Outbound filtering by domain (FQDN)"
+description:
+  es: "Permite o niega la salida a internet según el nombre de dominio de destino, no solo por IP y puerto."
+  en: "Allows or denies outbound internet traffic by destination domain name, not only by IP and port."
+providers:
+  azure:
+    services:
+      - service: "Azure Firewall (reglas de aplicación y de red con FQDN)"
+        docs: https://learn.microsoft.com/azure/firewall/features-by-sku
+  aws:
+    services:
+      - service: "AWS Network Firewall (stateful domain list rule groups)"
+        docs: https://docs.aws.amazon.com/network-firewall/latest/developerguide/stateful-rule-groups-domain-names.html
+  gcp:
+    services:
+      - service: "Cloud NGFW (FQDN objects en firewall policies)"
+        docs: https://docs.cloud.google.com/firewall/docs/fqdn-objects-overview
+caveats:
+  - es: "El mecanismo difiere. Las reglas de aplicación de Azure Firewall (HTTP/S y MSSQL) y las listas de dominios de Network Firewall (HTTP y HTTPS) se apoyan en el SNI o el encabezado Host. Los FQDN objects de Cloud NGFW, y los FQDN de las reglas de red de Azure Firewall, se resuelven a IPs por DNS."
+    en: "The mechanism differs. Azure Firewall application rules (HTTP/S and MSSQL) and Network Firewall domain lists (HTTP and HTTPS) rely on the SNI or the Host header. Cloud NGFW FQDN objects, and the FQDNs in Azure Firewall network rules, are resolved to IPs through DNS."
