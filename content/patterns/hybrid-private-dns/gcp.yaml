@@ -97,13 +97,13 @@ gotchas:
     body:
       es: >-
         VPC Network Peering no comparte automáticamente la información de DNS, así que una VPC peereada no resuelve
-        por sí sola las zonas de la VPC hub. En hub-and-spoke, cada spoke necesita una DNS peering zone hacia el
-        hub, y el DNS peering transitivo llega a un solo salto. Es la diferencia con Azure, donde un ruleset se linkea a VNets que ni siquiera están
-        peereadas.
+        por sí sola las zonas de la VPC hub. En hub-and-spoke, cada spoke necesita una DNS peering zone hacia el hub,
+        y el DNS peering transitivo llega a un solo salto. Es la diferencia con Azure, donde un ruleset se linkea a
+        VNets que ni siquiera están peereadas.
       en: >-
-        VPC Network Peering doesn't automatically share DNS information, so a peered VPC doesn't resolve the hub
-        VPC's zones on its own. In hub-and-spoke, each spoke needs a DNS peering zone to the hub, and transitive DNS
-        peering only goes one hop. That's the difference from Azure, where a ruleset links to VNets that aren't even peered.
+        VPC Network Peering doesn't automatically share DNS information, so a peered VPC doesn't resolve the hub VPC's
+        zones on its own. In hub-and-spoke, each spoke needs a DNS peering zone to the hub, and transitive DNS peering
+        only goes one hop. That's the difference from Azure, where a ruleset links to VNets that aren't even peered.
     sources:
       - https://docs.cloud.google.com/dns/docs/zones/peering-zones
       - https://docs.cloud.google.com/dns/docs/zones/zones-overview

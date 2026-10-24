@@ -72,9 +72,9 @@ gotchas:
         endpoint se cobra por hora por AZ. La alternativa (NAT
         Gateway) también tiene cargo por hora y por GB.
       en: >-
-        To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch
-        Logs interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is billed hourly per AZ. The alternative (NAT
-        Gateway) is also billed hourly and per GB.
+        To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch Logs
+        interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is billed
+        hourly per AZ. The alternative (NAT Gateway) is also billed hourly and per GB.
     sources:
       - https://repost.aws/knowledge-center/ecs-fargate-tasks-private-subnet
       - https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html
@@ -111,11 +111,13 @@ gotchas:
       en: The master user always exists; let Secrets Manager manage its password
     body:
       es: >-
-        Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets
-        Manager. El provider de Terraform no permite combinarlo con password, y RDS no lo soporta en algunos escenarios (por ejemplo Blue/Green deployments), así que decidilo de entrada.
+        Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets Manager. El
+        provider de Terraform no permite combinarlo con password, y RDS no lo soporta en algunos escenarios (por
+        ejemplo Blue/Green deployments), así que decidilo de entrada.
       en: >-
-        With manage_master_user_password = true, RDS generates the master password and stores it in Secrets
-        Manager. The Terraform provider doesn't allow combining it with password, and RDS doesn't support it in some scenarios (for example Blue/Green deployments), so decide upfront.
+        With manage_master_user_password = true, RDS generates the master password and stores it in Secrets Manager.
+        The Terraform provider doesn't allow combining it with password, and RDS doesn't support it in some scenarios
+        (for example Blue/Green deployments), so decide upfront.
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html
       - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance

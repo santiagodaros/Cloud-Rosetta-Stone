@@ -29,17 +29,18 @@ gotchas:
       es: >-
         Private Endpoints, reglas de VNet y CMK solo existen en Premium, que se cobra por messaging unit por hora
         aunque no haya mensajes. Standard solo admite reglas de IP. Este patrón usa Standard con autenticación solo
-        Entra ID: si el requisito es red privada, hay que pasar a Premium. En AWS, SQS admite un interface endpoint
-        sin cambiar de tier.
+        Entra ID: si el requisito es red privada, hay que pasar a Premium. En AWS, SQS se conecta por un interface VPC
+        endpoint.
       en: >-
-        Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with
-        zero messages. Standard only supports IP rules. This pattern uses Standard with Entra ID-only auth: if the
-        requirement is private networking, you have to move to Premium. In AWS, SQS supports an interface endpoint
-        without changing tier.
+        Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with zero
+        messages. Standard only supports IP rules. This pattern uses Standard with Entra ID-only auth: if the
+        requirement is private networking, you have to move to Premium. In AWS, SQS connects through an interface VPC
+        endpoint.
     sources:
       - https://learn.microsoft.com/azure/service-bus-messaging/private-link-service
       - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
       - https://azure.microsoft.com/pricing/details/service-bus/
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-internetwork-traffic-privacy.html
     verified_at: 2026-10-06
     roles: [queue]
     exams: [AZ-305, AZ-700, SC-500]

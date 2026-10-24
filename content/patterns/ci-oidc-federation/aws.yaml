@@ -64,15 +64,15 @@ gotchas:
       en: There's only one OIDC provider per URL per account
     body:
       es: >-
-        Crear un segundo provider para token.actions.githubusercontent.com en la misma cuenta falla: IAM no
-        permite registrar la misma URL dos veces en una cuenta. Si cada repo trae su propio stack de Terraform con el provider adentro, el segundo
-        apply rompe. Crealo una vez (en el stack de la cuenta) y referencialo con el data source; el módulo lo
-        permite con create_oidc_provider = false.
+        Crear un segundo provider para token.actions.githubusercontent.com en la misma cuenta falla: IAM no permite
+        registrar la misma URL dos veces en una cuenta. Si cada repo trae su propio stack de Terraform con el provider
+        adentro, el segundo apply rompe. Crealo una vez (en el stack de la cuenta) y referencialo con el data source;
+        el módulo lo permite con create_oidc_provider = false.
       en: >-
-        Creating a second provider for token.actions.githubusercontent.com in the same account fails: IAM doesn't
-        let you register the same URL twice in an account. If each repo ships its own Terraform stack with the provider inside, the second apply
-        breaks. Create it once (in the account stack) and reference it with the data source; the module supports
-        that with create_oidc_provider = false.
+        Creating a second provider for token.actions.githubusercontent.com in the same account fails: IAM doesn't let
+        you register the same URL twice in an account. If each repo ships its own Terraform stack with the provider
+        inside, the second apply breaks. Create it once (in the account stack) and reference it with the data source;
+        the module supports that with create_oidc_provider = false.
     sources:
       - https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
       - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_openid_connect_provider
