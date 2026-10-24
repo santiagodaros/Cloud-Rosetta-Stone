@@ -127,7 +127,7 @@ async function saveOffline(client) {
     if (r && (r.headers.get('content-type') || '').includes('html')) for (const a of assetsIn(await r.text(), new URL(req.url))) keep.add(a);
   }
   for (const req of await assets.keys()) {
-    if (/\.(js|css)$/.test(new URL(req.url).pathname) && !keep.has(req.url)) await assets.delete(req);
+    if (/\\.(js|css)$/.test(new URL(req.url).pathname) && !keep.has(req.url)) await assets.delete(req);
   }
   client && client.postMessage({ type: 'offline-done', total: urls.length });
 }

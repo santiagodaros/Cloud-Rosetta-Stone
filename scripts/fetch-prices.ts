@@ -40,7 +40,10 @@ async function getJson(url: string, headers: Record<string, string> = {}): Promi
     const res = await fetch(url, { headers: { accept: 'application/json', ...headers } });
     if (res.ok) return res.json();
     if (attempt >= 4 || (res.status < 500 && res.status !== 429)) throw new Error(`${res.status} ${res.statusText} — ${url}`);
-    await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
+    // Con 429 o 503 la API puede decir cuánto esperar; si no, backoff exponencial (con un tope de 60 s).
+    const retryAfter = Number(res.headers.get('retry-after'));
+    const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 60) * 1000 : 2 ** attempt * 1000;
+    await new Promise((r) => setTimeout(r, wait));
   }
 }
 

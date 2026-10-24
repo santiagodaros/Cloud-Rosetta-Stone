@@ -48,10 +48,12 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [ ] Decidir F4-21 (medir retención vs. "sin trackers"); si se adopta, actualizar README y D8.
 
 ### 5. Higiene técnica
-- [ ] Script `lint` (única falta del arnés; `typecheck` ya existe como `pnpm check`).
-- [ ] Revisar permisos de `ci.yml` (`ci.yml:9`) y fijar acciones por SHA (opcional).
-- [ ] Respetar `Retry-After` en el 429 de `scripts/fetch-prices.ts` (hoy backoff fijo; riesgo bajo).
-- [ ] Mantener un solo número de patrones/gotchas: hoy README, PLAN y la home pueden desfasarse. Generarlo desde `pnpm validate`.
+- [x] Script `lint` (ESLint 9, flat config) en `package.json`, `verify` y el CI. Encontró un bug real en el service worker (regex dentro de un template literal que perdía la barra).
+- [x] Acciones de GitHub fijadas por SHA (`@sha # tag`) y permisos revisados: ya estaban al mínimo. Una interpolación de `${{ }}` en un `run:` pasó a `env:`.
+- [x] `Retry-After` respetado en el 429/503 de `scripts/fetch-prices.ts` (tope 60 s).
+- [x] Test que compara los conteos del README con el contenido (`tests/readme-counts.test.ts`).
+- [ ] Decidir entre Renovate (`renovate.json`) y Dependabot (`.github/dependabot.yml`): hoy coexisten y pueden duplicar PRs. Ningún bot abrió PRs todavía, así que parece que Renovate no está instalado.
+- [ ] El CI de GitHub no corre: la cuenta tiene un problema de facturación ("recent account payments have failed or your spending limit needs to be increased"). Hasta resolverlo, ninguna rama pasó CI real; todo se validó localmente con las versiones del CI.
 
 ### Congelado (no empezar)
 - F4-04 Infracost, F4-06 deploy sandbox, F4-07 IA, F4-08 OCI, F4-20 votación.
