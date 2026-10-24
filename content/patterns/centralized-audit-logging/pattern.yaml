@@ -1,0 +1,48 @@
+id: centralized-audit-logging
+status: draft
+category: observability
+title:
+  es: Registros de auditoría centralizados de toda la organización
+  en: Organization-wide centralized audit logging
+summary:
+  es: Los registros de auditoría de todas las cuentas, proyectos o suscripciones llegan a un destino central en una cuenta aparte, con retención y acceso controlados y sin que cada equipo lo configure.
+  en: Audit logs from every account, project or subscription land in a central destination in a separate account, with controlled retention and access and without each team configuring it.
+problem:
+  es: >-
+    Cada cuenta, proyecto o suscripción genera su propio registro de quién hizo qué sobre qué recurso. Si cada equipo
+    lo configura por su cuenta, la retención y el acceso quedan en manos de cada uno. Los requisitos son: que los
+    registros de toda la organización lleguen a un destino central en una cuenta, proyecto o suscripción aparte, que
+    la retención y quién puede leerlos se definan en un solo lugar, y que sumar un equipo nuevo no exija configurar
+    nada. Lo difícil no es exportar sino lo que cada nube resuelve por su cuenta, lo que deja para habilitar y quién
+    tiene permiso para escribir en el destino.
+  en: >-
+    Each account, project or subscription generates its own record of who did what to which resource. If each team
+    configures it on its own, retention and access are left to each one. Requirements: audit records from the whole
+    organization reach a central destination in a separate account, project or subscription, retention and who can
+    read them are defined in one place, and adding a new team requires configuring nothing. The hard part isn't
+    exporting but what each cloud handles by itself, what it leaves for you to enable, and who has permission to
+    write to the destination.
+roles:
+  - id: sources
+    kind: actor
+    label: { es: "Fuentes (cuentas, proyectos o suscripciones)", en: "Sources (accounts, projects or subscriptions)" }
+  - id: audit-log
+    kind: capability
+    capability: centralized-logging
+    label: { es: Registro de auditoría de la nube, en: Cloud audit log }
+  - id: destination
+    kind: capability
+    capability: centralized-logging
+    label: { es: Destino central, en: Central destination }
+  - id: access
+    kind: capability
+    capability: access-control
+    label: { es: Acceso y retención, en: Access and retention }
+edges:
+  - { from: sources, to: audit-log, label: { es: operaciones del plano de control, en: control plane operations } }
+  - { from: audit-log, to: destination, label: { es: exportación, en: export } }
+  - { from: access, to: destination, label: { es: lectura y escritura controladas, en: controlled reads and writes } }
+paths:
+  - { id: collect, label: { es: "Fuente → registro → destino central", en: "Source → audit log → central destination" }, roles: [sources, audit-log, destination] }
+  - { id: read, label: { es: "Quién escribe y quién lee el destino", en: "Who writes and who reads the destination" }, roles: [access, destination] }
+tags: [observability, audit, governance, organization, retention]
