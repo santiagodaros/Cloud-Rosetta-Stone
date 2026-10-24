@@ -1,0 +1,6 @@
+# Fines de línea: el repo guarda LF y cada sistema trabaja con el suyo. Lo creó /dev-flow:init.
+# Si ya había archivos con CRLF commiteados, normalizarlos es un commit aparte: git add --renormalize .
+* text=auto
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf

@@ -13,3 +13,14 @@ dist/
 !*.tfvars.example
 crash.log
 .lighthouseci/
+# Claude Code: estado local
+.claude/.feature-flow/
+.claude/worktrees/
+.dev-flow/
+.claude/settings.local.json
+CLAUDE.local.md
+.private-terms
+tfplan
+*.tfplan
+plan.json
+whatif.json

@@ -1,0 +1,19 @@
+{
+  "extraKnownMarketplaces": {
+    "ai-env": {
+      "source": {
+        "source": "github",
+        "repo": "santiagodaros/ai-env"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "guard@ai-env": true,
+    "arch@ai-env": true,
+    "dev-flow@ai-env": true,
+    "app-review@ai-env": true,
+    "cloud-ops@ai-env": true,
+    "front-studio@ai-env": true
+  }
+}
