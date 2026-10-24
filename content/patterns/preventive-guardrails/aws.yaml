@@ -9,7 +9,7 @@ bindings:
       en: "An S3 policy declares the service's configuration without using API actions; an SCP limits principals' actions and doesn't evaluate the resource's configuration."
   exception:
     service: { es: "Alcance del attachment: OU o cuenta", en: "Attachment scope: OU or account" }
-    config: { es: "La OU o cuenta que necesita buckets públicos queda fuera de los targets de la política", en: "The OU or account that needs public buckets is left out of the policy's targets" }
+    config: { es: "Attachment de la política a nivel de OU o de cuenta, para excluir las cuentas que necesitan buckets públicos", en: "Policy attachment at the OU or account level, to exclude the accounts that need public buckets" }
     equivalence: partial
     notes:
       es: "La guía de buenas prácticas propone excluir esas cuentas con attachments a nivel de OU o cuenta, o concentrarlas en cuentas dedicadas."
@@ -133,8 +133,8 @@ gotchas:
   - id: test-in-an-ou-before-the-root
     severity: reliability
     title:
-      es: "Probá la política en una OU antes de adjuntarla a la raíz; quitar FullAWSAccess sin reemplazo corta todas las acciones"
-      en: "Test the policy in an OU before attaching it to the root; removing FullAWSAccess without a replacement cuts all actions"
+      es: "Probá las SCP y las RCP en una OU o en cuentas de prueba antes de subir a la raíz; quitar FullAWSAccess sin reemplazo corta todas las acciones"
+      en: "Test SCPs and RCPs in an OU or test accounts before moving up to the root; removing FullAWSAccess without a replacement cuts all actions"
     body:
       es: >-
         AWS recomienda con énfasis no adjuntar una SCP a la raíz sin probar su impacto en las cuentas: crear una OU y
@@ -185,5 +185,5 @@ cost:
   scales_to_zero: 'yes'
   fixed_cost_drivers: []
   notes:
-    es: "El patrón no despliega cómputo ni red: son políticas y attachments de Organizations. La facturación de estas políticas no se verificó en este borrador."
-    en: "The pattern deploys no compute or network: it's Organizations policies and attachments. Billing for these policies wasn't verified in this draft."
+    es: "El patrón no despliega cómputo ni red: son políticas y attachments de Organizations. No se verificó en una página de precios de AWS que estas políticas no tengan cargo, así que no se afirma ausencia de costos."
+    en: "The pattern deploys no compute or network: it's Organizations policies and attachments. It wasn't verified on an AWS pricing page that these policies are free, so no absence of costs is claimed."

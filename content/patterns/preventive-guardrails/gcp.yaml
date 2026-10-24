@@ -15,8 +15,8 @@ bindings:
     config: { es: "Inventario de los buckets con allUsers o allAuthenticatedUsers en una organización, carpeta o proyecto", en: "Inventory of buckets with allUsers or allAuthenticatedUsers across an organization, folder or project" }
     equivalence: partial
     notes:
-      es: "Cloud Asset Inventory muestra las policies IAM de los buckets; no es un informe de cumplimiento de la constraint."
-      en: "Cloud Asset Inventory shows the buckets' IAM policies; it isn't a compliance report for the constraint."
+      es: "La documentación de public access prevention indica usar Cloud Asset Inventory para ver las policies de todos los buckets de un proyecto, carpeta u organización. El overview de Cloud Asset Inventory lo describe como diseñado para tareas como el seguimiento de cumplimiento; no se verificó si su análisis de organization policies cubre esta constraint."
+      en: "The public access prevention documentation says to use Cloud Asset Inventory to view the policies of all buckets in a project, folder or organization. The Cloud Asset Inventory overview describes it as designed for tasks like compliance tracking; it wasn't verified whether its organization policy analysis covers this constraint."
 gotchas:
   - id: existing-public-grants-are-overridden-not-removed
     severity: security
@@ -136,5 +136,5 @@ cost:
   scales_to_zero: 'yes'
   fixed_cost_drivers: []
   notes:
-    es: "El patrón no despliega cómputo ni red: son organization policies. La facturación del servicio no se verificó en este borrador."
-    en: "The pattern deploys no compute or network: it's organization policies. The service's billing wasn't verified in this draft."
+    es: "El patrón no despliega cómputo ni red: son organization policies. No se verificó que el servicio de políticas no tenga cargo. La documentación de public access prevention advierte que, con los Data Access logs habilitados, al aplicarla puede aumentar la generación de logs, que cuenta para la cuota de ingestión y puede generar cargos de Cloud Audit Logs."
+    en: "The pattern deploys no compute or network: it's organization policies. It wasn't verified that the policy service is free. The public access prevention documentation warns that, with Data Access logs enabled, enforcing it can increase log generation, which counts toward the log ingestion quota and can incur Cloud Audit Logs charges."

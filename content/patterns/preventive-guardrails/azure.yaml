@@ -39,7 +39,7 @@ gotchas:
       - https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent
     verified_at: 2026-10-24
     roles: [policy]
-    exams: [SC-500, AZ-305]
+    exams: [SC-500, SC-100]
   - id: audit-does-not-block
     severity: security
     title:
@@ -90,7 +90,7 @@ gotchas:
       - https://learn.microsoft.com/azure/governance/policy/concepts/assignment-structure
     verified_at: 2026-10-24
     roles: [policy, audit]
-    exams: [AZ-305]
+    exams: [SC-500, SC-100]
   - id: exemption-expiry-is-optional
     severity: iam
     title:
@@ -125,5 +125,5 @@ cost:
   scales_to_zero: 'yes'
   fixed_cost_drivers: []
   notes:
-    es: "El patrón no despliega cómputo ni red: son definiciones, asignaciones y exemptions. La facturación de Azure Policy no se verificó en este borrador."
-    en: "The pattern deploys no compute or network: it's definitions, assignments and exemptions. Azure Policy billing wasn't verified in this draft."
+    es: "El patrón no despliega cómputo ni red: son definiciones, asignaciones y exemptions. No se verificó en una página de precios de Azure Policy si tiene cargo."
+    en: "The pattern deploys no compute or network: it's definitions, assignments and exemptions. Whether Azure Policy itself has a charge wasn't verified on an Azure Policy pricing page."
