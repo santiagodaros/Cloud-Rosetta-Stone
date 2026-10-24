@@ -13,7 +13,7 @@ locals {
   interface_endpoints = toset(["ecr.api", "ecr.dkr", "logs"])
 
   # Sin contraseña: la app genera el token con las credenciales del task role
-  # (gotcha: rds-iam-connection-rate → usar pool de conexiones).
+  # (gotcha: rds-iam-token-lifetime → usar pool de conexiones).
   app_environment = [
     { name = "PGHOST", value = aws_db_instance.this.address },
     { name = "PGPORT", value = "5432" },

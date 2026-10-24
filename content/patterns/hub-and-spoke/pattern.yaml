@@ -1,0 +1,47 @@
+id: hub-and-spoke
+status: draft
+category: networking
+title:
+  es: Hub-and-spoke con inspección centralizada
+  en: Hub-and-spoke with centralized inspection
+summary:
+  es: Varios equipos (spokes) comparten conectividad híbrida, DNS e inspección en un hub; el tráfico entre spokes y hacia internet pasa por un firewall central.
+  en: Several teams (spokes) share hybrid connectivity, DNS and inspection in a hub; traffic between spokes and to the internet goes through a central firewall.
+problem:
+  es: >-
+    Cada equipo tiene su propia red, pero la conectividad híbrida, el DNS y la inspección de tráfico no se pueden
+    repetir en todas. Los requisitos son: un punto único de salida a internet y hacia on-premises, que el tráfico
+    entre spokes se pueda inspeccionar y filtrar, y que sumar un spoke no obligue a tocar la configuración de los
+    demás. Lo difícil no es conectar las redes sino lograr que el tráfico pase por donde tiene que pasar: el ruteo
+    por defecto de cada nube conecta, o no conecta, más de lo que el diseño quiere.
+  en: >-
+    Each team has its own network, but hybrid connectivity, DNS and traffic inspection can't be repeated in all of
+    them. Requirements: a single exit point to the internet and to on-premises, spoke-to-spoke traffic that can be
+    inspected and filtered, and adding a spoke without touching the configuration of the others. The hard part isn't
+    connecting the networks but making traffic go where it should: each cloud's default routing connects, or doesn't
+    connect, more than the design intends.
+roles:
+  - id: spokes
+    kind: actor
+    label: { es: Spokes (redes de los equipos), en: Spokes (team networks) }
+  - id: routing
+    kind: capability
+    capability: virtual-network
+    label: { es: Ruteo hacia el hub, en: Routing to the hub }
+  - id: inspection
+    kind: capability
+    capability: managed-firewall
+    label: { es: Inspección central, en: Central inspection }
+  - id: hub
+    kind: capability
+    capability: virtual-network
+    label: { es: Hub (conectividad compartida), en: Hub (shared connectivity) }
+edges:
+  - { from: spokes, to: routing, label: { es: 0.0.0.0/0 y otros spokes, en: 0.0.0.0/0 and other spokes } }
+  - { from: routing, to: inspection, label: { es: next hop, en: next hop } }
+  - { from: inspection, to: hub, label: { es: tráfico permitido, en: allowed traffic } }
+  - { from: spokes, to: hub, label: { es: servicios compartidos, en: shared services } }
+paths:
+  - { id: inspected, label: { es: "Spoke → internet u otro spoke", en: "Spoke → internet or other spoke" }, roles: [spokes, routing, inspection, hub] }
+  - { id: shared, label: { es: "Spoke → servicios compartidos", en: "Spoke → shared services" }, roles: [spokes, hub] }
+tags: [networking, hub-and-spoke, firewall, routing, hybrid]

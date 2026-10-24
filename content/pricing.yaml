@@ -75,6 +75,21 @@ meters:
     azure: { service: Azure Database for PostgreSQL, match: { productName: Azure Database for PostgreSQL Flex Server Storage, meterName: Storage Data Stored } }
     docs: https://azure.microsoft.com/pricing/details/postgresql/flexible-server/
 
+  - id: azure-firewall-standard
+    provider: azure
+    label: { es: 'Azure Firewall Standard (hora de despliegue)', en: 'Azure Firewall Standard (deployment hour)' }
+    unit: hour
+    azure: { service: Azure Firewall, match: { skuName: Standard, meterName: Standard Deployment } }
+    docs: https://azure.microsoft.com/pricing/details/azure-firewall/
+  # La API de Retail Prices solo publica la hora del NAT Gateway Standard (global); no hay un meter horario para
+  # StandardV2, el default del módulo de controlled-egress. Se usa el de Standard como referencia.
+  - id: azure-nat-gateway-hour
+    provider: azure
+    label: { es: 'NAT Gateway (hora, SKU Standard)', en: 'NAT Gateway (hour, Standard SKU)' }
+    unit: hour
+    azure: { service: NAT Gateway, region: Global, match: { skuName: Standard, meterName: Standard Gateway } }
+    docs: https://azure.microsoft.com/pricing/details/azure-nat-gateway/
+
   # --- AWS (Price List bulk API: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html)
   - id: aws-resolver-eni
     provider: aws
@@ -118,6 +133,37 @@ meters:
     unit: gb-month
     aws: { offer: AmazonRDS, match: { usagetype: 'RDS:Multi-AZ-GP2-Storage', databaseEngine: PostgreSQL, deploymentOption: Multi-AZ } }
     docs: https://aws.amazon.com/rds/postgresql/pricing/
+
+  - id: aws-nat-gateway
+    provider: aws
+    label: { es: 'NAT gateway (hora, sin GB procesado)', en: 'NAT gateway (hourly, no GB processed)' }
+    unit: hour
+    aws: { offer: AmazonEC2, match: { usagetype: NatGateway-Hours } }
+    docs: https://aws.amazon.com/vpc/pricing/
+  - id: aws-network-firewall-endpoint
+    provider: aws
+    label: { es: 'Network Firewall — endpoint (hora, sin GB procesado)', en: 'Network Firewall — endpoint (hourly, no GB processed)' }
+    unit: hour
+    aws: { offer: AWSNetworkFirewall, match: { usagetype: USE1-Endpoint-Hour } }
+    docs: https://aws.amazon.com/network-firewall/pricing/
+  - id: aws-tgw-vpc-attachment
+    provider: aws
+    label: { es: 'Transit Gateway — attachment de VPC (hora, sin GB procesado)', en: 'Transit Gateway — VPC attachment (hourly, no GB processed)' }
+    unit: hour
+    aws: { offer: AmazonVPC, match: { usagetype: USE1-TransitGateway-Hours, operation: TransitGatewayVPC } }
+    docs: https://aws.amazon.com/transit-gateway/pricing/
+  - id: aws-kms-key
+    provider: aws
+    label: { es: 'Clave KMS administrada por el cliente (por mes)', en: 'KMS customer managed key (monthly)' }
+    unit: month
+    aws: { offer: awskms, match: { usagetype: us-east-1-KMS-Keys } }
+    docs: https://aws.amazon.com/kms/pricing/
+  - id: aws-secret
+    provider: aws
+    label: { es: 'Secreto de Secrets Manager (por mes)', en: 'Secrets Manager secret (monthly)' }
+    unit: month
+    aws: { offer: AWSSecretsManager, match: { usagetype: USE1-AWSSecretsManager-Secrets } }
+    docs: https://aws.amazon.com/secrets-manager/pricing/
 
   # --- GCP (Cloud Billing Catalog API: https://docs.cloud.google.com/billing/docs/how-to/get-pricing-information-api)
   # La API pide key (secret GCP_BILLING_API_KEY). Sin key, el job usa `manual`, tomado del
@@ -171,6 +217,20 @@ meters:
     gcp: { service: Cloud DNS, description: ManagedZone }
     manual: { unit_price: 0.2, verified_at: 2026-10-06, source: 'https://cloud.google.com/dns/pricing' }
     docs: https://cloud.google.com/dns/pricing
+  - id: gcp-secret-active-version
+    provider: gcp
+    label: { es: 'Secret Manager — versión activa (por mes, tras el tier gratuito)', en: 'Secret Manager — active version (monthly, after the free tier)' }
+    unit: month
+    gcp: { service: Secret Manager, description: 'Active secret versions' }
+    manual: { unit_price: 0.06, verified_at: 2026-10-24, source: 'https://cloud.google.com/secret-manager/pricing' }
+    docs: https://cloud.google.com/secret-manager/pricing
+  - id: gcp-nat-external-ip
+    provider: gcp
+    label: { es: 'IP externa usada por Cloud NAT', en: 'External IP address used by Cloud NAT' }
+    unit: hour
+    gcp: { service: Compute Engine, description: 'External IP addresses used by Cloud NAT' }
+    manual: { unit_price: 0.005, verified_at: 2026-10-24, source: 'https://cloud.google.com/vpc/network-pricing' }
+    docs: https://cloud.google.com/vpc/network-pricing
 
 floors:
   object-storage-ttl:
@@ -217,3 +277,34 @@ floors:
     # La server policy de inbound no tiene cargo: se paga la zona privada y la de forwarding.
     gcp:
       - { meter: gcp-dns-managed-zone, count: 2 }
+  app-secrets:
+    # Solo el Private Endpoint: el vault cobra por operación.
+    azure:
+      - { meter: azure-private-endpoint, count: 1 }
+    # endpoint_subnet_ids no tiene default: se asumen 2 subnets (2 AZ). Las lecturas no entran en el piso.
+    aws:
+      - { meter: aws-vpce-interface, count: 2 }
+      - { meter: aws-kms-key, count: 1 }
+      - { meter: aws-secret, count: 1 }
+    # Una versión activa; los primeros 6 por billing account son gratis, así que puede dar 0 en la práctica.
+    gcp:
+      - { meter: gcp-secret-active-version, count: 1 }
+  controlled-egress:
+    azure:
+      - { meter: azure-nat-gateway-hour, count: 1 }
+      - { meter: azure-firewall-standard, count: 1 }
+    # az_config no tiene default: se asumen 2 AZ (el mínimo que valida el módulo), un NAT y un endpoint por AZ.
+    aws:
+      - { meter: aws-nat-gateway, count: 2 }
+      - { meter: aws-network-firewall-endpoint, count: 2 }
+    # Cloud NAT cobra por VM que lo usa (cero VMs, cero cargo de gateway); queda la IP externa del NAT.
+    gcp:
+      - { meter: gcp-nat-external-ip, count: 1 }
+  hub-and-spoke:
+    azure:
+      - { meter: azure-firewall-standard, count: 1 }
+    # Con spokes = {} (default) queda el attachment de inspección; suma uno por spoke. azs sin default: 2 AZ.
+    aws:
+      - { meter: aws-tgw-vpc-attachment, count: 1 }
+      - { meter: aws-network-firewall-endpoint, count: 2 }
+    gcp: []

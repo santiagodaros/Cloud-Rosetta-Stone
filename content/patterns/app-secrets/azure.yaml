@@ -1,0 +1,209 @@
+provider: azure
+bindings:
+  identity:
+    service: { es: "Managed Identity (user-assigned)", en: "Managed Identity (user-assigned)" }
+    config: { es: "Rol Key Vault Secrets User a nivel de vault", en: "Key Vault Secrets User role at vault scope" }
+  private-access:
+    service: Private Endpoint (Private Link)
+    config: { es: "Subrecurso vault + zona privada privatelink.vaultcore.azure.net enlazada a la VNet", en: "vault sub-resource + privatelink.vaultcore.azure.net private zone linked to the VNet" }
+  store:
+    service: Azure Key Vault
+    config: { es: "RBAC, soft delete + purge protection, acceso público de red deshabilitado", en: "RBAC, soft delete + purge protection, public network access disabled" }
+  key:
+    service: Azure Key Vault (keys)
+    config: { es: "Clave en el mismo vault, solo si la app necesita cifrar por su cuenta", en: "Key in the same vault, only if the app needs to encrypt on its own" }
+    notes:
+      es: "Los secretos del vault los cifra el servicio con su propia jerarquía de claves, de forma transparente. Las claves del vault sirven para cifrar otras cosas (por ejemplo, datos de Storage)."
+      en: "The vault's secrets are encrypted by the service with its own key hierarchy, transparently. The vault's keys are for encrypting other things (for example, Storage data)."
+    equivalence: partial
+gotchas:
+  - id: soft-delete-blocks-name-reuse
+    severity: operations
+    title:
+      es: Un vault borrado sigue ocupando su nombre durante la retención, y al recuperarlo se pierden los role assignments
+      en: A deleted vault keeps its name during retention, and recovering it loses the role assignments
+    body:
+      es: >-
+        Soft delete viene activo en los vaults nuevos y, una vez activo, no se puede desactivar. La retención va de 7 a
+        90 días (90 por defecto) y solo se define al crear el vault. Hasta que venza no se puede crear otro vault con
+        el mismo nombre en la misma ubicación, ni un secreto con el nombre de uno borrado dentro del mismo vault.
+        Purge protection no viene activado por defecto: con él, nadie puede purgar antes de que pase la retención.
+        Si recuperás un vault, las asignaciones de roles de Azure RBAC no se restauran y hay que recrearlas. Un
+        destroy y recreate con el mismo nombre falla hasta que venza la retención: incluí el entorno en el nombre y
+        volvé a aplicar los role assignments después de recuperar.
+      en: >-
+        Soft delete is on for new vaults and, once on, can't be turned off. Retention ranges from 7 to 90 days (90 by
+        default) and is only set when the vault is created. Until it expires you can't create another vault with the
+        same name in the same location, nor a secret named like a deleted one inside the same vault. Purge protection
+        isn't on by default: with it, nobody can purge before the retention period passes. If you recover a vault,
+        Azure RBAC role assignments aren't restored and must be recreated. A destroy and recreate with the same name
+        fails until retention expires: put the environment in the name and re-apply the role assignments after
+        recovering.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/general/soft-delete-overview
+      - https://learn.microsoft.com/azure/key-vault/general/rbac-migration
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [AZ-104, AZ-305]
+  - id: access-policy-model-self-grant
+    severity: iam
+    title:
+      es: Con access policies, quien puede escribir el vault puede darse acceso a los secretos; con RBAC no
+      en: With access policies, whoever can write the vault can grant themselves secret access; with RBAC they can't
+    body:
+      es: >-
+        En el modelo de access policies, un usuario con el rol Contributor, Key Vault Contributor o cualquier rol que
+        incluya Microsoft.KeyVault/vaults/write puede darse acceso al data plane configurando una access policy. Con
+        RBAC, dar acceso a claves, secretos y certificados exige ser Owner o User Access Administrator. Microsoft
+        documenta RBAC como el modelo recomendado y, desde la API 2026-02-01, como el default de los vaults nuevos.
+        Con RBAC además se puede asignar un rol sobre un secreto individual en lugar de armar un vault por cada
+        grupo de apps. Dale a la identidad de la app solo Key Vault Secrets User, y contá con que una asignación nueva
+        puede tardar varios minutos en propagarse: el primer acceso tiene que reintentar.
+      en: >-
+        In the access policy model, a user with the Contributor role, Key Vault Contributor or any role that includes
+        Microsoft.KeyVault/vaults/write can grant themselves data-plane access by configuring an access policy. With
+        RBAC, granting access to keys, secrets and certificates requires being Owner or User Access Administrator.
+        Microsoft documents RBAC as the recommended model and, starting with API 2026-02-01, as the default for new
+        vaults. RBAC also lets you assign a role on an individual secret instead of building one vault per group of
+        apps. Give the app identity only Key Vault Secrets User, and expect a new assignment to take several minutes
+        to propagate: the first access has to retry.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/general/rbac-access-policy
+      - https://learn.microsoft.com/azure/key-vault/general/rbac-migration
+    verified_at: 2026-10-24
+    roles: [store, identity]
+    exams: [AZ-104, AZ-305, SC-500]
+  - id: private-endpoint-needs-linked-zone
+    severity: networking
+    title:
+      es: "El Private Endpoint no alcanza: si la zona privada no está enlazada a la VNet, el vault resuelve a su IP pública"
+      en: "The Private Endpoint isn't enough: if the private zone isn't linked to the VNet, the vault resolves to its public IP"
+    body:
+      es: >-
+        Para que la VNet llegue al vault por el Private Endpoint hace falta una zona privada llamada exactamente
+        privatelink.vaultcore.azure.net, enlazada a esa VNet y con el registro A del vault. Si la zona no está enlazada,
+        la consulta devuelve la IP pública. Con el acceso de red público deshabilitado y sin allow-list en el
+        firewall, el servicio rechaza todas las solicitudes en ese ingress. Desde on-premises hacen falta forwarders condicionales para vault.azure.net y
+        vaultcore.azure.net hacia un resolver con acceso a la resolución de Azure (ver el patrón DNS privado híbrido).
+        El nombre del vault sigue resolviendo en DNS público aunque sea privado: no pongas entorno ni cliente en el
+        nombre si eso es parte de tu modelo de amenazas.
+      en: >-
+        For the VNet to reach the vault through the Private Endpoint you need a private zone named exactly
+        privatelink.vaultcore.azure.net, linked to that VNet and holding the vault's A record. If the zone isn't
+        linked, the query returns the public IP. With public network access disabled and no firewall allow-list, the
+        service rejects every request at that ingress. From
+        on-premises you need conditional forwarders for vault.azure.net and vaultcore.azure.net to a resolver with
+        access to Azure resolution (see the hybrid private DNS pattern). The vault name still resolves in public DNS
+        even when the vault is private: don't put environment or customer in the name if that's part of your threat
+        model.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/general/private-link-service
+    verified_at: 2026-10-24
+    roles: [private-access, store]
+    exams: [AZ-700, AZ-104]
+  - id: rotation-is-yours-to-build
+    severity: operations
+    title:
+      es: Key Vault avisa que el secreto está por vencer; cambiar la credencial en el tercero lo tenés que programar vos
+      en: Key Vault tells you the secret is about to expire; changing the credential at the third party is yours to build
+    body:
+      es: >-
+        Treinta días antes de la fecha de expiración de un secreto, Key Vault publica el evento SecretNearExpiry en
+        Event Grid. Para rotar, tenés que crear la suscripción al evento y aportar la función que crea la versión
+        nueva en el vault y actualiza el servicio externo. El tutorial de Microsoft lo muestra para una contraseña de
+        SQL Server. Entre esos dos pasos puede haber un desfase en el que el secreto del vault no autentica, y si un
+        paso falla Event Grid reintenta durante dos horas. El template del tutorial de dos credenciales pide plan
+        Premium solo cuando el vault está detrás de un firewall.
+      en: >-
+        Thirty days before a secret's expiration date, Key Vault publishes the SecretNearExpiry event to Event Grid.
+        To rotate, you have to create the event subscription and provide the function that creates the new version in
+        the vault and updates the external service. Microsoft's tutorial shows it for a SQL Server password. Between
+        those two steps there can be a lag during which the vault's secret doesn't authenticate, and if a step fails
+        Event Grid retries for two hours. The two-credential tutorial's template asks for a Premium plan only when
+        the vault is behind a firewall.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/secrets/tutorial-rotation
+      - https://learn.microsoft.com/azure/key-vault/secrets/tutorial-rotation-dual
+      - https://learn.microsoft.com/azure/key-vault/secrets/javascript-developer-guide-set-update-rotate-secret
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [AZ-305]
+  - id: audit-needs-diagnostic-setting
+    severity: security
+    title:
+      es: Sin un diagnostic setting, nadie registra quién leyó el secreto
+      en: Without a diagnostic setting, nobody records who read the secret
+    body:
+      es: >-
+        Los resource logs de Key Vault no se recopilan ni se guardan hasta que creás un diagnostic setting y los
+        enviás a un destino. Para Key Vault, AuditEvent es la única categoría disponible. Sin esa configuración no hay
+        registro de los accesos al data plane, aunque RBAC y el firewall estén bien puestos. Creá el diagnostic setting
+        junto con el vault (el módulo lo hace) y mandalo a un workspace de Log Analytics que otra gente pueda consultar.
+      en: >-
+        Key Vault resource logs aren't collected or stored until you create a diagnostic setting and route them to a
+        destination. For Key Vault, AuditEvent is the only available category. Without it there is no record of
+        data-plane access, even if RBAC and the firewall are set up correctly. Create the diagnostic setting together
+        with the vault (the module does) and send it to a Log Analytics workspace that other people can query.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/general/monitor-key-vault
+      - https://learn.microsoft.com/azure/key-vault/general/logging
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [AZ-104, SC-500]
+  - id: vault-keys-do-not-encrypt-its-secrets
+    severity: security
+    title:
+      es: Key Vault cifra los secretos con una jerarquía de claves del servicio; en AWS y GCP elegís una clave tuya
+      en: Key Vault encrypts secrets with a service-owned key hierarchy; in AWS and GCP you pick a key of your own
+    body:
+      es: >-
+        Key Vault guarda todos los secretos como datos cifrados, con una jerarquía de claves del servicio, y la
+        documentación aclara que ese cifrado es transparente y no requiere acción tuya. Las claves que guardás en Key
+        Vault sirven, por ejemplo, como clave envolvente (BYOK) para cifrar datos de Azure Storage. En AWS, al crear
+        un secreto podés elegir una clave administrada por el cliente de KMS, y en GCP una clave de Cloud KMS (CMEK).
+        Si un requisito de cumplimiento exige controlar la clave del propio almacén de secretos, revisá que Key Vault
+        lo cubra antes de elegirlo; el rol de clave de este patrón es parcial en Azure.
+      en: >-
+        Key Vault stores all secrets as encrypted data, with a service-owned key hierarchy, and the documentation
+        states that this encryption is transparent and requires no action from you. The keys you store in Key Vault
+        serve, for example, as a wrapping key (BYOK) to encrypt Azure Storage data. In AWS, when you create a secret
+        you can pick a KMS customer managed key, and in GCP a Cloud KMS key (CMEK). If a compliance requirement
+        demands controlling the key of the secrets store itself, check that Key Vault covers it before choosing it;
+        the key role in this pattern is partial in Azure.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/secrets/about-secrets
+      - https://learn.microsoft.com/azure/key-vault/general/security-features
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html
+      - https://docs.cloud.google.com/secret-manager/docs/cmek
+    verified_at: 2026-10-24
+    roles: [key, store]
+    exams: [AZ-305, SC-500]
+  - id: pay-per-operation-and-endpoint-hour
+    severity: cost
+    title:
+      es: Cada lectura del secreto es una operación facturable, y el Private Endpoint se paga por hora
+      en: Every secret read is a billable operation, and the Private Endpoint is billed hourly
+    body:
+      es: >-
+        Key Vault cuenta como una operación cada llamada REST autenticada con éxito, incluidos los get y list de
+        secretos, y las cobra por cada 10.000 operaciones. El Private Endpoint se factura por hora más los datos
+        procesados. Una app que lee el secreto en cada request multiplica las operaciones sin necesidad: leelo al
+        arrancar o cacheá el valor y volvé a leerlo cuando falle la autenticación contra el tercero.
+      en: >-
+        Key Vault counts every successfully authenticated REST call as one operation, including secret get and list,
+        and bills them per 10,000 operations. The Private Endpoint is billed per hour plus data processed. An app that
+        reads the secret on every request multiplies operations for no reason: read it at startup or cache the value
+        and re-read it when authentication against the third party fails.
+    sources:
+      - https://azure.microsoft.com/pricing/details/key-vault/
+      - https://azure.microsoft.com/pricing/details/private-link/
+    verified_at: 2026-10-24
+    roles: [store, private-access]
+    exams: [AZ-305]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Private Endpoint (por hora)", en: "Private Endpoint (hourly)" }
+  notes:
+    es: El Private Endpoint se cobra por hora; el vault cobra por operación.
+    en: The Private Endpoint is billed hourly; the vault bills per operation.

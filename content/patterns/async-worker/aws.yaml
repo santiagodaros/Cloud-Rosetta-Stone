@@ -90,13 +90,17 @@ gotchas:
       en: Limit the event source mapping's concurrency, not just the function's
     body:
       es: >-
-        Ante un pico de mensajes Lambda escala rápido y puede saturar la base o la API de destino. scaling_config
-        .maximum_concurrency limita cuántas invocaciones concurrentes dispara la cola, sin los efectos colaterales
-        del reserved concurrency de la función (que además puede provocar throttling y reintentos).
+        scaling_config.maximum_concurrency limita cuántas instancias concurrentes de la función puede invocar la
+        cola. Es un setting del event source mapping, independiente del reserved concurrency de la función y sin
+        cargo, y evita que una cola consuma toda la concurrencia reservada o la cuota de la cuenta. Ojo: el
+        reserved concurrency tiene que ser mayor o igual que la suma de los máximos de todos los event sources de
+        la función; si no, Lambda puede hacer throttling de tus mensajes.
       en: >-
-        On a message spike Lambda scales fast and can overwhelm the downstream database or API.
-        scaling_config.maximum_concurrency limits how many concurrent invocations the queue triggers, without the
-        side effects of the function's reserved concurrency (which can also cause throttling and retries).
+        scaling_config.maximum_concurrency limits how many concurrent instances of the function the queue can
+        invoke. It's an event source mapping setting, independent of the function's reserved concurrency and free
+        of charge, and it keeps one queue from using all of the reserved concurrency or the account's concurrency
+        quota. Note: the reserved concurrency must be greater than or equal to the sum of the maximums of all the
+        function's event sources; otherwise Lambda might throttle your messages.
     sources:
       - https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html
     verified_at: 2026-10-06

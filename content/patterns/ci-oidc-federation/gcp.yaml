@@ -110,12 +110,12 @@ gotchas:
     body:
       es: >-
         El principalSet y el workload_identity_provider que le pasás a la action son
-        projects/NÚMERO/locations/global/..., no el ID del proyecto: con el ID el token exchange falla. Además, un
+        projects/NÚMERO/locations/global/..., no el ID del proyecto. Además, un
         cambio de IAM suele aplicarse en 2 minutos pero puede tardar 7 o más, así que un pipeline que se acaba de
         configurar puede fallar en la primera corrida sin que nada esté mal.
       en: >-
         The principalSet and the workload_identity_provider you pass to the action are
-        projects/NUMBER/locations/global/..., not the project ID: with the ID, the token exchange fails. Also, an
+        projects/NUMBER/locations/global/..., not the project ID. Also, an
         IAM change usually applies within 2 minutes but can take 7 or more, so a freshly configured pipeline can
         fail its first run with nothing actually wrong.
     sources:

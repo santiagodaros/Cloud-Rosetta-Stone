@@ -97,14 +97,11 @@ gotchas:
       en: Private Google Access doesn't restrict who reaches the bucket
     body:
       es: >-
-        Private Google Access solo permite que VMs sin IP pública lleguen a las APIs de Google. El bucket sigue
-        aceptando requests autenticadas desde internet. Para restringir el origen necesitás bucket IP filtering
-        o VPC Service Controls; este último es a nivel organización y suele no estar al alcance de un equipo de
-        aplicación.
+        Private Google Access solo permite que VMs sin IP pública lleguen a las APIs de Google. Para restringir
+        el origen necesitás bucket IP filtering o VPC Service Controls.
       en: >-
-        Private Google Access only lets VMs without public IPs reach Google APIs. The bucket still accepts
-        authenticated requests from the internet. To restrict origin you need bucket IP filtering or VPC Service
-        Controls; the latter is organization-level and often out of reach for an application team.
+        Private Google Access only lets VMs without public IPs reach Google APIs. To restrict origin you need
+        bucket IP filtering or VPC Service Controls.
     sources:
       - https://docs.cloud.google.com/vpc/docs/private-google-access
       - https://docs.cloud.google.com/storage/docs/ip-filtering-overview

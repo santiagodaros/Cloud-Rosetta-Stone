@@ -9,7 +9,8 @@ describe('changelog', () => {
     const added = new Set(events.filter((e) => e.kind === 'added').map((e) => `${e.pattern}/${e.provider}/${e.id}`));
     for (const { pattern, provider, gotcha } of allGotchas) expect(added).toContain(`${pattern.id}/${provider}/${gotcha.id}`);
     for (const e of events) expect(e.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  });
+    // Recorre `git log` de todo el contenido: crece con cada commit, así que el timeout de 5 s no alcanza.
+  }, 60_000);
 });
 
 describe('wordDiff', () => {

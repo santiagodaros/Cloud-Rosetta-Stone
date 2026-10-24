@@ -28,18 +28,19 @@ gotchas:
     body:
       es: >-
         Private Endpoints, reglas de VNet y CMK solo existen en Premium, que se cobra por messaging unit por hora
-        aunque no haya mensajes. Standard solo admite reglas de IP y además tiene un cargo base mensual. Este patrón
-        usa Standard con autenticación solo Entra ID: si el requisito es red privada, el piso de costo cambia de
-        orden de magnitud. En AWS, SQS admite un interface endpoint sin cambiar de tier.
+        aunque no haya mensajes. Standard solo admite reglas de IP. Este patrón usa Standard con autenticación solo
+        Entra ID: si el requisito es red privada, hay que pasar a Premium. En AWS, SQS se conecta por un interface VPC
+        endpoint.
       en: >-
-        Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with
-        zero messages. Standard only supports IP rules and also has a monthly base charge. This pattern uses
-        Standard with Entra ID-only auth: if the requirement is private networking, the cost floor changes by an
-        order of magnitude. In AWS, SQS supports an interface endpoint without changing tier.
+        Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with zero
+        messages. Standard only supports IP rules. This pattern uses Standard with Entra ID-only auth: if the
+        requirement is private networking, you have to move to Premium. In AWS, SQS connects through an interface VPC
+        endpoint.
     sources:
       - https://learn.microsoft.com/azure/service-bus-messaging/private-link-service
       - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
       - https://azure.microsoft.com/pricing/details/service-bus/
+      - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-internetwork-traffic-privacy.html
     verified_at: 2026-10-06
     roles: [queue]
     exams: [AZ-305, AZ-700, SC-500]
@@ -89,13 +90,12 @@ gotchas:
       en: The scaler needs an identity too, not just the container
     body:
       es: >-
-        KEDA consulta el largo de la cola por su cuenta. Si el namespace tiene local auth deshabilitada, la regla de
-        escalado tiene que usar la identidad administrada (identity_id en la regla); con un connection string no
-        funciona. El portal no permite configurarlo: hacelo por IaC o CLI.
+        KEDA consulta el largo de la cola por su cuenta. Para que lo haga con identidad administrada, la regla de
+        escalado usa la propiedad identity en lugar de auth. El portal no permite configurarlo: hacelo por IaC o
+        CLI.
       en: >-
-        KEDA queries the queue length on its own. If the namespace has local auth disabled, the scale rule must use
-        the managed identity (identity_id on the rule); a connection string won't work. The portal can't configure
-        it: use IaC or CLI.
+        KEDA queries the queue length on its own. To have it use a managed identity, the scale rule uses the
+        identity property instead of auth. The portal can't configure it: use IaC or CLI.
     sources:
       - https://learn.microsoft.com/azure/container-apps/scale-app
       - https://learn.microsoft.com/azure/container-apps/managed-identity

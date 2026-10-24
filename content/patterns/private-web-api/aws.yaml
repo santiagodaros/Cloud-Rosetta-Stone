@@ -40,22 +40,23 @@ gotchas:
     verified_at: 2026-10-06
     roles: [database, identity]
     exams: [SAA-C03, SCS-C03]
-  - id: rds-iam-connection-rate
+  - id: rds-iam-token-lifetime
     severity: reliability
     title:
-      es: IAM auth tiene un límite de conexiones nuevas por segundo
-      en: IAM auth has a new-connections-per-second limit
+      es: El token de IAM auth dura 15 minutos y solo sirve para abrir la conexión
+      en: The IAM auth token lasts 15 minutes and is only used to open the connection
     body:
       es: >-
-        El token dura 15 minutos y solo sirve para abrir la conexión (una sesión abierta no expira). AWS
-        recomienda IAM auth cuando la app abre menos de 200 conexiones nuevas por segundo. Con autoscaling
-        agresivo o sin pool de conexiones lo pasás rápido: usá pooling en la app o RDS Proxy.
+        El token vence a los 15 minutos y se usa solo para autenticar: no afecta la sesión una vez establecida,
+        pero un token vencido hace que se rechace una conexión nueva. Una app que abre una conexión por request
+        tiene que generar un token fresco cada vez; mantené un pool y renová el token al abrir conexiones nuevas.
       en: >-
-        The token lasts 15 minutes and is only used to open the connection (an open session doesn't expire). AWS
-        recommends IAM auth when the app opens fewer than 200 new connections per second. With aggressive
-        autoscaling or no connection pool you'll exceed it quickly: use app-side pooling or RDS Proxy.
+        The token expires after 15 minutes and is used only to authenticate: it doesn't affect the session once
+        established, but an expired token makes a new connection request fail. An app that opens a connection per
+        request must generate a fresh token each time; keep a pool and refresh the token when opening new connections.
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+      - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Connecting.html
     verified_at: 2026-10-06
     roles: [identity, database]
     exams: [SAA-C03]
@@ -68,16 +69,17 @@ gotchas:
       es: >-
         Para bajar la imagen y mandar logs sin salida a internet, la tarea necesita interface endpoints de ECR (api
         y dkr) y CloudWatch Logs, más el gateway endpoint de S3 (donde ECR guarda las capas). Cada interface
-        endpoint se cobra por hora por AZ: es el costo fijo que en ACA y Cloud Run no existe. La alternativa (NAT
+        endpoint se cobra por hora por AZ. La alternativa (NAT
         Gateway) también tiene cargo por hora y por GB.
       en: >-
-        To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch
-        Logs interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is
-        billed hourly per AZ: it's the fixed cost that doesn't exist in ACA or Cloud Run. The alternative (NAT
-        Gateway) is also billed hourly and per GB.
+        To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch Logs
+        interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is billed
+        hourly per AZ. The alternative (NAT Gateway) is also billed hourly and per GB.
     sources:
       - https://repost.aws/knowledge-center/ecs-fargate-tasks-private-subnet
       - https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html
+      - https://aws.amazon.com/privatelink/pricing/
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html
     verified_at: 2026-10-06
     roles: [app]
     exams: [SAA-C03, ANS-C01]
@@ -88,13 +90,14 @@ gotchas:
       en: HTTPS on an internal ALB still needs a certificate for a domain you control
     body:
       es: >-
-        El listener HTTPS requiere un certificado en ACM. Un certificado público de ACM se valida contra DNS o mail
-        de un dominio real aunque el ALB sea interno; la alternativa es AWS Private CA, que tiene cargo mensual.
-        En ACA y Cloud Run el certificado del dominio por defecto lo gestiona la plataforma.
+        Para crear un listener HTTPS hay que desplegar al menos un certificado de servidor SSL (de ACM o de IAM).
+        ACM exige probar la propiedad del dominio de un certificado público por DNS, mail o HTTP, y no puede
+        validar recursos en una private hosted zone de VPC ni en ningún otro dominio privado, aunque el ALB sea
+        interno.
       en: >-
-        The HTTPS listener needs an ACM certificate. A public ACM certificate is validated via DNS or email for a
-        real domain even if the ALB is internal; the alternative is AWS Private CA, which has a monthly fee. In ACA
-        and Cloud Run the platform manages the default domain's certificate.
+        To create an HTTPS listener you must deploy at least one SSL server certificate (from ACM or IAM). ACM
+        requires proving domain ownership for a public certificate via DNS, email or HTTP, and cannot validate
+        resources in a VPC private hosted zone or any other private domain, even if the ALB is internal.
     sources:
       - https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
       - https://docs.aws.amazon.com/acm/latest/userguide/domain-ownership-validation.html
@@ -108,15 +111,16 @@ gotchas:
       en: The master user always exists; let Secrets Manager manage its password
     body:
       es: >-
-        Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets
-        Manager: nunca pasa por variables ni por el estado de Terraform. Es incompatible con pasar password a mano,
-        y no está soportado en algunos escenarios (por ejemplo Blue/Green deployments), así que decidilo de entrada.
+        Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets Manager. El
+        provider de Terraform no permite combinarlo con password, y RDS no lo soporta en algunos escenarios (por
+        ejemplo Blue/Green deployments), así que decidilo de entrada.
       en: >-
-        With manage_master_user_password = true, RDS generates the master password and stores it in Secrets
-        Manager: it never goes through variables or Terraform state. It's incompatible with passing a password
-        manually, and isn't supported in some scenarios (for example Blue/Green deployments), so decide upfront.
+        With manage_master_user_password = true, RDS generates the master password and stores it in Secrets Manager.
+        The Terraform provider doesn't allow combining it with password, and RDS doesn't support it in some scenarios
+        (for example Blue/Green deployments), so decide upfront.
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html
+      - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance
     verified_at: 2026-10-06
     roles: [database]
     exams: [SAA-C03, SCS-C03]

@@ -17,6 +17,7 @@ export type Gotcha = {
   body: Localized;
   sources: string[];
   verified_at: string;
+  verified_by?: string | null;
   exams: string[];
   url: Partial<Record<Locale, string>>;
 };
@@ -153,7 +154,7 @@ export function formatGotcha(g: Gotcha, lang: Locale, today = new Date()): strin
   const fresh = age > STALE_AFTER_DAYS ? ` (verified ${age} days ago: re-verify before relying on it)` : '';
   return [
     `### ${t(g.title, lang)}`,
-    `key: ${g.key} · cloud: ${g.provider} · severity: ${g.severity} · verified_at: ${g.verified_at}${fresh}${g.exams.length ? ` · exams: ${g.exams.join(', ')}` : ''}`,
+    `key: ${g.key} · cloud: ${g.provider} · severity: ${g.severity} · verified_at: ${g.verified_at}${g.verified_by ? ` by @${g.verified_by}` : ' (maintainer only, no external reviewer)'}${fresh}${g.exams.length ? ` · exams: ${g.exams.join(', ')}` : ''}`,
     '',
     t(g.body, lang),
     '',

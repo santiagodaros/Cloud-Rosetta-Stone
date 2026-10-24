@@ -1,0 +1,159 @@
+provider: azure
+bindings:
+  nat:
+    service: Azure NAT Gateway
+    config: { es: "StandardV2 (zona-redundante), asociado a AzureFirewallSubnet", en: "StandardV2 (zone-redundant), attached to AzureFirewallSubnet" }
+    from:
+      aws:
+        es: "El NAT Gateway se asocia a la subnet y no necesita rutas en su tabla; en AWS vive en una subnet pública y las subnets privadas lo apuntan por ruta."
+        en: "The NAT gateway is attached to the subnet and needs no routes in its table; in AWS it lives in a public subnet and private subnets point to it by route."
+  filter:
+    service: Azure Firewall
+    config: { es: "Standard con firewall policy: reglas de aplicación por FQDN (HTTPS) y DNS proxy", en: "Standard with a firewall policy: application rules by FQDN (HTTPS) and DNS proxy" }
+gotchas:
+  - id: default-outbound-access
+    severity: networking
+    title:
+      es: Sin un método de salida explícito la VM usa una IP que es de Microsoft y puede cambiar
+      en: Without an explicit outbound method the VM uses an IP that Microsoft owns and can change
+    body:
+      es: >-
+        Una VM sin método de salida explícito recibe una IP pública de salida por defecto. Esa IP es propiedad de
+        Microsoft y puede cambiar sin aviso, así que no sirve para un allowlist de terceros. Para la versión de API
+        publicada después del 31 de marzo de 2026, las subnets de las VNets nuevas tienen defaultOutboundAccess en
+        false; las VNets existentes no cambian, y sus VMs nuevas siguen recibiendo la IP por defecto salvo que la
+        subnet se haga privada. Las herramientas que fijan una versión de API anterior (la doc nombra a Terraform)
+        dejan el valor en null, que permite la salida implícita. Declará un método explícito (NAT Gateway) y fijá
+        la subnet como privada de forma explícita; las VMs que ya existen tienen que pasar por stop/deallocate para
+        que el cambio les aplique. En una subnet privada sin salida explícita, Windows Update y la activación de Windows no funcionan.
+      en: >-
+        A VM without an explicit outbound method gets a default outbound public IP. That IP is owned by Microsoft and
+        can change without notice, so it is no good for a third-party allowlist. For the API version released after
+        March 31, 2026, subnets in new VNets have defaultOutboundAccess set to false; existing VNets don't change,
+        and new VMs in them keep getting the default IP unless the subnet is made private. Tools that pin an earlier
+        API version (the doc names Terraform) leave the value as null, which allows implicit outbound access. Declare
+        an explicit method (NAT Gateway) and set the subnet to private explicitly; existing VMs must be stopped and
+        deallocated for the change to take effect. In a private subnet without explicit outbound, Windows Update and Windows
+        activation don't work.
+    sources:
+      - https://learn.microsoft.com/azure/virtual-network/ip-services/default-outbound-access
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [AZ-700, AZ-104]
+  - id: nat-standard-zonal
+    severity: reliability
+    title:
+      es: Un NAT Gateway Standard es zonal, y pasar a StandardV2 obliga a cambiar las IPs de salida
+      en: A Standard NAT gateway is zonal, and moving to StandardV2 forces new egress IPs
+    body:
+      es: >-
+        El SKU Standard opera en una sola zona de disponibilidad (o en "No zone", donde Azure lo ubica por vos), y si
+        esa zona cae el corte afecta la salida de las subnets asociadas. StandardV2 es zona-redundante, pero un
+        Standard no se puede actualizar a StandardV2: hay que crear uno nuevo para reemplazarlo en la subnet, y
+        StandardV2 exige IPs públicas StandardV2, que no son las Standard. Cambiar de SKU después implica cambiar las
+        IPs que tus terceros tienen en el allowlist. La zona de un NAT Gateway tampoco se puede cambiar una vez
+        creado, y StandardV2 no está disponible en algunas regiones (la doc las lista). Si necesitás resiliencia
+        entre zonas, elegí StandardV2 desde el principio.
+      en: >-
+        The Standard SKU operates in a single availability zone (or in "No zone", where Azure places it for you), and
+        if that zone goes down the outage affects outbound connectivity for the associated subnets. StandardV2 is
+        zone-redundant, but a Standard gateway can't be upgraded to StandardV2: you create a new one to replace it on
+        the subnet, and StandardV2 requires StandardV2 public IPs, which are not the Standard ones. Switching SKUs
+        later means changing the IPs your third parties have in their allowlist. A NAT gateway's zone also can't be
+        changed after creation, and StandardV2 isn't available in some regions (the doc lists them). If you need
+        cross-zone resilience, choose StandardV2 from the start.
+    sources:
+      - https://learn.microsoft.com/azure/nat-gateway/nat-overview
+      - https://learn.microsoft.com/azure/nat-gateway/nat-gateway-resource
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [AZ-700, AZ-305]
+  - id: udr-overrides-nat-gateway
+    severity: networking
+    title:
+      es: "Una ruta 0.0.0.0/0 hacia el firewall pisa al NAT Gateway de la subnet: va en AzureFirewallSubnet"
+      en: "A 0.0.0.0/0 route to the firewall overrides the subnet's NAT gateway: attach it to AzureFirewallSubnet"
+    body:
+      es: >-
+        Una UDR para 0.0.0.0/0 con next hop de virtual appliance o de gateway de red anula la conectividad a internet
+        del NAT Gateway. Si los workloads rutean por un firewall, el NAT Gateway de la subnet de los workloads no es
+        el que sale a internet. Para que los destinos vean las IPs fijas del NAT Gateway, asocialo a
+        AzureFirewallSubnet y dejá en las subnets de workloads las rutas hacia la IP privada del firewall; no hace
+        falta una UDR adicional para la salida del firewall. Si el NAT Gateway tiene varias IPs públicas, elige una
+        al azar y no se puede indicar cuál, así que el tercero tiene que permitir todas. Con un firewall
+        zona-redundante, la doc indica usar un NAT Gateway StandardV2: el Standard no soporta ese despliegue. Y sin
+        NAT Gateway el firewall ofrece 2.496 SNAT ports por IP pública y por instancia (mínimo de dos instancias),
+        contra 64.512 por IP en el NAT Gateway.
+      en: >-
+        A UDR for 0.0.0.0/0 with a virtual appliance or network gateway next hop overrides the NAT gateway's internet
+        connectivity. If workloads route through a firewall, the NAT gateway on the workload subnet is not the one
+        that goes out to the internet. For destinations to see the NAT gateway's fixed IPs, attach it to
+        AzureFirewallSubnet and keep the routes to the firewall's private IP on the workload subnets; no additional
+        UDR is needed for the firewall's own egress. If the NAT gateway has several public IPs, it picks one at
+        random and you can't say which, so the third party must allow all of them. With a zone-redundant firewall,
+        the doc says to use a StandardV2 NAT gateway: Standard doesn't support that deployment. And without a NAT
+        gateway the firewall provides 2,496 SNAT ports per public IP per instance (minimum of two instances),
+        against 64,512 per IP on the NAT gateway.
+    sources:
+      - https://learn.microsoft.com/azure/nat-gateway/nat-overview
+      - https://learn.microsoft.com/azure/firewall/integrate-with-nat-gateway
+    verified_at: 2026-10-24
+    roles: [filter, nat]
+    exams: [AZ-700, AZ-305]
+  - id: fqdn-rules-need-dns-proxy
+    severity: security
+    title:
+      es: Las reglas FQDN de red exigen DNS proxy y no admiten comodines; las de aplicación cubren solo HTTP/S y MSSQL
+      en: Network FQDN rules require DNS proxy and don't allow wildcards; application rules cover only HTTP/S and MSSQL
+    body:
+      es: >-
+        Las reglas de aplicación filtran por FQDN (con comodines) el tráfico HTTP/S y Azure SQL, apoyándose en el
+        encabezado SNI y sin terminar TLS. Para otros protocolos hay que poner FQDN en reglas de red: requieren
+        habilitar DNS proxy, no admiten comodines por diseño y se traducen a IPs por DNS (el firewall actualiza las
+        reglas cada 15 segundos), así que no distinguen dos FQDN que resuelven a la misma IP. El SKU Basic no admite
+        FQDN en reglas de red. Usá reglas de aplicación para HTTP/S y reservá las de red para el resto, con DNS proxy
+        habilitado en la policy.
+      en: >-
+        Application rules filter HTTP/S and Azure SQL traffic by FQDN (wildcards included), relying on the SNI header
+        and without terminating TLS. For other protocols you put FQDNs in network rules: they require enabling DNS
+        proxy, don't support wildcards by design and are translated to IPs through DNS (the firewall updates the
+        rules every 15 seconds), so they can't tell apart two FQDNs that resolve to the same IP. The Basic SKU doesn't
+        support FQDNs in network rules. Use application rules for HTTP/S and keep network rules for the rest, with
+        DNS proxy enabled on the policy.
+    sources:
+      - https://learn.microsoft.com/azure/firewall/fqdn-filtering-network-rules
+      - https://learn.microsoft.com/azure/firewall/features-by-sku
+    verified_at: 2026-10-24
+    roles: [filter]
+    exams: [AZ-700]
+  - id: nat-and-firewall-billing
+    severity: cost
+    title:
+      es: NAT Gateway y Azure Firewall se cobran por hora, más por GB procesado
+      en: NAT Gateway and Azure Firewall are billed hourly, plus per GB processed
+    body:
+      es: >-
+        La página de precios del NAT Gateway cobra horas de recurso y datos procesados (tráfico de salida y de
+        respuesta), y aclara que la tarifa por hora se cobra aunque el NAT Gateway no tenga subnets ni IPs asociadas;
+        además aplican cargos de ancho de banda. Azure Firewall cobra una tarifa fija por hora por deployment,
+        independiente de la escala, más un cargo por GB procesado. Si no necesitás filtrar por destino, el NAT Gateway solo ya da la IP fija sin el firewall.
+      en: >-
+        The NAT Gateway pricing page charges resource hours and data processed (outbound and return traffic), and
+        states that the hourly rate is charged regardless of the NAT gateway having subnets or public IPs attached;
+        bandwidth charges also apply. Azure Firewall charges a fixed hourly fee per deployment, regardless of scale,
+        plus a per-GB processed charge. If you don't need to filter by
+        destination, the NAT gateway alone already gives the fixed IP without the firewall.
+    sources:
+      - https://azure.microsoft.com/pricing/details/azure-nat-gateway/
+      - https://azure.microsoft.com/pricing/details/azure-firewall/
+    verified_at: 2026-10-24
+    roles: [nat, filter]
+    exams: [AZ-305]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "NAT Gateway (por hora)", en: "NAT Gateway (hourly)" }
+    - { es: "Azure Firewall (por hora por deployment)", en: "Azure Firewall (hourly per deployment)" }
+  notes:
+    es: El NAT Gateway y el firewall se cobran por hora (el NAT Gateway, aunque no tenga subnets ni IPs asociadas), y los dos suman un cargo por GB procesado. Al NAT Gateway se le suman cargos de ancho de banda.
+    en: The NAT gateway and the firewall are billed hourly (the NAT gateway even with no subnets or public IPs attached), and both add a per-GB processed charge. The NAT gateway also adds bandwidth charges.

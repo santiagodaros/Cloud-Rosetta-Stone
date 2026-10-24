@@ -23,6 +23,9 @@ están para proteger eso.
 - **Fuente oficial obligatoria.** Dominios aceptados: ver `OFFICIAL_SOURCE_HOSTS` en `src/lib/schema.ts`.
   Blogs, foros y videos sirven para descubrir un problema, no para respaldarlo.
 - **`verified_at` = el día que leíste las fuentes**, no el día que escribiste el texto.
+- **`verified_by`** (opcional) = tu usuario de GitHub, sin `@`, si re-verificaste un gotcha de una nube que
+  conocés. Sin el campo, el sitio dice "sin revisor externo". `pnpm freshness --review` lista la cola, los más
+  severos primero. Si querés revisar una nube de forma regular, abrí el issue "Quiero revisar una nube".
 - **Sin ganador.** Si algo es más simple o barato en una nube, decí qué se paga en otro lado.
 - **Comparar lo comparable:** mismo motor (PostgreSQL con PostgreSQL), mismo nivel de aislamiento de red.
 - **Nunca** incluyas nombres de clientes, IDs de tenant/suscripción/cuenta/proyecto reales, IPs públicas o

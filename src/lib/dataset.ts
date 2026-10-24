@@ -47,6 +47,7 @@ export function flatGotchas(siteUrl: URL | undefined) {
     body: g.body,
     sources: g.sources,
     verified_at: g.verified_at,
+    verified_by: g.verified_by ?? null,
     exams: g.exams,
     roles: g.roles,
     url: Object.fromEntries(

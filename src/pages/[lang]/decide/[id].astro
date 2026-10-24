@@ -150,7 +150,7 @@ const region = (p: (typeof PROVIDERS)[number]) => site.pricing?.regions[p];
     <p class="mt-4 text-xs text-muted">{s.decideVerified} {decision.verified_at} · <a href={capabilitiesHref(lang)}>{s.dictionary}</a></p>
   </section>
 
-  <script is:inline type="application/json" id="decide-data" set:html={JSON.stringify(data)} />
+  <script is:inline type="application/json" id="decide-data" set:html={JSON.stringify(data).replace(/</g, '\\u003c')} />
 </Base>
 
 <script>

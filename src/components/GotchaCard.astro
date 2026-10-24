@@ -41,7 +41,16 @@ const shortUrl = (u: string) => {
     >
       ● {s.verified(age)}{freshness === 'bad' && ` · ${s.stale}`}
     </span>
-    {isFallback(g.title, lang) && <span class="text-muted italic">({s.untranslated})</span>}
+    {
+      g.verified_by ? (
+        <a href={`https://github.com/${g.verified_by}`} rel="noopener" target="_blank" class="text-muted no-underline! hover:underline!">
+          ✓ {s.reviewedBy(g.verified_by)}
+        </a>
+      ) : (
+        <span class="text-muted" title={s.maintainerOnlyHint}>◌ {s.maintainerOnly}</span>
+      )
+    }
+    {isFallback(g.title, lang) &&<span class="text-muted italic">({s.untranslated})</span>}
   </div>
   <Heading class="mb-1.5 flex items-start gap-2 text-[15px] leading-snug font-semibold">
     <a href={`#${anchor}`} class="flex-1 text-fg no-underline hover:underline">{t(g.title, lang)}</a>

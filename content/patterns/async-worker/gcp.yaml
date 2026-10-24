@@ -73,13 +73,13 @@ gotchas:
       en: With push, the ack is the HTTP response and must arrive within the ack deadline
     body:
       es: >-
-        Pub/Sub considera procesado el mensaje cuando el endpoint responde 2xx. Si el worker tarda más que el ack
-        deadline (máximo 600 s), Pub/Sub lo reentrega mientras sigue corriendo. Alineá ack_deadline_seconds con el
-        timeout del servicio de Cloud Run y, para trabajos largos, usá pull o Cloud Run Jobs.
+        Pub/Sub considera procesado el mensaje cuando el endpoint responde con 102, 200, 201, 202 o 204; cualquier
+        otro código es un nack y Pub/Sub reenvía el mensaje. Lo mismo pasa si el worker tarda más que el ack
+        deadline: Pub/Sub lo reentrega mientras sigue corriendo.
       en: >-
-        Pub/Sub considers the message processed when the endpoint responds 2xx. If the worker takes longer than the
-        ack deadline (max 600 s), Pub/Sub redelivers it while it's still running. Align ack_deadline_seconds with the
-        Cloud Run service timeout and, for long jobs, use pull or Cloud Run Jobs.
+        Pub/Sub considers the message processed when the endpoint responds with 102, 200, 201, 202 or 204; any other
+        code is a nack and Pub/Sub resends the message. The same happens if the worker takes longer than the ack
+        deadline: Pub/Sub redelivers it while it's still running.
     sources:
       - https://docs.cloud.google.com/pubsub/docs/push
       - https://docs.cloud.google.com/pubsub/docs/lease-management
@@ -93,13 +93,11 @@ gotchas:
       en: Pub/Sub offers exactly-once delivery, but only on pull subscriptions
     body:
       es: >-
-        Es el único de los tres servicios del patrón con exactly-once delivery nativo, pero push (lo que dispara a
-        Cloud Run) no lo soporta. Con push, igual que en Service Bus y SQS Standard, el worker tiene que ser
-        idempotente.
+        Pub/Sub soporta exactly-once delivery solo con suscripciones pull: push (lo que dispara a Cloud Run) no lo
+        soporta, porque el cliente no sabe si Pub/Sub recibió la respuesta y la procesó.
       en: >-
-        It's the only one of the pattern's three services with native exactly-once delivery, but push (what
-        triggers Cloud Run) doesn't support it. With push, as with Service Bus and SQS Standard, the worker must be
-        idempotent.
+        Pub/Sub supports exactly-once delivery only with pull subscriptions: push (what triggers Cloud Run) doesn't
+        support it, because the client doesn't know whether Pub/Sub received the response and processed it.
     sources:
       - https://docs.cloud.google.com/pubsub/docs/exactly-once-delivery
     verified_at: 2026-10-06

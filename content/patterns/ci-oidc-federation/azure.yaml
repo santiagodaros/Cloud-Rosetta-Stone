@@ -87,19 +87,21 @@ gotchas:
       en: With Contributor the pipeline can't create role assignments
     body:
       es: >-
-        Contributor no tiene Microsoft.Authorization/roleAssignments/write. Si tu Terraform asigna roles (por
-        ejemplo, la identidad de una app sobre un Key Vault), el apply falla con AuthorizationFailed. La salida
-        rápida es darle Owner o User Access Administrator al pipeline, y es justo lo que no querés. La salida
+        Contributor no permite asignar roles en Azure RBAC (excluye Microsoft.Authorization/*/Write). Si tu
+        Terraform asigna roles (por ejemplo, la identidad de una app sobre un Key Vault), Contributor no alcanza.
+        La salida rápida es darle Owner o User Access Administrator al pipeline, y es justo lo que no querés. La salida
         correcta es Role Based Access Control Administrator con una condición que limite qué roles puede asignar
         (y que excluya los roles privilegiados).
       en: >-
-        Contributor lacks Microsoft.Authorization/roleAssignments/write. If your Terraform assigns roles (say, an
-        app's identity on a Key Vault), apply fails with AuthorizationFailed. The quick fix is giving the pipeline
+        Contributor does not allow assigning roles in Azure RBAC (it excludes Microsoft.Authorization/*/Write). If
+        your Terraform assigns roles (say, an app's identity on a Key Vault), Contributor is not enough. The quick
+        fix is giving the pipeline
         Owner or User Access Administrator, which is exactly what you don't want. The right fix is Role Based Access
         Control Administrator with a condition limiting which roles it can assign (and excluding privileged ones).
     sources:
       - https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-portal
       - https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-examples
+      - https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged
     verified_at: 2026-10-06
     roles: [permissions]
     exams: [AZ-104, SC-500, AZ-400]

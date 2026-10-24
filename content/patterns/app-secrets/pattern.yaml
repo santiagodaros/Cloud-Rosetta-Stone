@@ -1,0 +1,51 @@
+id: app-secrets
+status: draft
+category: identity
+title:
+  es: Secretos de aplicación con rotación y acceso privado
+  en: Application secrets with rotation and private access
+summary:
+  es: Una app lee con la identidad de su workload un secreto de un tercero guardado en un servicio administrado, por red privada, con rotación y auditoría de accesos.
+  en: An app reads a third-party secret stored in a managed service with its workload identity, over a private network, with rotation and access auditing.
+problem:
+  es: >-
+    La app necesita una credencial de un tercero (una API key, una connection string externa) que no se puede
+    reemplazar por identidad. No puede vivir en el repo, en una variable de entorno ni en un archivo. Los requisitos
+    son: guardarla en un servicio administrado, leerla con la identidad del workload sin otra clave que cuidar,
+    que el tráfico hacia el almacén no salga por internet, poder rotarla y saber quién la leyó y cuándo.
+  en: >-
+    The app needs a third-party credential (an API key, an external connection string) that can't be replaced by
+    identity. It can't live in the repo, in an environment variable or in a file. Requirements: store it in a
+    managed service, read it with the workload identity with no other key to protect, keep the traffic to the
+    store off the internet, be able to rotate it, and know who read it and when.
+roles:
+  - id: app
+    kind: actor
+    label: { es: Aplicación (workload), en: Application (workload) }
+  - id: identity
+    kind: capability
+    capability: workload-identity
+    label: { es: Identidad del workload, en: Workload identity }
+  - id: private-access
+    kind: capability
+    capability: private-service-access
+    label: { es: Acceso privado al almacén, en: Private access to the store }
+  - id: store
+    kind: capability
+    capability: secrets-store
+    label: { es: Almacén de secretos, en: Secrets store }
+  - id: key
+    kind: capability
+    capability: key-management
+    label: { es: Clave de cifrado, en: Encryption key }
+edges:
+  - { from: app, to: identity, label: { es: se autentica con, en: authenticates with } }
+  - { from: identity, to: store, label: { es: permiso de lectura, en: read permission } }
+  - { from: app, to: private-access, label: { es: lee por, en: reads over } }
+  - { from: private-access, to: store, label: { es: llega al, en: reaches } }
+  - { from: store, to: key, label: { es: cifra con, en: encrypted with } }
+paths:
+  - { id: read-secret, label: { es: "Lectura por red privada", en: "Read over private network" }, roles: [app, private-access, store] }
+  - { id: authorize, label: { es: "Identidad y permiso", en: "Identity and permission" }, roles: [app, identity, store] }
+  - { id: encryption, label: { es: "Cifrado en reposo", en: "Encryption at rest" }, roles: [store, key] }
+tags: [secrets, identity, rotation, private-link, audit]

@@ -1,0 +1,158 @@
+provider: aws
+bindings:
+  nat:
+    service: NAT gateway
+    config: { es: "Zonal, uno por AZ, en subnet pública con Elastic IP", en: "Zonal, one per AZ, in a public subnet with an Elastic IP" }
+    from:
+      azure:
+        es: "Un NAT gateway zonal vive en una sola AZ y las subnets privadas lo apuntan por ruta; en Azure se asocia a la subnet sin rutas, y el SKU StandardV2 es zona-redundante."
+        en: "A zonal NAT gateway lives in a single AZ and private subnets point to it by route; in Azure it is attached to the subnet with no routes, and the StandardV2 SKU is zone-redundant."
+  filter:
+    service: AWS Network Firewall
+    config: { es: "Regla stateful de lista de dominios (ALLOWLIST, HTTP_HOST y TLS_SNI), un endpoint por AZ", en: "Stateful domain list rule (ALLOWLIST, HTTP_HOST and TLS_SNI), one endpoint per AZ" }
+gotchas:
+  - id: nat-zonal-single-az
+    severity: reliability
+    title:
+      es: "Un NAT gateway zonal vive en una sola AZ: compartirlo entre AZs es un punto único de falla"
+      en: "A zonal NAT gateway lives in a single AZ: sharing it across AZs is a single point of failure"
+    body:
+      es: >-
+        Cada NAT gateway se crea en una AZ específica y tiene redundancia dentro de esa zona. Si recursos de varias AZs
+        comparten uno y cae su AZ, los recursos de las otras AZs pierden el acceso a internet. AWS recomienda crear un
+        NAT gateway por AZ y rutear cada recurso al de su propia AZ. También existe el modo regional: se expande solo a
+        las AZs donde hay workloads, aunque la doc aclara que puede tardar hasta 60 minutos en llegar a una zona nueva
+        y que hasta entonces el tráfico de esa zona se procesa cruzando zonas. El módulo crea un NAT gateway zonal por
+        AZ y una tabla de rutas por AZ.
+      en: >-
+        Each NAT gateway is created in a specific AZ and is redundant within that zone. If resources in several AZs
+        share one and its AZ goes down, resources in the other AZs lose internet access. AWS recommends creating a NAT
+        gateway per AZ and routing each resource to the one in its own AZ. There is also a regional mode: it expands
+        only to the AZs where workloads are present, although the doc notes it can take up to 60 minutes to reach a
+        new zone and that until then that zone's traffic is processed across zones. The module creates one zonal NAT
+        gateway per AZ and one route table per AZ.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-basics.html
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateways-regional.html
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [SAA-C03, ANS-C01]
+  - id: nat-simultaneous-connections
+    severity: reliability
+    title:
+      es: Cada IP del NAT gateway admite hasta 55.000 conexiones simultáneas al mismo destino
+      en: Each NAT gateway IP supports up to 55,000 simultaneous connections to the same destination
+    body:
+      es: >-
+        Cada IPv4 de un NAT gateway soporta hasta 55.000 conexiones simultáneas a cada destino único (combinación de
+        IP de destino, puerto y protocolo). Si tus instancias crean muchas conexiones al mismo destino, podés quedar
+        con conexiones existentes y sin poder abrir nuevas. El límite se sube asociando hasta 8 IPv4 al NAT gateway
+        (una primaria y siete secundarias; por defecto solo se pueden asociar 2 Elastic IPs a un NAT gateway público y
+        se amplía con una solicitud de cuota). También sirve repartir clientes en varios NAT gateways, limitar las
+        conexiones o cerrar las ociosas. Cada IP extra es una IP más que el tercero tiene que permitir.
+      en: >-
+        Each IPv4 address of a NAT gateway supports up to 55,000 simultaneous connections to each unique destination
+        (a combination of destination IP, port and protocol). If your instances open many connections to the same
+        destination, you can end up with existing connections and no way to open new ones. The limit goes up by
+        associating up to 8 IPv4 addresses with the NAT gateway (one primary and seven secondary; by default only 2
+        Elastic IPs can be associated with a public NAT gateway, and you raise that with a quota request). Spreading
+        clients across several NAT gateways, limiting connections or closing idle ones also helps. Each extra IP is
+        one more IP the third party must allow.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-basics.html
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-troubleshooting.html
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [ANS-C01]
+  - id: nat-cost-hour-and-gb
+    severity: cost
+    title:
+      es: El NAT gateway cobra por hora y por GB procesado; un NAT por AZ multiplica la parte fija
+      en: The NAT gateway charges per hour and per GB processed; one NAT per AZ multiplies the fixed part
+    body:
+      es: >-
+        Un NAT gateway se cobra por cada hora que está disponible y por cada GB que procesa. AWS indica que, si los
+        recursos mandan o reciben mucho tráfico entre AZs, conviene que estén en la misma AZ que el NAT gateway (o
+        crear uno por AZ), y que si la mayor parte del tráfico va a servicios de AWS con interface o gateway endpoints,
+        crear esos endpoints reduce el cargo; la página de precios de Network Firewall agrega que los gateway VPC
+        endpoints no tienen cargo por hora ni por procesamiento. Un NAT gateway por AZ multiplica el cargo por hora:
+        es el precio de la resiliencia del gotcha anterior. Sacá del NAT el tráfico hacia servicios de AWS que tengan
+        endpoint.
+      en: >-
+        A NAT gateway is charged for each hour it is available and for each GB it processes. AWS notes that if
+        resources send or receive a lot of traffic across AZs, they should be in the same AZ as the NAT gateway (or you
+        should create one per AZ), and that if most traffic goes to AWS services that support interface or gateway
+        endpoints, creating those endpoints reduces the charge; the Network Firewall pricing page adds that gateway
+        VPC endpoints have no hourly or data processing charges. One NAT gateway per AZ multiplies the hourly charge:
+        it's the price of the resilience in the previous gotcha. Take traffic to AWS services that have an endpoint
+        off the NAT.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html
+      - https://aws.amazon.com/network-firewall/pricing/
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [SAA-C03]
+  - id: network-firewall-domain-list
+    severity: security
+    title:
+      es: La lista de dominios de Network Firewall se apoya en el SNI o el Host, no en las IPs, y por defecto mira el tráfico de su VPC
+      en: The Network Firewall domain list relies on the SNI or Host, not on IPs, and by default looks at its own VPC's traffic
+    body:
+      es: >-
+        Para HTTPS Network Firewall usa el SNI del handshake TLS y para HTTP el encabezado Host; no pausa la conexión
+        para hacer consultas DNS ni evalúa las IPs, así que se apoya en lo que declara el cliente. Una lista de
+        dominios no puede acotar por puerto ni por un único protocolo: para eso hacen falta reglas Suricata o
+        stateful de 5-tupla. Por defecto la inspección usa como HOME_NET el CIDR de la VPC donde está el firewall;
+        para filtrar tráfico de otras VPCs (por ejemplo vía transit gateway) hay que definir HOME_NET con esos CIDR.
+        Con la acción Allow el firewall deniega lo que no coincide solo si la política usa default action order; con
+        strict order esa denegación no aplica. Si querés validar además el dominio por el que se resolvió la IP de
+        destino, existe el target AWS_ROUTE_53_RESOLVED_DOMAIN.
+      en: >-
+        For HTTPS, Network Firewall uses the SNI from the TLS handshake and for HTTP the Host header; it doesn't pause
+        the connection to do DNS lookups or evaluate IPs, so it relies on what the client asserts. A domain list can't
+        scope by port or by a single protocol: for that you need Suricata or 5-tuple stateful rules. By default
+        inspection uses the CIDR of the firewall's VPC as HOME_NET; to filter traffic from other VPCs (for example
+        through a transit gateway) you must set HOME_NET to include those CIDRs. With the Allow action the firewall
+        denies non-matching traffic only if the policy uses default action order; under strict order that denial
+        doesn't apply. If you also want to validate the domain the destination IP was resolved for, the
+        AWS_ROUTE_53_RESOLVED_DOMAIN target exists.
+    sources:
+      - https://docs.aws.amazon.com/network-firewall/latest/developerguide/stateful-rule-groups-domain-names.html
+    verified_at: 2026-10-24
+    roles: [filter]
+    exams: [ANS-C01, SCS-C03]
+  - id: network-firewall-billing-nat-waiver
+    severity: cost
+    title:
+      es: Network Firewall cobra por endpoint por AZ y por GB; con el NAT gateway en el mismo camino, AWS exime el cargo del NAT
+      en: Network Firewall charges per endpoint per AZ and per GB; with the NAT gateway in the same path, AWS waives the NAT charge
+    body:
+      es: >-
+        Network Firewall cobra por hora cada firewall endpoint por región y AZ, y por cada GB que procesa. La página de
+        precios dice que si creás un NAT gateway junto al firewall en una cadena de servicio, se eximen las horas y el
+        procesamiento estándar del NAT gateway, de forma uno a uno con el uso del firewall; para recibirlo, el NAT
+        gateway y el firewall tienen que estar en la misma región y el NAT gateway debe estar en el mismo camino de red
+        que el endpoint. En su ejemplo, si el NAT gateway y la instancia están en AZs distintas aplican cargos de
+        transferencia de EC2. Mantené firewall, NAT gateway y workloads alineados por AZ (como hace el módulo) y
+        confirmá las condiciones vigentes en la página de precios.
+      en: >-
+        Network Firewall charges hourly for each firewall endpoint per region and AZ, and for each GB it processes. The
+        pricing page says that if you create a NAT gateway next to the firewall in a service chain, the standard NAT
+        gateway hourly and data processing charges are waived, on a one-to-one basis with the firewall's usage; to get
+        it, the NAT gateway and the firewall must be in the same region and the NAT gateway must be in the same
+        networking path as the firewall endpoint. In its example, if the NAT gateway and the instance are in different
+        AZs, EC2 data transfer charges apply. Keep firewall, NAT gateway and workloads aligned per AZ (as the module
+        does) and confirm the current conditions on the pricing page.
+    sources:
+      - https://aws.amazon.com/network-firewall/pricing/
+    verified_at: 2026-10-24
+    roles: [filter, nat]
+    exams: [SAA-C03]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "NAT gateway (por hora, uno por AZ)", en: "NAT gateway (hourly, one per AZ)" }
+    - { es: "Firewall endpoint de Network Firewall (por hora, uno por AZ)", en: "Network Firewall endpoint (hourly, one per AZ)" }
+  notes:
+    es: El NAT gateway y cada firewall endpoint se cobran por hora mientras estén disponibles, más un cargo por GB procesado. AWS exime el cargo del NAT gateway que está en el mismo camino que el firewall, con las condiciones de la página de precios.
+    en: The NAT gateway and each firewall endpoint are billed hourly while available, plus a per-GB processed charge. AWS waives the charge of a NAT gateway in the same path as the firewall, under the conditions on the pricing page.

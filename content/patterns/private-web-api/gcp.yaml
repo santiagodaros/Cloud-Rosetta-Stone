@@ -85,13 +85,13 @@ gotchas:
       en: Cloud SQL's private IP goes over a VPC peering that isn't transitive
     body:
       es: >-
-        Private services access se implementa con VPC Network Peering hacia la red de Google. Otra VPC peereada
-        con la tuya no llega a la base, y para on-premises tenés que exportar custom routes en el peering. Si tu
-        topología es hub-and-spoke, evaluá Private Service Connect en lugar de PSA.
+        Private services access se implementa con VPC Network Peering hacia la red de Google. Solo permite
+        conexiones desde una VPC, y el peering no ofrece ruteo transitivo: otra VPC peereada con la tuya no llega
+        a la base. Si tu topología es hub-and-spoke, evaluá Private Service Connect en lugar de PSA.
       en: >-
-        Private services access is implemented with VPC Network Peering to Google's network. Another VPC peered
-        with yours can't reach the database, and for on-premises you must export custom routes on the peering. If
-        your topology is hub-and-spoke, consider Private Service Connect instead of PSA.
+        Private services access is implemented with VPC Network Peering to Google's network. It only allows
+        connections from one VPC, and peering doesn't provide transitive routing: another VPC peered with yours
+        can't reach the database. If your topology is hub-and-spoke, consider Private Service Connect instead of PSA.
     sources:
       - https://docs.cloud.google.com/sql/docs/postgres/private-ip
       - https://docs.cloud.google.com/vpc/docs/vpc-peering
@@ -106,17 +106,16 @@ gotchas:
     body:
       es: >-
         Con ingress internal, Cloud Run rechaza requests que no vengan de VPCs del mismo proyecto (o perímetro de
-        VPC SC) o de otros servicios de Google, aun usando la URL run.app. Pero además, por default exige
-        run.routes.invoke: el cliente tiene que mandar un ID token de una identidad con roles/run.invoker. En ACA y
-        en el ALB interno la red es el único control salvo que agregues auth en la app.
+        VPC SC) o de otros servicios de Google, aun usando la URL run.app. Pero la autenticación IAM sigue
+        aplicando: el cliente tiene que presentar un ID token y su cuenta de servicio necesita roles/run.invoker.
       en: >-
         With internal ingress, Cloud Run rejects requests not coming from VPCs in the same project (or VPC SC
-        perimeter) or from other Google services, even via the run.app URL. On top of that, by default it requires
-        run.routes.invoke: the client must send an ID token from an identity with roles/run.invoker. In ACA and the
-        internal ALB the network is the only control unless you add auth in the app.
+        perimeter) or from other Google services, even via the run.app URL. But IAM authentication still applies:
+        the client must present an ID token and its service account needs roles/run.invoker.
     sources:
       - https://docs.cloud.google.com/run/docs/securing/ingress
       - https://docs.cloud.google.com/run/docs/securing/managing-access
+      - https://docs.cloud.google.com/run/docs/authenticating/service-to-service
     verified_at: 2026-10-06
     roles: [ingress, app]
     exams: [PCSE, PCA]

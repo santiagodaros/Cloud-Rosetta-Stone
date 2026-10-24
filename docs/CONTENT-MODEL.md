@@ -41,6 +41,8 @@ Con N nubes, hub-and-spoke necesita N entradas por concepto; el mapeo par a par 
   - `severity`: `security | iam | networking | cost | reliability | operations`
   - `sources`: ≥ 1 URL https de un dominio oficial (lista en `OFFICIAL_SOURCE_HOSTS`)
   - `verified_at`: fecha ISO en que alguien leyó las fuentes y confirmó el texto
+  - `verified_by` (opcional): usuario de GitHub (sin `@`) de quien lo re-verificó además del mantenedor. Sin
+    el campo, la UI muestra "sin revisor externo". El schema valida el formato, no que la persona tenga experiencia.
   - `roles` (opcional): roles del patrón a los que aplica; alimentan el contador por nodo y el panel del
     diagrama interactivo.
   - `exams` (opcional): códigos de certificación donde este conocimiento suma. Tienen que existir en

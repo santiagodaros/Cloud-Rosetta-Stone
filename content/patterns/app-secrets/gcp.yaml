@@ -1,0 +1,223 @@
+provider: gcp
+bindings:
+  identity:
+    service: { es: "Service Account (adjunta al workload)", en: "Service Account (attached to the workload)" }
+    config: { es: "roles/secretmanager.secretAccessor sobre el secreto, no sobre el proyecto", en: "roles/secretmanager.secretAccessor on the secret, not on the project" }
+  private-access:
+    service: Private Google Access
+    config: { es: "private_ip_google_access en la subnet del workload", en: "private_ip_google_access on the workload's subnet" }
+    notes:
+      es: "Es un flag por subnet que deja a las VMs sin IP externa llegar a las APIs de Google. No cubre los endpoints regionales *.rep.googleapis.com."
+      en: "It's a per-subnet flag that lets VMs without external IPs reach Google APIs. It doesn't cover the regional *.rep.googleapis.com endpoints."
+    equivalence: partial
+    from:
+      azure:
+        es: "No creás un endpoint por recurso: es un flag de la subnet, y no cubre los endpoints regionales."
+        en: "You don't create a per-resource endpoint: it's a subnet flag, and it doesn't cover regional endpoints."
+      aws:
+        es: "No creás un endpoint con política propia: es un flag de la subnet, y no cubre los endpoints regionales."
+        en: "You don't create an endpoint with its own policy: it's a subnet flag, and it doesn't cover regional endpoints."
+  store:
+    service: Secret Manager
+    config: { es: "Replicación automática con CMEK, acceso por versión fija", en: "Automatic replication with CMEK, access by pinned version" }
+  key:
+    service: Cloud KMS
+    config: { es: "Clave simétrica en global", en: "Symmetric key in global" }
+    from:
+      azure:
+        es: "Podés cifrar los secretos con tu propia clave (CMEK); en Key Vault los secretos los cifra el servicio con su propia jerarquía."
+        en: "You can encrypt the secrets with your own key (CMEK); in Key Vault the service encrypts secrets with its own hierarchy."
+gotchas:
+  - id: latest-alias-outage
+    severity: reliability
+    title:
+      es: El alias latest puede desplegar un valor malo de inmediato; en producción referenciá un número de versión
+      en: The latest alias can roll out a bad value immediately; in production reference a version number
+    body:
+      es: >-
+        El alias latest apunta a la versión agregada más recientemente. Google lo describe como cómodo para desarrollo
+        pero problemático para algunas cargas de producción, porque un valor malo puede desplegarse de inmediato y
+        causar una caída de todo el servicio. La guía de best practices pide referenciar los secretos por número de
+        versión y desplegar los cambios con tu proceso de release, y deshabilitar una versión antes de destruirla para
+        que el paso sea reversible. Cada rotación agrega una versión: resolvé el número al rotar,
+        guardalo en la configuración del deploy y leelo al arrancar.
+      en: >-
+        The latest alias points to the most recently added version. Google describes it as convenient for development
+        but problematic for some production workloads, because a bad value can be rolled out immediately and cause a
+        service-wide outage. The best practices guide asks to reference secrets by version number and deploy changes
+        through your release process, and to disable a version before destroying it so the step is reversible. Every
+        rotation adds a version: resolve the number when rotating, store it in the deploy
+        configuration and read it at startup.
+    sources:
+      - https://docs.cloud.google.com/secret-manager/docs/rotation-recommendations
+      - https://docs.cloud.google.com/secret-manager/docs/best-practices
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [PCSE, PCA]
+  - id: rotation-is-a-pubsub-message
+    severity: operations
+    title:
+      es: "Secret Manager no rota la credencial: publica un mensaje SECRET_ROTATE y alguien tiene que hacer el cambio"
+      en: "Secret Manager doesn't rotate the credential: it publishes a SECRET_ROTATE message and someone has to do the change"
+    body:
+      es: >-
+        En next_rotation_time, Secret Manager envía un mensaje SECRET_ROTATE a los topics de Pub/Sub del secreto, y
+        tenés que configurar un suscriptor que lo reciba y actúe, por ejemplo creando una versión nueva y desplegándola.
+        Google no garantiza la entrega si hay errores de configuración del secreto, del topic, de permisos o de cuotas:
+        reintenta hasta siete días y después cancela la rotación. Si hay una rotación en curso, las programadas se
+        omiten, y el rotation_period no puede ser menor a una hora. Google recomienda que el servicio que rota (Cloud
+        Run en su ejemplo) sea reentrante y que la credencial nueva en el sistema externo no invalide las existentes,
+        para no afectar a los workloads que todavía las usan.
+      en: >-
+        At next_rotation_time, Secret Manager sends a SECRET_ROTATE message to the secret's Pub/Sub topics, and you
+        must configure a subscriber that receives it and acts, for example by creating a new version and deploying it.
+        Google doesn't guarantee delivery if there are misconfigurations in the secret, the topic, permissions or
+        quotas: it retries for up to seven days and then cancels the rotation. If a rotation is in flight, scheduled
+        ones are skipped, and rotation_period can't be less than one hour. Google recommends the rotating service
+        (Cloud Run in its example) be reentrant and that the new credential in the external system not invalidate the
+        existing ones, so workloads still using them aren't affected.
+    sources:
+      - https://docs.cloud.google.com/secret-manager/docs/secret-rotation
+      - https://docs.cloud.google.com/secret-manager/docs/rotation-recommendations
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [PCSE, PCD]
+  - id: data-access-logs-off-by-default
+    severity: security
+    title:
+      es: Leer el valor del secreto es un Data Access log, y esos logs vienen apagados
+      en: Reading the secret value is a Data Access log, and those logs are off by default
+    body:
+      es: >-
+        AccessSecretVersion requiere un permiso DATA_READ y genera un Data Access audit log. Esos logs están
+        deshabilitados por defecto para todos los servicios salvo algunos de BigQuery, así que hay que habilitarlos
+        explícitamente. Las operaciones que modifican versiones (agregar, deshabilitar, destruir) son de tipo
+        ADMIN_WRITE y van a Admin Activity. La guía de best practices recomienda habilitar los data access logs para analizar los pedidos
+        AccessSecretVersion, y hacerlo a nivel de carpeta u organización para no configurarlo en cada proyecto.
+      en: >-
+        AccessSecretVersion requires a DATA_READ permission and generates a Data Access audit log. Those logs are
+        disabled by default for all services except some BigQuery ones, so you have to enable them explicitly. Operations
+        that modify versions (add, disable, destroy) are ADMIN_WRITE and go to Admin Activity. The best practices
+        guide recommends enabling data access logs to analyze AccessSecretVersion requests, and doing it at the folder
+        or organization level so you don't configure it in every project.
+    sources:
+      - https://docs.cloud.google.com/secret-manager/docs/audit-logging
+      - https://docs.cloud.google.com/logging/docs/audit/configure-data-access
+      - https://docs.cloud.google.com/secret-manager/docs/best-practices
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [PCSE, PCA]
+  - id: pga-skips-regional-endpoints
+    severity: networking
+    title:
+      es: Private Google Access no cubre los endpoints regionales, que son los del servicio regional de Secret Manager
+      en: Private Google Access doesn't cover regional endpoints, which are the ones for Secret Manager's regional service
+    body:
+      es: >-
+        Private Google Access es un setting por subnet: deja que las VMs que solo tienen IP interna lleguen a las IPs
+        externas de las APIs de Google, y no tiene efecto en instancias con IP externa. Si lo deshabilitás, esas VMs
+        pierden el acceso. No soporta los endpoints regionales y multirregionales, los que terminan en
+        rep.googleapis.com. El servicio regional de Secret Manager se accede con un endpoint regional
+        (secretmanager.<location>.rep.googleapis.com en los ejemplos de la documentación) y sus secretos solo se
+        pueden acceder desde esa región. Google documenta cómo usar endpoints de Private Service Connect para llegar a
+        los endpoints regionales.
+      en: >-
+        Private Google Access is a per-subnet setting: it lets VMs that only have an internal IP reach the external
+        IPs of Google APIs, and has no effect on instances with an external IP. If you disable it, those VMs lose
+        access. It doesn't support regional and multi-regional endpoints, the ones ending in rep.googleapis.com.
+        Secret Manager's regional service is accessed through a regional endpoint
+        (secretmanager.<location>.rep.googleapis.com in the documentation's examples) and its secrets can only be
+        accessed from that region. Google documents how to use Private Service Connect endpoints to reach regional endpoints.
+    sources:
+      - https://docs.cloud.google.com/vpc/docs/private-google-access
+      - https://docs.cloud.google.com/vpc/docs/access-regional-google-apis-endpoints
+      - https://docs.cloud.google.com/secret-manager/docs/create-regional-secrets
+      - https://docs.cloud.google.com/secret-manager/docs/secret-manager-secrets-comparison
+    verified_at: 2026-10-24
+    roles: [private-access, store]
+    exams: [PCNE, PCA]
+  - id: cmek-key-location-and-lifecycle
+    severity: security
+    title:
+      es: La clave CMEK tiene que estar en la ubicación de la réplica, y si la deshabilitás o destruís el secreto queda ilegible
+      en: The CMEK key must be in the replica's location, and if you disable or destroy it the secret becomes unreadable
+    body:
+      es: >-
+        La clave CMEK tiene que estar en la misma ubicación que la réplica que cifra; con replicación automática, en
+        la multirregión global de Cloud KMS, y una clave Cloud EKM no sirve ahí porque no existe en global. Si
+        deshabilitás temporalmente o destruís la clave, los datos que cifró no se pueden descifrar y quedan
+        inaccesibles. Secret Manager usa la versión primaria de la clave y no se puede fijar otra: al rotar la clave,
+        las versiones nuevas del secreto usan la nueva, las existentes no se recifran y siguen accesibles mientras las
+        versiones viejas de la clave sigan habilitadas. El service agent de Secret Manager necesita
+        roles/cloudkms.cryptoKeyEncrypterDecrypter sobre la clave, y el uso de la clave se factura al proyecto de
+        Cloud KMS.
+      en: >-
+        The CMEK key must be in the same location as the replica it encrypts; with automatic replication, in the
+        global Cloud KMS multi-region, and a Cloud EKM key doesn't work there because it doesn't exist in global. If
+        you temporarily disable or permanently destroy the key, the data it encrypted can't be decrypted and becomes
+        inaccessible. Secret Manager uses the key's primary version and a specific one can't be set: when you rotate
+        the key, new secret versions use the new one, existing versions aren't re-encrypted and stay accessible as long
+        as the old key versions remain enabled. Secret Manager's service agent needs
+        roles/cloudkms.cryptoKeyEncrypterDecrypter on the key, and key usage is billed to the Cloud KMS project.
+    sources:
+      - https://docs.cloud.google.com/secret-manager/docs/cmek
+    verified_at: 2026-10-24
+    roles: [key, store]
+    exams: [PCSE]
+  - id: user-managed-replication-fails-with-region-outage
+    severity: reliability
+    title:
+      es: Con replicación definida por el usuario, una región caída hace fallar las escrituras, y las ubicaciones no se cambian
+      en: With user-managed replication, a region outage fails writes, and the locations can't be changed
+    body:
+      es: >-
+        La política de replicación se elige al crear el secreto y sus ubicaciones no se pueden actualizar. Con
+        replicación definida por el usuario en varias regiones, si una o más tienen una caída, la creación o
+        actualización falla y Secret Manager devuelve un error, para mantener los datos consistentes. Google recomienda
+        la replicación automática salvo que haya requisitos de ubicación (que se pueden imponer con una
+        restricción de ubicación de recursos en la política de la organización). Para la facturación, cada ubicación de una política definida por el usuario
+        cuenta como una ubicación separada, y la automática como una sola.
+      en: >-
+        The replication policy is chosen when the secret is created and its locations can't be updated. With
+        user-managed replication across several regions, if one or more have an outage, the create or update action
+        fails and Secret Manager returns an error, to keep the data consistent. Google recommends automatic
+        replication unless there are location requirements (which can be enforced with a
+        resource locations constraint in the organization policy). For billing, each location in a user-managed policy counts as a separate
+        location, and automatic replication as a single one.
+    sources:
+      - https://docs.cloud.google.com/secret-manager/docs/choosing-replication
+      - https://docs.cloud.google.com/secret-manager/docs/best-practices
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [PCA, PCSE]
+  - id: old-versions-keep-billing
+    severity: cost
+    title:
+      es: Cada rotación agrega una versión activa, y una versión deshabilitada sigue facturando
+      en: Every rotation adds an active version, and a disabled version keeps billing
+    body:
+      es: >-
+        Secret Manager cobra por las versiones activas por ubicación, por las operaciones de acceso (cada 10.000) y
+        por cada mensaje SECRET_ROTATE enviado. Una versión está activa si está habilitada o deshabilitada; las
+        destruidas no se cobran, y las operaciones de administración tampoco. Como cada rotación agrega una versión,
+        las viejas se acumulan: deshabilitá la anterior, esperá a confirmar que nadie la usa y destruila (la guía de
+        best practices recomienda ese orden).
+      en: >-
+        Secret Manager charges for active versions per location, for access operations (per 10,000) and for every
+        SECRET_ROTATE message sent. A version is active if it is enabled or disabled; destroyed versions aren't
+        charged, and neither are management operations. Since each rotation adds a version, old ones pile up: disable
+        the previous one, wait until you confirm nobody uses it and destroy it (the best practices guide recommends
+        that order).
+    sources:
+      - https://cloud.google.com/secret-manager/pricing
+      - https://docs.cloud.google.com/secret-manager/docs/best-practices
+    verified_at: 2026-10-24
+    roles: [store]
+    exams: [PCA]
+cost:
+  scales_to_zero: 'partial'
+  fixed_cost_drivers:
+    - { es: "Versiones activas del secreto (por mes, con un tier gratuito)", en: "Active secret versions (monthly, with a free tier)" }
+  notes:
+    es: Private Google Access es un flag de subnet y no suma un recurso aparte. Se cobran las versiones activas, las lecturas y los mensajes de rotación; hay un tier gratuito, ver la página de precios.
+    en: Private Google Access is a subnet flag and adds no separate resource. Active versions, reads and rotation messages are billed; there is a free tier, see the pricing page.

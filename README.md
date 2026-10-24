@@ -65,6 +65,10 @@ Fase 3 en curso: 5 patrones en las 3 nubes, 74 gotchas con fuente oficial, 28 ca
 | Ingesta privada de objetos con expiración (TTL) | Blob + lifecycle + Private Endpoint | S3 + lifecycle + Gateway Endpoint | GCS + lifecycle + PGA |
 | Web API privada Zero Trust (PostgreSQL sin contraseñas) | ACA interno + PG Flexible (Entra) | ECS Fargate + ALB interno + RDS IAM | Cloud Run internal + Cloud SQL IAM |
 | Worker asíncrono con escala a cero y dead-letter | ACA Jobs + Service Bus | Lambda + SQS | Cloud Run + Pub/Sub push |
+| Despliegue desde CI sin secretos (federación OIDC) | Federated identity credential | IAM OIDC provider + rol | Workload Identity Federation + service account |
+| DNS privado híbrido (on-premises ↔ nube) | DNS Private Resolver | Route 53 Resolver | Cloud DNS (inbound policy + forwarding) |
+
+En borrador, todavía sin publicar en el sitio (esperan que el CI valide el Terraform y una revisión humana): **secretos de aplicación** (`app-secrets`), **salida a internet controlada** (`controlled-egress`) y **hub-and-spoke con inspección centralizada** (`hub-and-spoke`). Sus 49 gotchas pasaron una verificación independiente contra las fuentes oficiales; ninguno tiene revisor externo todavía.
 
 ## Desarrollo local
 
@@ -102,7 +106,8 @@ docs/launch/        ← kit de lanzamiento (posts, Show HN, calendario)
 ## Contribuir
 
 La contribución más valiosa no es un patrón nuevo: es **re-verificar un gotcha** y actualizar su
-`verified_at`. Ver [CONTRIBUTING.md](CONTRIBUTING.md) y los issues
+`verified_at` (y dejar tu usuario en `verified_by`). Hoy los verifica el mantenedor y cada tarjeta lo dice:
+buscamos revisores con experiencia real en AWS y GCP (issue "Quiero revisar una nube"). Ver [CONTRIBUTING.md](CONTRIBUTING.md) y los issues
 [`good first issue`](https://github.com/santiagodaros/Cloud-Rosetta-Stone/issues?q=is%3Aopen+label%3A%22good+first+issue%22).
 
 ## Licencia

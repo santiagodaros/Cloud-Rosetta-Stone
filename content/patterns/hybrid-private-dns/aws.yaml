@@ -53,7 +53,7 @@ gotchas:
         to work. That's what the inbound endpoint is for, just like Azure's or GCP's inbound
         policy.
     sources:
-      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html
     verified_at: 2026-10-06
     roles: [inbound]
     exams: [ANS-C01]
@@ -69,8 +69,8 @@ gotchas:
         estar asociada a la VPC del hub.
       en: >-
         The inbound endpoint resolves with what its VPC sees. If the zone is associated only with application VPCs,
-        on-premises gets NXDOMAIN even though everything resolves fine from the VMs. In multi-account setups, the zone must also
-        be associated with the hub VPC.
+        on-premises gets NXDOMAIN even though everything resolves fine from the VMs. In multi-account setups, the zone
+        must also be associated with the hub VPC.
     sources:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-choose-vpc.html
     verified_at: 2026-10-06
@@ -85,14 +85,14 @@ gotchas:
       es: >-
         Si en una VPC hay una regla FORWARD para corp.example.com y también una private hosted zone
         corp.example.com, gana la regla. Entre reglas gana la más específica, y con una regla SYSTEM excluís un
-        subdominio del reenvío. En Azure es al revés: la zona privada vinculada se consulta antes que el ruleset.
+        subdominio del reenvío.
       en: >-
         If a VPC has a FORWARD rule for corp.example.com and also a corp.example.com private hosted zone, the rule
-        wins. Among rules the most specific wins, and a SYSTEM rule excludes a subdomain from forwarding. In Azure
-        it's the other way around: the linked private zone is checked before the ruleset.
+        wins. Among rules the most specific wins, and a SYSTEM rule excludes a subdomain from forwarding.
     sources:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-forward-vpc-to-network-domain-name-matches.html
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-forward-vpc-to-network-using-rules.html
     verified_at: 2026-10-06
     roles: [outbound, private-zone]
     exams: [ANS-C01]
