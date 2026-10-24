@@ -85,13 +85,13 @@ gotchas:
       en: Cloud SQL's private IP goes over a VPC peering that isn't transitive
     body:
       es: >-
-        Private services access se implementa con VPC Network Peering hacia la red de Google. Otra VPC peereada
-        con la tuya no llega a la base, y para on-premises tenés que exportar custom routes en el peering. Si tu
-        topología es hub-and-spoke, evaluá Private Service Connect en lugar de PSA.
+        Private services access se implementa con VPC Network Peering hacia la red de Google. Solo permite
+        conexiones desde una VPC, y el peering no ofrece ruteo transitivo: otra VPC peereada con la tuya no llega
+        a la base. Si tu topología es hub-and-spoke, evaluá Private Service Connect en lugar de PSA.
       en: >-
-        Private services access is implemented with VPC Network Peering to Google's network. Another VPC peered
-        with yours can't reach the database, and for on-premises you must export custom routes on the peering. If
-        your topology is hub-and-spoke, consider Private Service Connect instead of PSA.
+        Private services access is implemented with VPC Network Peering to Google's network. It only allows
+        connections from one VPC, and peering doesn't provide transitive routing: another VPC peered with yours
+        can't reach the database. If your topology is hub-and-spoke, consider Private Service Connect instead of PSA.
     sources:
       - https://docs.cloud.google.com/sql/docs/postgres/private-ip
       - https://docs.cloud.google.com/vpc/docs/vpc-peering

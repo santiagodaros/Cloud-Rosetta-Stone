@@ -18,7 +18,8 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] Pre-verificación automática de los 74 gotchas contra sus fuentes (2026-10-24): `docs/PRE-VERIFICACION.md`. 44 confirmados, 28 parciales, 1 dudoso (`rds-iam-connection-rate`, AWS), 1 no verificable. No es una revisión: no cambió `verified_at` ni `verified_by`.
 - [x] Workflow semanal con segundo issue "Cola de revisión por nube" y convocatoria de revisores en `docs/launch/convocatoria-revisores.md`.
 - [x] Resuelto el dudoso (`rds-iam-connection-rate` → reescrito como `rds-iam-token-lifetime`, sin el límite de 200 conexiones/s que ya no está en la doc de AWS) y el no verificable (`vpc-plus-two-not-from-onprem`: fuente corregida a la página de Route 53 que sí lo dice). `verified_at` sigue en 2026-10-06 hasta que una persona lea las fuentes.
-- [ ] Resolver los 28 parciales: agregar una fuente que respalde la afirmación o recortarla (casi siempre números, atributos de Terraform y códigos de error). Empezar por `security` e `iam`.
+- [x] Resueltos los 28 parciales (11 de `iam`/`security` y 17 del resto): con fuente textual o recortando lo que no se pudo respaldar. Los recortes sacan lo no comprobado, no necesariamente lo falso: un revisor con experiencia puede reponer frases con su fuente.
+- [ ] Releer el diff de esas 28 correcciones con ojos de revisor (`git log -p -- content`) antes de dar los gotchas por verificados.
 - [ ] Re-verificar de verdad (acción humana): `pnpm freshness --review` lista la cola por nube, los más severos primero. Al revisar uno, actualizar `verified_at` y sumar `verified_by`. Así las fechas dejan de ser todas el 2026-10-06.
 - [x] Declarar en README, `/methodology` y CONTRIBUTING qué verifica el schema (hay fuente oficial) y qué no (que sea cierto).
 - [ ] Al incorporar un revisor: descomentar su nube en `.github/CODEOWNERS`.

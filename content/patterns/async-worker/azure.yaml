@@ -28,14 +28,14 @@ gotchas:
     body:
       es: >-
         Private Endpoints, reglas de VNet y CMK solo existen en Premium, que se cobra por messaging unit por hora
-        aunque no haya mensajes. Standard solo admite reglas de IP y además tiene un cargo base mensual. Este patrón
-        usa Standard con autenticación solo Entra ID: si el requisito es red privada, el piso de costo cambia de
-        orden de magnitud. En AWS, SQS admite un interface endpoint sin cambiar de tier.
+        aunque no haya mensajes. Standard solo admite reglas de IP. Este patrón usa Standard con autenticación solo
+        Entra ID: si el requisito es red privada, hay que pasar a Premium. En AWS, SQS admite un interface endpoint
+        sin cambiar de tier.
       en: >-
         Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with
-        zero messages. Standard only supports IP rules and also has a monthly base charge. This pattern uses
-        Standard with Entra ID-only auth: if the requirement is private networking, the cost floor changes by an
-        order of magnitude. In AWS, SQS supports an interface endpoint without changing tier.
+        zero messages. Standard only supports IP rules. This pattern uses Standard with Entra ID-only auth: if the
+        requirement is private networking, you have to move to Premium. In AWS, SQS supports an interface endpoint
+        without changing tier.
     sources:
       - https://learn.microsoft.com/azure/service-bus-messaging/private-link-service
       - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus

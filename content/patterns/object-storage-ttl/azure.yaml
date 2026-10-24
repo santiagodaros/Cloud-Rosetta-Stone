@@ -142,17 +142,14 @@ gotchas:
     body:
       es: >-
         Crear el Private Endpoint no alcanza: el FQDN <cuenta>.blob.core.windows.net tiene que resolver a la IP
-        privada vía la zona privatelink.blob.core.windows.net vinculada a la VNet (o a tu DNS híbrido). Si
-        resuelve a la IP pública, con acceso público deshabilitado la request falla con 403 y parece un problema
-        de permisos.
+        privada vía la zona privatelink.blob.core.windows.net vinculada a la VNet (o a tu DNS híbrido). Si resuelve a la IP pública, el firewall del servicio rechaza la request con 403 y parece un problema de permisos.
       en: >-
         Creating the Private Endpoint is not enough: the FQDN <account>.blob.core.windows.net must resolve to the
-        private IP via the privatelink.blob.core.windows.net zone linked to the VNet (or your hybrid DNS). If it
-        resolves to the public IP, with public access disabled the request fails with 403 and looks like a
-        permissions issue.
+        private IP via the privatelink.blob.core.windows.net zone linked to the VNet (or your hybrid DNS). If it resolves to the public IP, the service firewall rejects the request with 403 and looks like a permissions issue.
     sources:
       - https://learn.microsoft.com/azure/private-link/private-endpoint-dns
       - https://learn.microsoft.com/azure/private-link/private-endpoint-overview
+      - https://learn.microsoft.com/troubleshoot/azure/private-link/troubleshoot-403-access-denied-private-endpoint
     verified_at: 2026-10-06
     roles: [private-access]
     exams: [AZ-700, AZ-104]

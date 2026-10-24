@@ -69,16 +69,17 @@ gotchas:
       es: >-
         Para bajar la imagen y mandar logs sin salida a internet, la tarea necesita interface endpoints de ECR (api
         y dkr) y CloudWatch Logs, más el gateway endpoint de S3 (donde ECR guarda las capas). Cada interface
-        endpoint se cobra por hora por AZ: es el costo fijo que en ACA y Cloud Run no existe. La alternativa (NAT
+        endpoint se cobra por hora por AZ. La alternativa (NAT
         Gateway) también tiene cargo por hora y por GB.
       en: >-
         To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch
-        Logs interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is
-        billed hourly per AZ: it's the fixed cost that doesn't exist in ACA or Cloud Run. The alternative (NAT
+        Logs interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is billed hourly per AZ. The alternative (NAT
         Gateway) is also billed hourly and per GB.
     sources:
       - https://repost.aws/knowledge-center/ecs-fargate-tasks-private-subnet
       - https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html
+      - https://aws.amazon.com/privatelink/pricing/
+      - https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html
     verified_at: 2026-10-06
     roles: [app]
     exams: [SAA-C03, ANS-C01]

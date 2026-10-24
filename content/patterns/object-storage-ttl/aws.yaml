@@ -35,15 +35,16 @@ gotchas:
       en: Expiration is asynchronous, but billing stops at the expiration date
     body:
       es: >-
-        S3 encola las expiraciones y puede tardar días en borrar físicamente. A diferencia de Azure, no pagás
-        storage de un objeto vencido aunque todavía aparezca en el listado. Igual que en las otras nubes: no es un
-        control de seguridad, el objeto sigue siendo legible hasta que se borra.
+        S3 encola las expiraciones y las procesa de forma asincrónica: puede pasar desde días hasta semanas entre
+        la fecha de expiración y el borrado real. No se cobra la expiración ni el tiempo de storage de un objeto
+        que ya venció.
       en: >-
-        S3 queues expirations and can take days to physically delete. Unlike Azure, you don't pay storage for an
-        expired object even if it still shows up in listings. Same as the other clouds: it's not a security
-        control, the object remains readable until it's deleted.
+        S3 queues expirations and processes them asynchronously: anywhere from days to weeks can pass between the
+        expiration date and the actual deletion. You're not charged for the expiration or for the storage time of
+        an object that has already expired.
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html
     verified_at: 2026-10-06
     roles: [lifecycle]
     exams: [SAA-C03]
@@ -69,17 +70,19 @@ gotchas:
   - id: abort-incomplete-multipart
     severity: cost
     title:
-      es: Los multipart uploads incompletos se cobran y no se ven
-      en: Incomplete multipart uploads are billed and invisible
+      es: Los multipart uploads incompletos se siguen cobrando
+      en: Incomplete multipart uploads keep being billed
     body:
       es: >-
-        Las partes de un multipart upload que nunca se completó ocupan storage y no aparecen al listar objetos.
-        Agregá siempre una regla AbortIncompleteMultipartUpload; en un bucket de ingesta es donde más se acumulan.
+        S3 retiene las partes de un multipart upload hasta que lo completás o lo abortás, y se cobra su storage
+        durante todo ese tiempo. Agregá siempre una regla AbortIncompleteMultipartUpload: abortar el upload borra
+        las partes.
       en: >-
-        Parts from a multipart upload that never completed take up storage and don't show up when listing
-        objects. Always add an AbortIncompleteMultipartUpload rule; ingestion buckets are where they pile up most.
+        S3 keeps the parts of a multipart upload until you complete or stop it, and their storage is billed the
+        whole time. Always add an AbortIncompleteMultipartUpload rule: aborting the upload deletes the parts.
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-abort-incomplete-mpu-lifecycle-config.html
+      - https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html
     verified_at: 2026-10-06
     roles: [lifecycle]
     exams: [SAA-C03]

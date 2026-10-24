@@ -125,8 +125,8 @@ gotchas:
   - id: pg-stop-auto-restarts
     severity: cost
     title:
-      es: La base no escala a cero, y si la detenés arranca sola a los 7 días
-      en: The database doesn't scale to zero, and if you stop it, it restarts after 7 days
+      es: Detener la base corta el cómputo, pero arranca sola a los 7 días
+      en: Stopping the database stops compute billing, but it restarts on its own after 7 days
     body:
       es: >-
         ACA puede bajar a cero réplicas, pero PostgreSQL Flexible factura cómputo mientras está encendido. Detenerlo
@@ -139,6 +139,7 @@ gotchas:
     sources:
       - https://learn.microsoft.com/azure/postgresql/configure-maintain/concepts-limits
       - https://learn.microsoft.com/azure/postgresql/overview
+      - https://learn.microsoft.com/azure/postgresql/backup-restore/concepts-backup-restore
     verified_at: 2026-10-06
     roles: [database]
     exams: [AZ-104]

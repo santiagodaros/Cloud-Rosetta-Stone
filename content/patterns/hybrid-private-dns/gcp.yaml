@@ -33,15 +33,15 @@ gotchas:
       es: >-
         Cloud DNS no usa IPs de tu VPC para reenviar: toda consulta a un forwarding target sale desde
         35.199.192.0/19. El firewall on-premises tiene que permitir UDP y TCP 53 desde ese rango, y on-premises
-        necesita una ruta de vuelta por los túneles VPN o attachments de Interconnect de la misma VPC y región. Con
-        BGP eso es un anuncio custom del Cloud Router. Sin la ruta, el DNS on-premises recibe la consulta y la
-        respuesta se pierde: parece un timeout.
+        necesita una ruta de vuelta por los túneles VPN o attachments de Interconnect de la misma VPC. Con BGP eso
+        es un anuncio custom del Cloud Router. Sin la ruta, el DNS on-premises recibe la consulta y la respuesta
+        se pierde.
       en: >-
         Cloud DNS doesn't use your VPC's IPs to forward: every query to a forwarding target comes from
         35.199.192.0/19. The on-premises firewall must allow UDP and TCP 53 from that range, and on-premises needs a
-        return route through the VPN tunnels or Interconnect attachments in the same VPC and region. With BGP that's
-        a custom advertisement on the Cloud Router. Without the route, the on-premises DNS gets the query and the
-        reply is lost: it looks like a timeout.
+        return route through the VPN tunnels or Interconnect attachments in the same VPC. With BGP that's a custom
+        advertisement on the Cloud Router. Without the route, the on-premises DNS gets the query and the reply is
+        lost.
     sources:
       - https://docs.cloud.google.com/dns/docs/zones/forwarding-zones
       - https://docs.cloud.google.com/dns/docs/server-policies-overview
@@ -96,16 +96,17 @@ gotchas:
       en: VPC Network Peering doesn't share private zones; you need peering zones
     body:
       es: >-
-        Una VPC peereada no ve las zonas privadas ni las forwarding zones autorizadas solo para la VPC hub. En
-        hub-and-spoke, cada spoke necesita una DNS peering zone hacia el hub, y el DNS peering transitivo llega a
-        un solo salto. Es la diferencia con Azure, donde un ruleset se linkea a VNets que ni siquiera están
+        VPC Network Peering no comparte automáticamente la información de DNS, así que una VPC peereada no resuelve
+        por sí sola las zonas de la VPC hub. En hub-and-spoke, cada spoke necesita una DNS peering zone hacia el
+        hub, y el DNS peering transitivo llega a un solo salto. Es la diferencia con Azure, donde un ruleset se linkea a VNets que ni siquiera están
         peereadas.
       en: >-
-        A peered VPC doesn't see private zones or forwarding zones authorized only for the hub VPC. In hub-and-spoke,
-        each spoke needs a DNS peering zone to the hub, and transitive DNS peering only goes one hop. That's the
-        difference from Azure, where a ruleset links to VNets that aren't even peered.
+        VPC Network Peering doesn't automatically share DNS information, so a peered VPC doesn't resolve the hub
+        VPC's zones on its own. In hub-and-spoke, each spoke needs a DNS peering zone to the hub, and transitive DNS
+        peering only goes one hop. That's the difference from Azure, where a ruleset links to VNets that aren't even peered.
     sources:
       - https://docs.cloud.google.com/dns/docs/zones/peering-zones
+      - https://docs.cloud.google.com/dns/docs/zones/zones-overview
       - https://learn.microsoft.com/azure/dns/private-resolver-endpoints-rulesets
     verified_at: 2026-10-06
     roles: [private-zone]
