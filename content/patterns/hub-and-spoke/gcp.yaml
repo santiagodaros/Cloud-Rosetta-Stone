@@ -9,14 +9,14 @@ bindings:
         en: "Peering isn't transitive here either, and custom routes (static and dynamic) aren't exchanged by default: you have to turn on export at the hub and import at each spoke."
   routing:
     service: { es: "VPC Network Peering con intercambio de custom routes", en: "VPC Network Peering with custom route exchange" }
-    config: { es: "export_custom_routes en el peering del hub; import_custom_routes en el de cada spoke", en: "export_custom_routes on the hub's peering; import_custom_routes on each spoke's" }
+    config: { es: "Exportar custom routes en el peering del hub e importarlas en el de cada spoke", en: "Export custom routes on the hub's peering and import them on each spoke's" }
     equivalence: partial
     notes:
       es: "El peering intercambia rutas pero no ofrece ruteo transitivo, así que no reenvía tráfico entre spokes."
       en: "Peering exchanges routes but doesn't provide transitive routing, so it doesn't forward traffic between spokes."
   inspection:
     service: { es: "Cloud NGFW: firewall endpoints + política de firewall con perfil de seguridad", en: "Cloud NGFW: firewall endpoints + firewall policy with security profile" }
-    config: { es: "Un endpoint zonal asociado a cada VPC; reglas con acción apply_security_profile_group", en: "A zonal endpoint associated with each VPC; rules with the apply_security_profile_group action" }
+    config: { es: "Un endpoint zonal asociado a las VPC de esa zona (una asociación por VPC y zona); reglas con acción apply_security_profile_group", en: "A zonal endpoint associated with the VPCs in that zone (one association per VPC and zone); rules with the apply_security_profile_group action" }
     equivalence: partial
     notes:
       es: "La política de cada VPC selecciona el tráfico y los paquetes interceptados se mandan al firewall endpoint para inspección de capa 7."
@@ -55,16 +55,18 @@ gotchas:
         rutas dinámicas y las estáticas IPv4 sin network tags con un next hop distinto del internet gateway por
         defecto no se exportan ni se importan por defecto. Se habilitan con --export-custom-routes en la VPC
         que las tiene y --import-custom-routes en la que las recibe. Las estáticas con network tags o con el
-        internet gateway por defecto como next hop no se pueden exportar ni importar. Un spoke que no importa
-        las rutas del hub no llega a on-premises por el hub.
+        internet gateway por defecto como next hop no se pueden exportar ni importar. Para dar un camino desde
+        on-premises hacia la VPC peereada, además hay que configurar Cloud Router en modo custom advertisement
+        con los rangos de subnet de la VPC peereada.
       en: >-
         Subnet routes are always exchanged (except IPv4 subnet routes using privately used public IPv4 addresses), but
         dynamic routes and
         IPv4 static routes without network tags with a next hop other than the default internet gateway aren't
         exported or imported by default. You enable them with --export-custom-routes on the VPC that has them and
         --import-custom-routes on the one that receives them. Static routes with network tags or with the default
-        internet gateway as next hop can't be exported or imported. A spoke that doesn't import the hub's routes
-        can't reach on-premises through the hub.
+        internet gateway as next hop can't be exported or imported. To provide a path from on-premises to the
+        peered VPC, you also have to configure Cloud Router custom advertisement mode with the peered VPC's
+        subnet ranges.
     sources:
       - https://docs.cloud.google.com/vpc/docs/vpc-peering
     verified_at: 2026-10-24
@@ -73,20 +75,21 @@ gotchas:
   - id: ncc-vpc-spokes-change-the-design
     severity: networking
     title:
-      es: "Con Network Connectivity Center el diseño cambia: no se combina con peering entre los mismos spokes"
-      en: "With Network Connectivity Center the design changes: it can't be combined with peering between the same spokes"
+      es: "Con Network Connectivity Center el diseño cambia: hay límites al usar peering entre VPC spokes"
+      en: "With Network Connectivity Center the design changes: there are limits to using peering between VPC spokes"
     body:
       es: >-
-        Los VPC spokes de NCC intercambian las rutas de subnet con los demás spokes del hub. No se puede usar VPC
-        Network Peering entre dos VPC spokes que ya estén conectados por un hub de NCC, el intercambio de rutas
-        estáticas entre VPC spokes no está soportado y en la topología estrella NCC no conecta entre sí a los
-        spokes del edge group. Elegí el modelo antes de crear las VPC, porque no se pueden mezclar entre los
-        mismos spokes.
+        Los VPC spokes de NCC pueden exportar e importar todas las rutas de subnet de los demás VPC spokes. No se
+        puede usar VPC Network Peering entre dos VPC spokes que también estén conectados por un hub de NCC, y el
+        intercambio de rutas estáticas entre VPC spokes no está soportado. Sí se puede tener un VPC spoke de NCC
+        peereado con una VPC separada que no es parte de NCC, y usar peering entre dos VPC spokes del edge group de
+        un hub con topología estrella, porque NCC no conecta entre sí a los spokes de ese grupo.
       en: >-
-        NCC VPC spokes exchange subnet routes with the other spokes on the hub. You can't use VPC Network Peering
-        between two VPC spokes that are also connected through an NCC hub, static route exchange across VPC spokes
-        isn't supported, and in the star topology NCC doesn't connect the spokes in the edge group to each other.
-        Choose the model before creating the VPCs, because you can't mix them between the same spokes.
+        NCC VPC spokes can export and import all subnet routes from the other VPC spokes. You can't use VPC Network
+        Peering between two VPC spokes that are also connected through an NCC hub, and static route exchange across
+        VPC spokes isn't supported. You can have an NCC-connected VPC spoke peered with a separate VPC that isn't
+        part of NCC, and use peering between two VPC spokes in the edge group of a hub with star topology, because
+        NCC doesn't connect the spokes in that group to each other.
     sources:
       - https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/vpc-spokes-overview
     verified_at: 2026-10-24
@@ -95,21 +98,23 @@ gotchas:
   - id: firewall-endpoint-zonal-per-vpc
     severity: reliability
     title:
-      es: El firewall endpoint es zonal, se asocia a una VPC por zona y solo inspecciona el tráfico que una regla selecciona
-      en: The firewall endpoint is zonal, associates with a VPC per zone, and only inspects traffic that a rule selects
+      es: El firewall endpoint es zonal, una VPC se asocia a un solo endpoint por zona y solo inspecciona el tráfico que una regla selecciona
+      en: The firewall endpoint is zonal, a VPC associates with only one endpoint per zone, and it only inspects traffic that a rule selects
     body:
       es: >-
         Un firewall endpoint es un recurso zonal, y la asociación lo vincula a una VPC en la misma zona. Una VPC
         puede asociarse a un solo endpoint por zona, sea de organización o de proyecto. Cloud NGFW redirige el
         tráfico al endpoint solo cuando coincide con una regla de política con la acción
-        apply_security_profile_group. Para cubrir las zonas donde corren los workloads, creá un endpoint y una
-        asociación por zona y por VPC, y verificá que cada flujo a inspeccionar tenga su regla.
+        apply_security_profile_group. Un endpoint se puede asociar a una o más VPC de la misma zona, y si una VPC
+        abarca varias zonas se asocia un endpoint por zona; en una zona sin endpoint asociado no hay inspección de
+        capa 7. Verificá que cada flujo a inspeccionar tenga su regla.
       en: >-
         A firewall endpoint is a zonal resource, and the association links it to a VPC network in the same zone. A
         VPC network can associate with only one endpoint per zone, organization-level or project-level. Cloud NGFW
         redirects traffic to the endpoint only when it matches a policy rule with the apply_security_profile_group
-        action. To cover the zones where workloads run, create one endpoint and one association per zone and per
-        VPC, and check that every flow to inspect has its rule.
+        action. An endpoint can be attached to one or more VPC networks in the same zone, and if a VPC network spans
+        several zones you attach one endpoint per zone; in a zone with no endpoint attached there is no layer 7
+        inspection. Check that every flow to inspect has its rule.
     sources:
       - https://docs.cloud.google.com/firewall/docs/about-firewall-endpoints
       - https://docs.cloud.google.com/firewall/docs/about-intrusion-prevention
@@ -120,5 +125,5 @@ cost:
   scales_to_zero: 'partial'
   fixed_cost_drivers: []
   notes:
-    es: Pendiente de verificar contra la página oficial de precios cómo se factura el firewall endpoint; completar antes de publicar.
-    en: Pending verification against the official pricing page of how the firewall endpoint is billed; complete before publishing.
+    es: Sin verificar cómo se factura el firewall endpoint; el valor de scales_to_zero es provisional hasta contrastarlo con la página oficial de precios.
+    en: How the firewall endpoint is billed is unverified; the scales_to_zero value is provisional until checked against the official pricing page.
