@@ -1,0 +1,200 @@
+provider: gcp
+bindings:
+  audit-log:
+    service: { es: "Cloud Audit Logs + sink agregado (Log Router)", en: "Cloud Audit Logs + aggregated sink (Log Router)" }
+    config: { es: "Sink de organización o carpeta con include_children, sin interceptar, filtrado a los audit logs", en: "Organization or folder sink with include_children, non-intercepting, filtered to audit logs" }
+  destination:
+    service: { es: "Cloud Logging (log bucket en el proyecto central)", en: "Cloud Logging (log bucket in the central project)" }
+    config: { es: "Log bucket en un proyecto con la retención del patrón; bloqueo opcional", en: "Log bucket in a project with the pattern's retention; optional lock" }
+  access:
+    service: IAM
+    config: { es: "logging.logWriter y logging.bucketWriter para la writer identity del sink sobre el proyecto central", en: "logging.logWriter and logging.bucketWriter for the sink's writer identity on the central project" }
+gotchas:
+  - id: include-children-defaults-to-false
+    severity: security
+    title:
+      es: Un sink de organización o carpeta con includeChildren en false solo exporta los logs del propio recurso padre
+      en: An organization or folder sink with includeChildren set to false only exports the parent resource's own logs
+    body:
+      es: >-
+        includeChildren aplica solo a sinks de organizaciones y carpetas, y su valor por defecto es false: en ese caso
+        solo los logs del recurso padre del sink están disponibles para exportar, no los de los proyectos que
+        contiene. Con true, los logs de todos los proyectos, carpetas y cuentas de facturación hijos también quedan
+        disponibles, y que una entrada se exporte depende del filtro del sink. Ponelo en true de forma explícita (en
+        gcloud, --include-children) y, si querés limitar los hijos, filtrá por la parte del proyecto del nombre del
+        log.
+      en: >-
+        includeChildren applies only to sinks owned by organizations and folders, and its default is false: in that
+        case only the logs owned by the sink's parent resource are available for export, not those of the projects it
+        contains. With true, the logs of all contained projects, folders and billing accounts are also available, and
+        whether an entry is exported depends on the sink's filter. Set it to true explicitly (in gcloud,
+        --include-children) and, if you want to limit the children, filter on the project part of the log name.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/billingAccounts.sinks
+      - https://docs.cloud.google.com/logging/docs/export/aggregated_sinks
+    verified_at: 2026-10-24
+    roles: [audit-log]
+    exams: [PCSE, PCA]
+  - id: writer-identity-needs-destination-access
+    severity: iam
+    title:
+      es: El sink no exporta hasta que su writer identity tiene permiso de escritura sobre el destino
+      en: The sink doesn't export until its writer identity has write permission on the destination
+    body:
+      es: >-
+        El writerIdentity del sink tiene que tener permiso de escritura sobre el destino o las entradas no se
+        exportan. Logging crea y administra esa cuenta de servicio, y los permisos del destino los otorgás vos (no
+        hacen falta si el destino es un log bucket del mismo proyecto del sink; acá está en otro proyecto, así que
+        sí). Para todos los destinos se pide Logs Writer (roles/logging.logWriter, con el permiso
+        logging.logEntries.route) y, para un log bucket, Logs Bucket Writer (roles/logging.bucketWriter). Para
+        otorgarlos hace falta Owner sobre el proyecto que contiene el destino. Logging usa la misma cuenta de servicio
+        para todos los sinks de un mismo recurso (proyecto, carpeta, organización o cuenta de facturación).
+      en: >-
+        The sink's writerIdentity must have permission to write to the destination or the entries aren't exported.
+        Logging creates and manages that service account, and you grant the destination permissions yourself (they
+        aren't needed if the destination is a log bucket in the same project as the sink; here it's in another
+        project, so they are). For all destinations Logs Writer is required (roles/logging.logWriter, with the
+        logging.logEntries.route permission) and, for a log bucket, Logs Bucket Writer (roles/logging.bucketWriter).
+        To grant them you need Owner on the project that contains the destination. Logging uses the same service
+        account for all sinks of one resource (project, folder, organization or billing account).
+    sources:
+      - https://docs.cloud.google.com/logging/docs/export/aggregated_sinks
+      - https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/billingAccounts.sinks
+    verified_at: 2026-10-24
+    roles: [audit-log, destination, access]
+    exams: [PCSE, ACE]
+  - id: admin-activity-not-stored-in-destination-project
+    severity: reliability
+    title:
+      es: Si el destino es un proyecto, los Admin Activity y System Event no se guardan en él sin un sink propio
+      en: If the destination is a project, Admin Activity and System Event logs aren't stored in it without a sink of its own
+    body:
+      es: >-
+        Los Admin Activity y System Event audit logs se almacenan en el bucket _Required del proyecto que los generó,
+        y no se pueden configurar, excluir ni deshabilitar. Si los enrutás a otro proyecto, no pasan por los sinks
+        _Default ni _Required del proyecto de destino y, por lo tanto, no se guardan ahí. Para guardarlos hay que
+        crear un sink en el proyecto de destino o actualizar su sink _Default. Un log bucket como destino es distinto:
+        no es un destino que reenvíe las entradas, así que los sinks del proyecto que lo aloja no las reprocesan. La
+        documentación recomienda un proyecto como destino de un sink agregado; este patrón apunta directo al bucket.
+      en: >-
+        Admin Activity and System Event audit logs are stored in the _Required bucket of the project that generated
+        them, and you can't configure, exclude or disable them. If you route them to another project, they don't pass
+        through the destination project's _Default or _Required sinks and, consequently, aren't stored there. To store
+        them you have to create a sink in the destination project or update its _Default sink. A log bucket as
+        destination is different: it isn't a destination that reroutes entries, so the sinks of the project that hosts
+        it don't reprocess them. The documentation recommends a project as the destination of an aggregated sink; this
+        pattern points straight at the bucket.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/audit
+      - https://docs.cloud.google.com/logging/docs/export/aggregated_sinks_overview
+    verified_at: 2026-10-24
+    roles: [audit-log, destination]
+    exams: [PCSE, PCA]
+  - id: intercepting-sink-hides-logs-from-child-sinks
+    severity: operations
+    title:
+      es: Un sink agregado que intercepta saca los logs de los sinks de los proyectos hijos
+      en: An aggregated sink that intercepts takes logs away from the child projects' sinks
+    body:
+      es: >-
+        Un sink agregado que intercepta evita que las entradas lleguen a los sinks de los recursos hijos, salvo los
+        _Required de donde se originan; uno que no intercepta no cambia cómo se enrutan hacia los demás sinks. Un sink
+        que intercepta exige includeChildren en true y un proyecto como destino. Si un equipo necesita controlar por
+        su cuenta cómo enruta ciertos logs, verificá que el sink que intercepta no se los lleve. La guía de aggregated
+        sinks recomienda probar la configuración primero con uno que no intercepta y poner datos de contacto en la
+        descripción del que intercepta.
+      en: >-
+        An aggregated sink that intercepts prevents entries from reaching the sinks in child resources, except the
+        _Required ones where they originate; one that doesn't intercept doesn't change how entries are routed to other
+        sinks. A sink that intercepts requires includeChildren set to true and a project as destination. If a team
+        needs independent control over how certain logs are routed, verify that the intercepting sink doesn't take
+        them. The aggregated sinks guide recommends testing the configuration first with a non-intercepting one and
+        adding contact information to the description of the intercepting one.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/export/aggregated_sinks_overview
+      - https://docs.cloud.google.com/logging/docs/reference/v2/rest/v2/billingAccounts.sinks
+    verified_at: 2026-10-24
+    roles: [audit-log]
+    exams: [PCSE, PCA]
+  - id: vpc-sc-ingress-for-sink-identity
+    severity: networking
+    title:
+      es: Un destino dentro de un perímetro de VPC Service Controls exige una regla de ingreso para la identidad del sink
+      en: A destination inside a VPC Service Controls perimeter requires an ingress rule for the sink's identity
+    body:
+      es: >-
+        Enrutar entradas a un recurso protegido por un service perimeter exige agregar al perímetro una regla de
+        ingreso que permita el acceso desde la cuenta de servicio del sink. Si un sink agregado enruta a un bucket de
+        Cloud Storage dentro de un perímetro, el tipo de identidad de la regla tiene que ser ANY_IDENTITY: no se
+        pueden usar ANY_SERVICE_ACCOUNT ni ANY_USER_ACCOUNT para ese destino. Los sinks no agregados no necesitan esa
+        regla. Si el proyecto central va a estar en un perímetro, agregá la regla antes de crear el sink.
+      en: >-
+        Routing entries to a resource protected by a service perimeter requires adding an ingress rule to the
+        perimeter that allows access from the sink's service account. If an aggregated sink routes to a Cloud Storage
+        bucket inside a perimeter, the rule's identity type must be ANY_IDENTITY: you can't use ANY_SERVICE_ACCOUNT or
+        ANY_USER_ACCOUNT for that destination. Non-aggregated sinks don't need that rule. If the central project is
+        going to be in a perimeter, add the rule before creating the sink.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/export/aggregated_sinks
+    verified_at: 2026-10-24
+    roles: [audit-log, destination]
+    exams: [PCNE, PCSE]
+  - id: data-access-logs-enabled-at-the-source
+    severity: security
+    title:
+      es: Los Data Access logs se habilitan en el origen, a nivel de organización o carpeta; el sink solo enruta lo que existe
+      en: Data Access logs are enabled at the source, at organization or folder level; the sink only routes what exists
+    body:
+      es: >-
+        Salvo BigQuery, los Data Access audit logs están deshabilitados por defecto y hay que habilitarlos de forma
+        explícita; se escriben en el proyecto cuyos datos se acceden. Habilitarlos en una organización aplica a todos
+        los proyectos y carpetas existentes y nuevos, y en un proyecto no se puede deshabilitar un log habilitado en
+        su organización padre. Habilitarlos puede generar cargos por uso de logs adicional. El sink agregado no cambia
+        esa configuración: filtra y enruta las entradas que existen. El gotcha data-access-logs-off-by-default del
+        patrón app-secrets cubre el caso de Secret Manager.
+      en: >-
+        Except for BigQuery, Data Access audit logs are disabled by default and you must enable them explicitly; they
+        are written to the project whose data is accessed. Enabling them in an organization applies to all existing
+        and new projects and folders, and in a project you can't disable a log enabled in its parent organization.
+        Enabling them might result in additional log usage charges. The aggregated sink doesn't change that
+        configuration: it filters and routes the entries that exist. The data-access-logs-off-by-default gotcha of the
+        app-secrets pattern covers the Secret Manager case.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/audit
+      - https://docs.cloud.google.com/logging/docs/audit/configure-data-access
+    verified_at: 2026-10-24
+    roles: [audit-log]
+    exams: [PCSE, PCA]
+  - id: bucket-retention-and-lock
+    severity: operations
+    title:
+      es: La retención de un bucket en una organización o carpeta no se puede extender, y bloquear un bucket es irreversible
+      en: A bucket's retention in an organization or folder can't be extended, and locking a bucket is irreversible
+    body:
+      es: >-
+        No se puede extender la retención de un log bucket que está en una carpeta u organización; la alternativa
+        documentada es un sink que enrute a un bucket de un proyecto y configurar la retención ahí, como hace este
+        patrón. Si extendés la retención, las reglas aplican hacia adelante y no de forma retroactiva, y los logs no
+        se pueden recuperar cuando termina la retención aplicable. Bloquear un bucket es irreversible: bloquea también
+        su política de retención y no se puede borrar hasta que cada entrada cumpla el período. Para evitar borrar por
+        accidente un proyecto con un bucket bloqueado, agregale un lien. La consola no permite bloquear: se hace con
+        gcloud (--locked) o con la API. La región del bucket no se puede cambiar después de crearlo.
+      en: >-
+        You can't extend the retention period of a log bucket that is in a folder or organization; the documented
+        alternative is a sink that routes to a bucket in a project and configuring retention there, as this pattern
+        does. If you extend retention, the rules apply going forward and not retroactively, and logs can't be
+        recovered after the applicable retention period ends. Locking a bucket is irreversible: it also locks the
+        bucket's retention policy and you can't delete the bucket until every entry has fulfilled the period. To
+        prevent accidentally deleting a project that contains a locked bucket, add a lien to it. The console doesn't
+        support locking: use gcloud (--locked) or the API. You can't change the bucket's region after creating it.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/buckets
+    verified_at: 2026-10-24
+    roles: [destination, access]
+    exams: [PCSE, PCA]
+cost:
+  scales_to_zero: 'partial'
+  fixed_cost_drivers: []
+  notes:
+    es: Esta ficha no cuantifica costos. Habilitar Data Access logs puede generar cargos por uso de logs adicional, y los logs retenidos más allá del período por defecto de un bucket tienen costo de retención (ver el gotcha data-access-logs-enabled-at-the-source).
+    en: This card doesn't quantify costs. Enabling Data Access logs might result in additional log usage charges, and logs retained longer than a bucket's default retention period have retention costs (see the data-access-logs-enabled-at-the-source gotcha).
