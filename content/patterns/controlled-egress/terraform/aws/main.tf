@@ -45,6 +45,7 @@ resource "aws_nat_gateway" "this" {
 # --- Network Firewall: lista de dominios (gotcha: network-firewall-domain-list) ------------------------
 
 resource "aws_networkfirewall_rule_group" "domains" {
+  #checkov:skip=CKV_AWS_345:El módulo no crea ni recibe una KMS key; las reglas no contienen datos de cliente y se cifran con la clave propiedad de AWS (por defecto). Para exigir CMK hay que agregar encryption_configuration con una key propia.
   name     = "${var.name}-allowed-domains"
   type     = "STATEFUL"
   capacity = var.rule_group_capacity
@@ -73,6 +74,7 @@ resource "aws_networkfirewall_rule_group" "domains" {
 # Default action order: con strict order la denegación de lo que no coincide no aplica
 # (gotcha: network-firewall-domain-list).
 resource "aws_networkfirewall_firewall_policy" "this" {
+  #checkov:skip=CKV_AWS_346:El módulo no crea ni recibe una KMS key; las reglas no contienen datos de cliente y se cifran con la clave propiedad de AWS (por defecto). Para exigir CMK hay que agregar encryption_configuration con una key propia.
   name = "${var.name}-egress"
 
   firewall_policy {
@@ -90,6 +92,7 @@ resource "aws_networkfirewall_firewall_policy" "this" {
 }
 
 resource "aws_networkfirewall_firewall" "this" {
+  #checkov:skip=CKV_AWS_345:El módulo no crea ni recibe una KMS key; las reglas no contienen datos de cliente y se cifran con la clave propiedad de AWS (por defecto). Para exigir CMK hay que agregar encryption_configuration con una key propia.
   name                = var.name
   vpc_id              = var.vpc_id
   firewall_policy_arn = aws_networkfirewall_firewall_policy.this.arn
@@ -99,6 +102,21 @@ resource "aws_networkfirewall_firewall" "this" {
     for_each = var.az_config
     content {
       subnet_id = subnet_mapping.value.firewall_subnet_id
+    }
+  }
+}
+
+# Logs de alertas a CloudWatch Logs (opcional: el log group es de la cuenta, no lo crea el módulo).
+resource "aws_networkfirewall_logging_configuration" "this" {
+  count = var.alert_log_group_name == null ? 0 : 1
+
+  firewall_arn = aws_networkfirewall_firewall.this.arn
+
+  logging_configuration {
+    log_destination_config {
+      log_destination      = { logGroup = var.alert_log_group_name }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "ALERT"
     }
   }
 }

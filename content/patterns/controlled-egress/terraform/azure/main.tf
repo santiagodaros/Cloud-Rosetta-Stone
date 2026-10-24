@@ -56,6 +56,9 @@ resource "azurerm_subnet_network_security_group_association" "workloads" {
 
 # --- NAT Gateway: las IPs que ve el tercero --------------------------------------------
 
+# azurerm 5.x acepta "StandardV2" en azurerm_public_ip.sku y en azurerm_nat_gateway.sku_name (doc del provider, que además
+# pide omitir `zones` con ese SKU). Las reglas azurerm_public_ip_invalid_sku y azurerm_nat_gateway_invalid_sku_name de
+# tflint-ruleset-azurerm 0.27.0 (la versión que fija .tflint/azure.hcl) todavía no lo conocen: de ahí los tflint-ignore.
 resource "azurerm_public_ip" "nat" {
   count = var.nat_public_ip_count
 
@@ -63,7 +66,7 @@ resource "azurerm_public_ip" "nat" {
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
   allocation_method   = "Static"
-  sku                 = local.nat_public_ip_sku
+  sku                 = local.nat_public_ip_sku # tflint-ignore: azurerm_public_ip_invalid_sku
   tags                = var.tags
 }
 
@@ -71,7 +74,7 @@ resource "azurerm_nat_gateway" "this" {
   name                = "ng-${var.name}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
-  sku_name            = var.nat_sku_name
+  sku_name            = var.nat_sku_name # tflint-ignore: azurerm_nat_gateway_invalid_sku_name
   zones               = local.nat_zones
   tags                = var.tags
 }
@@ -102,6 +105,7 @@ resource "azurerm_public_ip" "firewall" {
 }
 
 resource "azurerm_firewall_policy" "this" {
+  #checkov:skip=CKV_AZURE_220:IDPS (intrusion_detection) es una función de Azure Firewall Premium y de policies Premium; este módulo usa SKU Standard (filtrado por FQDN y threat intelligence en Deny).
   name                     = "fwp-${var.name}"
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
@@ -140,6 +144,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
 }
 
 resource "azurerm_firewall" "this" {
+  #checkov:skip=CKV_AZURE_216:Con firewall_policy_id el modo de threat intelligence lo define la policy (threat_intelligence_mode = "Deny" en azurerm_firewall_policy.this); threat_intel_mode del firewall aplica a reglas clásicas.
   name                = "fw-${var.name}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location

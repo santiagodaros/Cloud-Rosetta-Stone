@@ -93,8 +93,13 @@ run "firewall_has_an_endpoint_per_az" {
   command = plan
 
   assert {
-    condition     = length(aws_networkfirewall_firewall.this.subnet_mapping) == 2 && aws_networkfirewall_firewall.this.delete_protection
-    error_message = "Un endpoint por AZ y con protección contra borrado."
+    condition     = toset([for m in aws_networkfirewall_firewall.this.subnet_mapping : m.subnet_id]) == toset(["subnet-0aaaaaaaaaaaaaaa2", "subnet-0bbbbbbbbbbbbbbb2"])
+    error_message = "Un endpoint por AZ."
+  }
+
+  assert {
+    condition     = aws_networkfirewall_firewall.this.delete_protection
+    error_message = "El firewall tiene protección contra borrado por defecto."
   }
 }
 
@@ -142,4 +147,26 @@ run "rejects_empty_domain_list" {
   }
 
   expect_failures = [var.allowed_domains]
+}
+
+run "logging_is_opt_in" {
+  command = plan
+
+  assert {
+    condition     = length(aws_networkfirewall_logging_configuration.this) == 0
+    error_message = "Sin alert_log_group_name no se crea la configuración de logging."
+  }
+}
+
+run "logging_to_cloudwatch_when_requested" {
+  command = plan
+
+  variables {
+    alert_log_group_name = "/aws/network-firewall/egress"
+  }
+
+  assert {
+    condition     = [for d in aws_networkfirewall_logging_configuration.this[0].logging_configuration[0].log_destination_config : d.log_type] == ["ALERT"]
+    error_message = "El logging envía los eventos ALERT."
+  }
 }

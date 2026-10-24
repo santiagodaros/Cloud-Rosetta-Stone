@@ -73,6 +73,12 @@ variable "delete_protection" {
   default     = true
 }
 
+variable "alert_log_group_name" {
+  description = "Log group de CloudWatch Logs (ya existente) para los logs ALERT del firewall. null = sin logging."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags comunes (se aplican como default_tags)."
   type        = map(string)
