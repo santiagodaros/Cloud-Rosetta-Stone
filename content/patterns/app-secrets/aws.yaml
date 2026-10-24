@@ -1,0 +1,175 @@
+provider: aws
+bindings:
+  identity:
+    service: IAM Role (task role, instance profile)
+    config: { es: "secretsmanager:GetSecretValue sobre un secreto y kms:Decrypt sobre su clave", en: "secretsmanager:GetSecretValue on one secret and kms:Decrypt on its key" }
+  private-access:
+    service: Interface VPC Endpoint (PrivateLink)
+    config: { es: "com.amazonaws.<región>.secretsmanager con private DNS y política de endpoint propia", en: "com.amazonaws.<region>.secretsmanager with private DNS and its own endpoint policy" }
+  store:
+    service: AWS Secrets Manager
+    config: { es: "Secreto con CMK y política que exige el endpoint VPC", en: "Secret with a CMK and a policy that requires the VPC endpoint" }
+  key:
+    service: AWS KMS
+    config: { es: "CMK simétrica con rotación automática", en: "Symmetric CMK with automatic rotation" }
+    from:
+      azure:
+        es: "Acá elegís la clave de KMS que cifra cada secreto; en Key Vault los secretos los cifra el servicio con su propia jerarquía."
+        en: "Here you choose the KMS key that encrypts each secret; in Key Vault the service encrypts secrets with its own hierarchy."
+gotchas:
+  - id: rotation-lambda-needs-private-path
+    severity: networking
+    title:
+      es: La función de rotación tiene que llegar a Secrets Manager, y en una VPC sin internet eso es un endpoint
+      en: The rotation function must reach Secrets Manager, and in a VPC without internet that means an endpoint
+    body:
+      es: >-
+        Con rotación por Lambda, la función tiene que poder acceder a un endpoint de Secrets Manager y, si el secreto
+        son credenciales, al servicio donde se cambian. Si la función corre en una VPC sin acceso a internet, AWS
+        recomienda configurar endpoints privados de Secrets Manager en esa VPC; la alternativa, un NAT gateway o un
+        internet gateway, expone la VPC a más riesgo porque la IP del gateway puede ser atacada desde internet.
+        Cuando activás la rotación desde la consola, Secrets Manager crea la función en la misma VPC que la base de
+        datos, y AWS recomienda crear el endpoint en esa misma VPC. Dejá el endpoint y los security groups de la
+        función listos antes de activar la rotación. Para secretos como API keys no hay base de datos que actualizar
+        junto con el secreto.
+      en: >-
+        With Lambda rotation, the function must be able to access a Secrets Manager endpoint and, if the secret holds
+        credentials, the service where they are changed. If the function runs in a VPC without internet access, AWS
+        recommends configuring private Secrets Manager endpoints in that VPC; the alternative, a NAT gateway or an
+        internet gateway, exposes the VPC to more risk because the gateway's IP address can be attacked from the
+        internet. When you turn on rotation from the console, Secrets Manager creates the function in the same VPC as
+        the database, and AWS recommends creating the endpoint in that same VPC. Have the endpoint and the function's
+        security groups ready before turning rotation on. For secrets such as API keys there is no database to update
+        along with the secret.
+    sources:
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotation-function-network-access.html
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/vpc-endpoint-overview.html
+    verified_at: 2026-10-24
+    roles: [store, private-access]
+    exams: [SCS-C03, ANS-C01]
+  - id: endpoint-default-policy-allows-all
+    severity: security
+    title:
+      es: La política por default del endpoint permite acceso total a Secrets Manager
+      en: The endpoint's default policy allows full access to Secrets Manager
+    body:
+      es: >-
+        Un interface endpoint de Secrets Manager nace con una política que permite acceso total al servicio a través
+        de él. Que el tráfico sea privado no dice nada sobre qué principals leen qué secretos. Adjuntá una política de
+        endpoint con los principals, las acciones y los recursos permitidos: este módulo la limita al rol del
+        workload (y al de la función de rotación, si hay) y a las acciones que necesitan sobre este secreto.
+      en: >-
+        A Secrets Manager interface endpoint is created with a policy that allows full access to the service through
+        it. Private traffic says nothing about which principals read which secrets. Attach an endpoint policy with the
+        allowed principals, actions and resources: this module limits it to the workload role (and the rotation
+        function's, if any) and to the actions they need on this secret.
+    sources:
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/vpc-endpoint-overview.html
+    verified_at: 2026-10-24
+    roles: [private-access]
+    exams: [SCS-C03, ANS-C01]
+  - id: vpce-condition-denies-others
+    severity: iam
+    title:
+      es: Exigir el endpoint en la política del secreto también deniega a quien lea desde fuera de la VPC
+      en: Requiring the endpoint in the secret's policy also denies anyone reading from outside the VPC
+    body:
+      es: >-
+        Para exigir que la lectura pase por el endpoint, la política del secreto puede negar
+        secretsmanager:GetSecretValue cuando aws:sourceVpce no coincide con el endpoint; es el ejemplo de la
+        documentación de Secrets Manager. AWS advierte que los pedidos al secreto de otros servicios de AWS también
+        tienen que venir de la VPC, o esa política los deniega. Antes de aplicarla, inventariá quién más lee el valor
+        (función de rotación, integraciones, administradores) y asegurate de que todos pasen por el endpoint.
+      en: >-
+        To require reads to go through the endpoint, the secret's policy can deny secretsmanager:GetSecretValue when
+        aws:sourceVpce doesn't match the endpoint; this is the example in the Secrets Manager documentation. AWS warns
+        that requests to the secret from other AWS services must also come from the VPC, or that policy denies them.
+        Before applying it, inventory who else reads the value (rotation function, integrations, administrators) and
+        make sure they all go through the endpoint.
+    sources:
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/vpc-endpoint-overview.html
+    verified_at: 2026-10-24
+    roles: [store, private-access]
+    exams: [SCS-C03]
+  - id: metadata-not-encrypted
+    severity: security
+    title:
+      es: El nombre, la descripción, los tags y la configuración de rotación del secreto no se cifran
+      en: The secret's name, description, tags and rotation settings aren't encrypted
+    body:
+      es: >-
+        Secrets Manager cifra el valor del secreto, pero no el nombre ni la descripción, la configuración de rotación,
+        el ARN de la clave KMS asociada ni los tags. Cualquiera que pueda listar o describir el secreto los ve. No
+        pongas en esos campos nada que no pondrías en un log: ni valores, ni hosts internos, ni nombres de clientes.
+      en: >-
+        Secrets Manager encrypts the secret value, but not the name or description, the rotation settings, the ARN of
+        the associated KMS key or the tags. Anyone who can list or describe the secret sees them. Don't put anything
+        in those fields that you wouldn't put in a log: no values, no internal hosts, no customer names.
+    sources:
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html
+    verified_at: 2026-10-24
+    roles: [store, key]
+    exams: [SCS-C03]
+  - id: cmk-needs-kms-permission
+    severity: iam
+    title:
+      es: Con una CMK propia, leer el secreto exige permiso sobre el secreto y sobre la clave
+      en: With your own CMK, reading the secret needs permission on both the secret and the key
+    body:
+      es: >-
+        Al atender GetSecretValue, Secrets Manager llama a KMS Decrypt en nombre de quien lee, así que el rol necesita
+        permisos sobre la clave, que se pueden dar en una política de IAM o en la key policy. Con la clave
+        administrada aws/secretsmanager, su key policy (que no podés modificar) solo permite usarla cuando el pedido
+        lo hace Secrets Manager en nombre del usuario, y AWS permite incluso denegarla para exigir una CMK. Si
+        cambiás la clave de un secreto sin kms:Decrypt sobre la anterior, las versiones existentes no se recifran.
+        Dale al rol kms:Decrypt sobre la clave del secreto, acotado con kms:ViaService a Secrets Manager.
+      en: >-
+        When serving GetSecretValue, Secrets Manager calls KMS Decrypt on behalf of the reader, so the role needs
+        permissions on the key, which can be granted in an IAM policy or in the key policy. With the AWS managed key
+        aws/secretsmanager, its key policy (which you can't change) only allows using it when Secrets Manager makes
+        the request on the user's behalf, and AWS even lets you deny it to require a CMK. If you change a secret's
+        key without kms:Decrypt on the previous one, existing versions aren't re-encrypted. Give the role kms:Decrypt
+        on the secret's key, scoped with kms:ViaService to Secrets Manager.
+    sources:
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html
+    verified_at: 2026-10-24
+    roles: [key, identity]
+    exams: [SCS-C03, SAA-C03]
+  - id: billing-per-secret-replica-key-and-az
+    severity: cost
+    title:
+      es: Se cobra por secreto, por réplica, por clave KMS y por hora y AZ del endpoint, aunque nadie lea
+      en: You pay per secret, per replica, per KMS key and per endpoint hour and AZ, even if nobody reads
+    body:
+      es: >-
+        Secrets Manager cobra según la cantidad de secretos guardados y las llamadas a la API. Una réplica cuenta
+        como un secreto distinto y se factura aparte; crear versiones nuevas al rotar no se cobra y un secreto marcado
+        para borrado tampoco. Cada clave de KMS que creás tiene un costo mensual (prorrateado por hora), y el interface
+        endpoint se factura por cada hora que permanece aprovisionado en cada AZ. Usá una subnet por AZ que
+        realmente necesites, un secreto por credencial y réplicas solo si hay un requisito de otra región. Cada
+        GetSecretValue es una llamada facturable: leé el secreto al arrancar o cacheá el valor.
+      en: >-
+        Secrets Manager charges based on the number of secrets stored and API calls made. A replica counts as a
+        distinct secret and is billed separately; creating new versions when rotating isn't charged and neither is a
+        secret marked for deletion. Each KMS key you create has a monthly cost (prorated hourly), and the interface
+        endpoint is billed for each hour it stays provisioned in each AZ. Use one subnet per AZ you actually need, one
+        secret per credential, and replicas only if another region requires them. Each GetSecretValue is a billable
+        call: read the secret at startup or cache the value.
+    sources:
+      - https://aws.amazon.com/secrets-manager/pricing/
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_delete-secret.html
+      - https://aws.amazon.com/kms/pricing/
+      - https://aws.amazon.com/privatelink/pricing/
+    verified_at: 2026-10-24
+    roles: [store, key, private-access]
+    exams: [SAA-C03]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Interface endpoint de Secrets Manager (por hora y por AZ)", en: "Secrets Manager interface endpoint (hourly, per AZ)" }
+    - { es: "Clave KMS (por mes)", en: "KMS key (monthly)" }
+    - { es: "Secreto (por mes)", en: "Secret (monthly)" }
+  notes:
+    es: El endpoint, la clave y el secreto se cobran aunque nadie lea; las lecturas se cobran por llamada a la API.
+    en: The endpoint, the key and the secret are billed even if nobody reads; reads are billed per API call.
