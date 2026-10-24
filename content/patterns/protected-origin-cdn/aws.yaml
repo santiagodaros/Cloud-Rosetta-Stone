@@ -5,11 +5,21 @@ bindings:
     config: { es: "Distribución con origen S3 regular, origin access control (signing_behavior = always) y viewer protocol policy redirect-to-https", en: "Distribution with a regular S3 origin, origin access control (signing_behavior = always) and the redirect-to-https viewer protocol policy" }
     from:
       azure:
-        es: "No hay enlace privado en este patrón: CloudFront firma los pedidos al bucket con su OAC y la policy del bucket los acepta solo en nombre de tu distribución."
-        en: "There is no private link in this pattern: CloudFront signs its requests to the bucket with its OAC, and the bucket policy accepts them only on behalf of your distribution."
+        es: >-
+          No hay enlace privado en este patrón: CloudFront firma los pedidos al bucket con su OAC y la
+          policy del bucket los acepta solo en nombre de tu distribución.
+        en: >-
+          There is no private link in this pattern: CloudFront signs its requests to the bucket with its
+          OAC, and the bucket policy accepts them only on behalf of your distribution.
   object-storage:
     service: Amazon S3
-    config: { es: "Bucket regular (no website endpoint), con Block Public Access y una policy que permite s3:GetObject al servicio cloudfront.amazonaws.com con AWS:SourceArn", en: "Regular bucket (not a website endpoint), with Block Public Access and a policy that allows s3:GetObject to the cloudfront.amazonaws.com service with AWS:SourceArn" }
+    config:
+      es: >-
+        Bucket regular (no website endpoint) con una policy que permite s3:GetObject al servicio
+        cloudfront.amazonaws.com con AWS:SourceArn; el módulo además le aplica Block Public Access
+      en: >-
+        Regular bucket (not a website endpoint) with a policy that allows s3:GetObject to the
+        cloudfront.amazonaws.com service with AWS:SourceArn; the module also applies Block Public Access to it
 gotchas:
   - id: sourcearn-condition-scopes-the-origin
     severity: security
@@ -88,7 +98,12 @@ gotchas:
     exams: [SCS-C03]
 cost:
   scales_to_zero: 'partial'
-  fixed_cost_drivers: []
+  fixed_cost_drivers:
+    - { es: "Solo si asociás WAF: AWS WAF cobra por web ACL y por regla, por mes (prorrateado por hora)", en: "Only if you attach WAF: AWS WAF charges per web ACL and per rule, per month (prorated hourly)" }
   notes:
-    es: "Con facturación pay-as-you-go cada servicio se factura por separado según el uso real: la distribución, el bucket y, si lo asociás, WAF."
-    en: "With pay-as-you-go billing each service is billed separately by actual usage: the distribution, the bucket and, if you attach it, WAF."
+    es: >-
+      Con precios pay-as-you-go, la página de precios de CloudFront indica que cada servicio se factura por separado
+      según el uso real. CloudFront ofrece además planes flat-rate mensuales; este patrón no los considera.
+    en: >-
+      With pay-as-you-go pricing, the CloudFront pricing page says each service is billed separately based on actual
+      usage. CloudFront also offers monthly flat-rate plans; this pattern doesn't consider them.

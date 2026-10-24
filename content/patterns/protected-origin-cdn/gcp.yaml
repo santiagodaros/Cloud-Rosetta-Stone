@@ -2,14 +2,32 @@ provider: gcp
 bindings:
   cdn-edge:
     service: { es: "Cloud CDN sobre un backend bucket de un Application Load Balancer externo global", en: "Cloud CDN on a backend bucket of a global external Application Load Balancer" }
-    config: { es: "Backend bucket con enable_cdn, cache_mode CACHE_ALL_STATIC y una clave de URLs firmadas; proxy HTTPS con certificado administrado", en: "Backend bucket with enable_cdn, cache_mode CACHE_ALL_STATIC and a signed URL key; HTTPS proxy with a managed certificate" }
+    config:
+      es: >-
+        El módulo crea el backend bucket con enable_cdn, cache_mode CACHE_ALL_STATIC y una clave de URLs
+        firmadas, y un proxy HTTPS con certificado administrado
+      en: >-
+        The module creates the backend bucket with enable_cdn, cache_mode CACHE_ALL_STATIC and a signed URL
+        key, and an HTTPS proxy with a managed certificate
     from:
       aws:
-        es: "Además de que Cloud CDN lea el bucket con su propia cuenta de servicio, el acceso del visitante se controla firmando URLs en el backend bucket."
-        en: "Besides Cloud CDN reading the bucket with its own service account, visitor access is controlled by signing URLs on the backend bucket."
+        es: >-
+          Cloud CDN lee el bucket con su propia cuenta de servicio. El módulo crea una clave de URLs
+          firmadas, pero según la documentación Cloud CDN no bloquea los pedidos sin firma y el origen debe
+          validar las firmas.
+        en: >-
+          Cloud CDN reads the bucket with its own service account. The module creates a signed URL key, but
+          according to the documentation Cloud CDN doesn't block requests without a signature and the origin
+          must validate signatures.
   object-storage:
     service: Cloud Storage
-    config: { es: "Bucket con acceso uniforme y public_access_prevention enforced; roles/storage.objectViewer para la cuenta de servicio de Cloud CDN", en: "Bucket with uniform access and public_access_prevention enforced; roles/storage.objectViewer for the Cloud CDN service account" }
+    config:
+      es: >-
+        El módulo crea el bucket con uniform_bucket_level_access y public_access_prevention enforced, y da
+        roles/storage.objectViewer a la cuenta de servicio de Cloud CDN
+      en: >-
+        The module creates the bucket with uniform_bucket_level_access and public_access_prevention enforced,
+        and grants roles/storage.objectViewer to the Cloud CDN service account
 gotchas:
   - id: cdn-service-account-appears-with-first-key
     severity: iam
@@ -49,15 +67,20 @@ gotchas:
         indica sacar los permisos de lectura de allUsers (y allAuthenticatedUsers, si aplica) del bucket, que es
         habitual dejar públicos durante las pruebas. Aun sin acceso público, quien ya tiene permiso sobre el bucket,
         por ejemplo OWNER, puede acceder a Cloud Storage sin URL firmada. Y una URL firmada da acceso por tiempo
-        limitado a cualquiera que la tenga, sea o no usuario de Google. Revisá que el bucket no tenga allUsers ni
-        allAuthenticatedUsers antes de dar la entrada por cerrada, y firmá solo URLs HTTPS.
+        limitado a cualquiera que la tenga, sea o no usuario de Google. La misma página advierte que Cloud CDN no
+        bloquea los pedidos sin parámetro Signature ni cookie Cloud-CDN-Cookie (rechaza los de parámetros inválidos) y
+        que el origen debe validar las firmas y aceptar o rechazar los pedidos sin firma. Revisá que el bucket no
+        tenga allUsers ni allAuthenticatedUsers antes de dar la entrada por cerrada, y firmá solo URLs HTTPS.
       en: >-
         For signed URLs to protect the content, the origin must not grant public access: the documentation says to
         remove the allUsers (and allAuthenticatedUsers, if applicable) read permissions from the bucket, which is
         commonly left public during testing. Even without public access, anyone who already has permission on the
         bucket, such as OWNER, can access Cloud Storage without a signed URL. And a signed URL gives time-limited
-        access to anyone who holds it, whether or not they have a Google Account. Check that the bucket has neither
-        allUsers nor allAuthenticatedUsers before calling the entry closed, and sign only HTTPS URLs.
+        access to anyone who holds it, whether or not they have a Google Account. The same page warns that Cloud CDN
+        doesn't block requests without a Signature query parameter or Cloud-CDN-Cookie cookie (it rejects those with
+        invalid parameters) and that the origin must validate signatures and accept or reject unsigned requests. Check
+        that the bucket has neither allUsers nor allAuthenticatedUsers before calling the entry closed, and sign only
+        HTTPS URLs.
     sources:
       - https://docs.cloud.google.com/cdn/docs/using-signed-urls
     verified_at: 2026-10-24
@@ -91,5 +114,9 @@ cost:
   fixed_cost_drivers:
     - { es: "Regla de reenvío global del balanceador (por hora)", en: "The load balancer's global forwarding rule (hourly)" }
   notes:
-    es: Las reglas de reenvío globales se facturan por hora; Cloud CDN suma ancho de banda y pedidos, y el bucket su almacenamiento y operaciones.
-    en: Global forwarding rules are billed hourly; Cloud CDN adds bandwidth and requests, and the bucket adds its storage and operations.
+    es: >-
+      Las reglas de reenvío globales se facturan por hora. Cloud CDN cobra cache data transfer out, cache fill y cache
+      lookup requests; en un fallo de caché se suman los cargos de operaciones de Cloud Storage que apliquen.
+    en: >-
+      Global forwarding rules are billed hourly. Cloud CDN charges cache data transfer out, cache fill and cache
+      lookup requests; on a cache miss, any applicable Cloud Storage operation charges are added.
