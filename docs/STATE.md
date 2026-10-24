@@ -49,7 +49,7 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] Discussions habilitado (2026-10-24).
 - [ ] Private vulnerability reporting (lo referencia SECURITY.md): la API de GitHub responde 404 (lectura y escritura) con el token actual; se activa desde Settings → Code security → Private vulnerability reporting.
 - [x] Labels `freshness`, `good first issue`, `dependencies`, `terraform`, `reviewer` y `review-queue` creados (2026-10-24).
-- [ ] Decidir F4-21 (medir retención vs. "sin trackers"); si se adopta, actualizar README y D8.
+- [x] F4-21 decidido (2026-10-24): solo métricas proxy, sin analytics; README y D8 no cambian. Cómo leerlas: `docs/MANTENEDOR-SETUP.md`, sección 7.
 
 ### 5. Higiene técnica
 - [x] Script `lint` (ESLint 9, flat config) en `package.json`, `verify` y el CI. Encontró un bug real en el service worker (regex dentro de un template literal que perdía la barra).
@@ -57,6 +57,7 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] `Retry-After` respetado en el 429/503 de `scripts/fetch-prices.ts` (tope 60 s).
 - [x] Test que compara los conteos del README con el contenido (`tests/readme-counts.test.ts`).
 - [x] Decidido: se queda Renovate (`renovate.json`) y se borró `.github/dependabot.yml`. Renovate cubre npm, acciones de GitHub, providers de Terraform y plugins de tflint. Falta instalar la app (ver `docs/MANTENEDOR-SETUP.md`, sección 6): hasta entonces no hay ningún bot de dependencias activo.
+- [ ] **Decidir la visibilidad del repo (hoy PRIVADO).** Explica el 404 del reporte privado de vulnerabilidades, la falta de protección de ramas, el CI bloqueado y que los revisores externos no ven los issues #25 y #26. Auditoría previa a publicar hecha (sin secretos en el historial, licencias en orden): `docs/MANTENEDOR-SETUP.md`, sección 8.
 - [ ] El CI de GitHub no corre: la cuenta tiene un problema de facturación ("recent account payments have failed or your spending limit needs to be increased"). Hasta resolverlo, ninguna rama pasó CI real; todo se validó localmente con las versiones del CI.
 
 ### Congelado (no empezar)

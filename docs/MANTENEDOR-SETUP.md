@@ -92,13 +92,48 @@ plugins de tflint, según `renovate.json`. Es el único bot de dependencias del 
 Nota: el CI es la red de seguridad de esos PRs (validate, test, tflint y checkov). Mientras el CI de GitHub no corra
 por la facturación, no mergees PRs de Renovate sin correr `pnpm verify` y los tests de Terraform en local.
 
-## 7. Decisión pendiente: medir retención (F4-21)
+## 7. Medir retención (F4-21): decidido, solo métricas proxy
 
-Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores del feed Atom, tráfico de
-GitHub, descargas del dataset). Si se adopta analytics, actualizar README y el diferencial D8 ("sin trackers") en
-`docs/PLAN.md`. Mientras no se decida, no se agrega nada.
+Decisión del 2026-10-24: no se agrega analytics (ni Cloudflare Web Analytics ni otro). El "sin trackers, $0" es un
+diferencial del proyecto (D8) y todavía no hay tráfico que justifique romperlo. Las señales que se miran son las que ya
+da GitHub, sin instalar nada:
+
+```bash
+gh api repos/OWNER/REPO/traffic/views                # vistas y visitantes únicos, últimos 14 días
+gh api repos/OWNER/REPO/traffic/clones               # clones
+gh api repos/OWNER/REPO/traffic/popular/referrers    # de dónde llega la gente
+gh api repos/OWNER/REPO/traffic/popular/paths        # qué páginas del repo leen
+gh api repos/OWNER/REPO --jq '{stars:.stargazers_count, forks:.forks_count, watchers:.subscribers_count}'
+```
+
+GitHub solo guarda 14 días de tráfico: para tener historia hay que anotar los números cada semana. Se suman los PRs y
+issues de gente externa. Se revisa la decisión si el proyecto llega a ~1.000 estrellas (el benchmark de `docs/PLAN.md`,
+sección 5) o si aparece una pregunta que estas señales no puedan responder.
+
+## 8. Visibilidad del repo (hoy es privado)
+
+Verificado el 2026-10-24 con `gh repo view`: `visibility: PRIVATE`. Eso explica varias cosas que parecían problemas separados:
+
+- **La convocatoria de revisores no llega a nadie.** Los issues #25 y #26, `CODEOWNERS`, los `good first issue` y Hacktoberfest apuntan a gente externa, que con el repo privado no ve nada salvo que la invites como colaboradora.
+- **El reporte privado de vulnerabilidades da 404.** Esa función solo existe en repos públicos (`SECURITY.md` la menciona).
+- **No hay protección de ramas ni rulesets** ("Upgrade to GitHub Pro or make this repository public").
+- **El CI bloqueado** ("recent account payments have failed or your spending limit needs to be increased") es un límite de la cuenta por usar Actions en repos privados. Los repos públicos tienen minutos de Actions gratuitos.
+
+El sitio ya es público y el README presenta el proyecto como abierto (código MIT, contenido CC BY-SA), así que lo coherente es publicar el repo. Auditoría previa, hecha el 2026-10-24:
+
+- **Secretos:** ningún patrón de credenciales (AWS, GitHub, Slack, claves privadas, API keys) en los 119 commits del historial, ni archivos de credenciales versionados.
+- **Licencias:** `LICENSE` (MIT) y `LICENSE-CONTENT.md` (CC BY-SA 4.0) ya están. Los 63 archivos de `.claude/skills/` son de terceros (MIT, © 2025 Corey Haines) y no tenían su aviso: se agregó a `NOTICE.md`.
+- **Contenido interno:** no hay datos de clientes, tenants ni cuentas (el repo no tiene `.private-terms`). `.claude/settings.json` nombra plugins de un marketplace privado: es inocuo, pero conviene saberlo.
+
+Qué cambia al publicar: el CI de GitHub vuelve a correr sin costo, se habilitan el reporte privado de vulnerabilidades y la protección de ramas, y los revisores externos pueden ver los issues y abrir PRs. Es reversible (se puede volver a privado), pero los forks y clones que alguien haya hecho mientras fue público quedan.
+
+```bash
+gh repo edit OWNER/REPO --visibility public --accept-visibility-change-consequences
+```
+
+Después: activar el reporte privado de vulnerabilidades (Settings → Code security), proteger `main` (exigir PR y los checks del CI), correr el CI a mano sobre `main` para confirmar el Terraform y revisar que Renovate tenga acceso.
 
 ## Orden sugerido
 
-2 → 1 → 5 → 4 → 3 → 6. Lo primero deja que `prices.yml` funcione; los labels evitan que los workflows fallen al crear
+8 → 2 → 1 → 5 → 4 → 3 → 6 → 7. Lo primero deja que `prices.yml` funcione; los labels evitan que los workflows fallen al crear
 issues.
