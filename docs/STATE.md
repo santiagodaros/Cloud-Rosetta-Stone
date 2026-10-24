@@ -25,6 +25,9 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [ ] Al incorporar un revisor: descomentar su nube en `.github/CODEOWNERS`.
 
 ### 2. Patrones (meta: 12 a seis meses; hoy 5)
+- [x] Borradores construidos en rama `feat/new-patterns` (2026-10-24): `app-secrets` (#16), `controlled-egress` (#17), `hub-and-spoke` (#15), 49 gotchas. Cada uno lo escribió un agente y lo verificó otro contra las fuentes (32 confirmados, 14 parciales, 2 dudosos, 1 no verificable); los hallazgos se corrigieron con cita textual o recorte.
+- [ ] Para publicar cada uno: CI verde del Terraform (nunca se ejecutó localmente, no hay `terraform` en la máquina), filas en `content/pricing.yaml` (floors) y `content/terraform-map.yaml`, revisión humana, y recién ahí `status: published`.
+- [ ] Abiertos tras la corrección: `scales_to_zero: partial` provisional en GCP de hub-and-spoke (sin precio verificado del firewall endpoint); `terraform-map` y `pricing` sin cargar; los `#checkov:skip` de app-secrets se escribieron de memoria.
 - [ ] #15 hub-and-spoke, #16 secretos, #17 egress/NAT.
 - [ ] Un patrón nuevo por mes, sin funciones nuevas en paralelo.
 
