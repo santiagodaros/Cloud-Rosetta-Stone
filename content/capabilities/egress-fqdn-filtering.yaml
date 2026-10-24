@@ -20,5 +20,5 @@ providers:
       - service: "Cloud NGFW (FQDN objects en firewall policies)"
         docs: https://docs.cloud.google.com/firewall/docs/fqdn-objects-overview
 caveats:
-  - es: "El mecanismo difiere. Las reglas de aplicación de Azure Firewall (HTTP/S y MSSQL) y las listas de dominios de Network Firewall (HTTP y HTTPS) se apoyan en el SNI o el encabezado Host. Los FQDN objects de Cloud NGFW, y los FQDN de las reglas de red de Azure Firewall, se resuelven a IPs por DNS."
-    en: "The mechanism differs. Azure Firewall application rules (HTTP/S and MSSQL) and Network Firewall domain lists (HTTP and HTTPS) rely on the SNI or the Host header. Cloud NGFW FQDN objects, and the FQDNs in Azure Firewall network rules, are resolved to IPs through DNS."
+  - es: "El mecanismo difiere. Las reglas de aplicación de Azure Firewall (HTTP/S y MSSQL) y las listas de dominios de Network Firewall (con TLS_SNI y HTTP_HOST, HTTP y HTTPS) se apoyan en el SNI o el encabezado Host. Los FQDN objects de Cloud NGFW, y los FQDN de las reglas de red de Azure Firewall, se resuelven a IPs por DNS."
+    en: "The mechanism differs. Azure Firewall application rules (HTTP/S and MSSQL) and Network Firewall domain lists (with TLS_SNI and HTTP_HOST, HTTP and HTTPS) rely on the SNI or the Host header. Cloud NGFW FQDN objects, and the FQDNs in Azure Firewall network rules, are resolved to IPs through DNS."

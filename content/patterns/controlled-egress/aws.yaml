@@ -95,8 +95,8 @@ gotchas:
   - id: network-firewall-domain-list
     severity: security
     title:
-      es: La lista de dominios de Network Firewall mira solo HTTP/HTTPS, por SNI o Host, y solo el tráfico de su VPC
-      en: The Network Firewall domain list looks only at HTTP/HTTPS, by SNI or Host, and only at its own VPC's traffic
+      es: La lista de dominios de Network Firewall se apoya en el SNI o el Host, no en las IPs, y por defecto mira el tráfico de su VPC
+      en: The Network Firewall domain list relies on the SNI or Host, not on IPs, and by default looks at its own VPC's traffic
     body:
       es: >-
         Para HTTPS Network Firewall usa el SNI del handshake TLS y para HTTP el encabezado Host; no pausa la conexión
@@ -154,5 +154,5 @@ cost:
     - { es: "NAT gateway (por hora, uno por AZ)", en: "NAT gateway (hourly, one per AZ)" }
     - { es: "Firewall endpoint de Network Firewall (por hora, uno por AZ)", en: "Network Firewall endpoint (hourly, one per AZ)" }
   notes:
-    es: El NAT gateway y cada firewall endpoint se cobran por hora aunque no haya tráfico, más un cargo por GB procesado. AWS exime el cargo del NAT gateway que está en el mismo camino que el firewall, con las condiciones de la página de precios.
-    en: The NAT gateway and each firewall endpoint are billed hourly even with no traffic, plus a per-GB processed charge. AWS waives the charge of a NAT gateway in the same path as the firewall, under the conditions on the pricing page.
+    es: El NAT gateway y cada firewall endpoint se cobran por hora mientras estén disponibles, más un cargo por GB procesado. AWS exime el cargo del NAT gateway que está en el mismo camino que el firewall, con las condiciones de la página de precios.
+    en: The NAT gateway and each firewall endpoint are billed hourly while available, plus a per-GB processed charge. AWS waives the charge of a NAT gateway in the same path as the firewall, under the conditions on the pricing page.

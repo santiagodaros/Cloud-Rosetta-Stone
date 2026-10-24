@@ -25,7 +25,7 @@ gotchas:
         subnet se haga privada. Las herramientas que fijan una versión de API anterior (la doc nombra a Terraform)
         dejan el valor en null, que permite la salida implícita. Declará un método explícito (NAT Gateway) y fijá
         la subnet como privada de forma explícita; las VMs que ya existen tienen que pasar por stop/deallocate para
-        que el cambio les aplique. Sin salida explícita, Windows Update y la activación de Windows no funcionan.
+        que el cambio les aplique. En una subnet privada sin salida explícita, Windows Update y la activación de Windows no funcionan.
       en: >-
         A VM without an explicit outbound method gets a default outbound public IP. That IP is owned by Microsoft and
         can change without notice, so it is no good for a third-party allowlist. For the API version released after
@@ -33,8 +33,8 @@ gotchas:
         and new VMs in them keep getting the default IP unless the subnet is made private. Tools that pin an earlier
         API version (the doc names Terraform) leave the value as null, which allows implicit outbound access. Declare
         an explicit method (NAT Gateway) and set the subnet to private explicitly; existing VMs must be stopped and
-        deallocated for the change to take effect. Without explicit outbound, Windows Update and Windows activation
-        don't work.
+        deallocated for the change to take effect. In a private subnet without explicit outbound, Windows Update and Windows
+        activation don't work.
     sources:
       - https://learn.microsoft.com/azure/virtual-network/ip-services/default-outbound-access
     verified_at: 2026-10-24
@@ -129,20 +129,19 @@ gotchas:
   - id: nat-and-firewall-billing
     severity: cost
     title:
-      es: NAT Gateway y Azure Firewall se cobran por hora aunque no haya tráfico, más por GB procesado
-      en: NAT Gateway and Azure Firewall are billed hourly even with no traffic, plus per GB processed
+      es: NAT Gateway y Azure Firewall se cobran por hora, más por GB procesado
+      en: NAT Gateway and Azure Firewall are billed hourly, plus per GB processed
     body:
       es: >-
         La página de precios del NAT Gateway cobra horas de recurso y datos procesados (tráfico de salida y de
         respuesta), y aclara que la tarifa por hora se cobra aunque el NAT Gateway no tenga subnets ni IPs asociadas;
         además aplican cargos de ancho de banda. Azure Firewall cobra una tarifa fija por hora por deployment,
-        independiente de la escala, más un cargo por GB procesado. Con los dos en el camino corren los dos
-        medidores. Si no necesitás filtrar por destino, el NAT Gateway solo ya da la IP fija sin el firewall.
+        independiente de la escala, más un cargo por GB procesado. Si no necesitás filtrar por destino, el NAT Gateway solo ya da la IP fija sin el firewall.
       en: >-
         The NAT Gateway pricing page charges resource hours and data processed (outbound and return traffic), and
         states that the hourly rate is charged regardless of the NAT gateway having subnets or public IPs attached;
         bandwidth charges also apply. Azure Firewall charges a fixed hourly fee per deployment, regardless of scale,
-        plus a per-GB processed charge. With both in the path, both meters run. If you don't need to filter by
+        plus a per-GB processed charge. If you don't need to filter by
         destination, the NAT gateway alone already gives the fixed IP without the firewall.
     sources:
       - https://azure.microsoft.com/pricing/details/azure-nat-gateway/
@@ -156,5 +155,5 @@ cost:
     - { es: "NAT Gateway (por hora)", en: "NAT Gateway (hourly)" }
     - { es: "Azure Firewall (por hora por deployment)", en: "Azure Firewall (hourly per deployment)" }
   notes:
-    es: El NAT Gateway y el firewall se cobran por hora aunque no haya tráfico, y los dos suman un cargo por GB procesado. Al NAT Gateway se le suman cargos de ancho de banda.
-    en: The NAT gateway and the firewall are billed hourly even with no traffic, and both add a per-GB processed charge. The NAT gateway also adds bandwidth charges.
+    es: El NAT Gateway y el firewall se cobran por hora (el NAT Gateway, aunque no tenga subnets ni IPs asociadas), y los dos suman un cargo por GB procesado. Al NAT Gateway se le suman cargos de ancho de banda.
+    en: The NAT gateway and the firewall are billed hourly (the NAT gateway even with no subnets or public IPs attached), and both add a per-GB processed charge. The NAT gateway also adds bandwidth charges.
