@@ -196,5 +196,5 @@ cost:
   scales_to_zero: 'partial'
   fixed_cost_drivers: []
   notes:
-    es: Esta ficha no cuantifica costos. Habilitar Data Access logs puede generar cargos por uso de logs adicional, y los logs retenidos más allá del período por defecto de un bucket tienen costo de retención (ver el gotcha data-access-logs-enabled-at-the-source).
-    en: This card doesn't quantify costs. Enabling Data Access logs might result in additional log usage charges, and logs retained longer than a bucket's default retention period have retention costs (see the data-access-logs-enabled-at-the-source gotcha).
+    es: Esta ficha no cuantifica costos. La clasificación partial de scales_to_zero es del autor, sin fuente que la respalde. Habilitar Data Access logs puede generar cargos por uso de logs adicional, y los logs retenidos más allá del período por defecto de un bucket tienen costo de retención (ver el gotcha data-access-logs-enabled-at-the-source).
+    en: This card doesn't quantify costs. The partial classification of scales_to_zero is the author's, with no source backing it. Enabling Data Access logs might result in additional log usage charges, and logs retained longer than a bucket's default retention period have retention costs (see the data-access-logs-enabled-at-the-source gotcha).

@@ -36,7 +36,7 @@ gotchas:
       - https://learn.microsoft.com/azure/azure-monitor/platform/activity-log
     verified_at: 2026-10-24
     roles: [audit-log, destination]
-    exams: [AZ-104, SC-500]
+    exams: [AZ-104]
   - id: management-group-setting-misses-subscription-events
     severity: security
     title:
@@ -135,5 +135,5 @@ cost:
   scales_to_zero: 'partial'
   fixed_cost_drivers: []
   notes:
-    es: Esta ficha no cuantifica costos. El Activity Log no cobra ingesta en Log Analytics y su retención se cobra después de los 90 días (ver el gotcha activity-log-ingestion-cost).
-    en: This card doesn't quantify costs. The Activity Log has no ingestion charge in Log Analytics and its retention is charged after 90 days (see the activity-log-ingestion-cost gotcha).
+    es: Esta ficha no cuantifica costos. La clasificación partial de scales_to_zero es del autor, sin fuente que la respalde. El Activity Log no cobra ingesta en Log Analytics y su retención se cobra después de los 90 días (ver el gotcha activity-log-ingestion-cost).
+    en: This card doesn't quantify costs. The partial classification of scales_to_zero is the author's, with no source backing it. The Activity Log has no ingestion charge in Log Analytics and its retention is charged after 90 days (see the activity-log-ingestion-cost gotcha).

@@ -9,14 +9,14 @@ bindings:
       en: "It is AWS's audit record and delivers logs as files to S3; it isn't CloudWatch Logs, the service the dictionary associates with centralized logging. Member accounts see the trail but can't delete it, turn it off or change which events it logs."
   destination:
     service: Amazon S3
-    config: { es: "Bucket en la cuenta de log archive con SSE-KMS, versionado, acceso público bloqueado y expiración por ciclo de vida", en: "Bucket in the log archive account with SSE-KMS, versioning, public access blocked and lifecycle expiration" }
+    config: { es: "Decisión del módulo (main.tf): bucket en la cuenta de log archive con SSE-KMS, versionado, acceso público bloqueado y expiración por ciclo de vida", en: "Module decision (main.tf): bucket in the log archive account with SSE-KMS, versioning, public access blocked and lifecycle expiration" }
     equivalence: partial
     notes:
-      es: "El destino es un bucket de archivos de log, no un servicio de consulta como un workspace: leer implica consultar los objetos (por ejemplo con Athena)."
-      en: "The destination is a bucket of log files, not a query service like a workspace: reading means querying the objects (for example with Athena)."
+      es: "El destino es un bucket S3 donde CloudTrail entrega los logs como archivos. El cifrado, el versionado y la retención son decisiones del módulo, no un comportamiento documentado del servicio."
+      en: "The destination is an S3 bucket where CloudTrail delivers the logs as files. Encryption, versioning and retention are the module's decisions, not documented service behavior."
   access:
     service: { es: "Bucket policy y key policy", en: "Bucket policy and key policy" }
-    config: { es: "CloudTrail escribe con aws:SourceArn del trail; los lectores se listan de forma explícita en la bucket policy y con kms:Decrypt en la key policy", en: "CloudTrail writes with the trail's aws:SourceArn; readers are listed explicitly in the bucket policy and with kms:Decrypt in the key policy" }
+    config: { es: "Decisión del módulo (main.tf): CloudTrail escribe con aws:SourceArn del trail; si se pasa reader_role_arns, la bucket policy les da s3:GetObject y s3:ListBucket y la key policy les da kms:Decrypt", en: "Module decision (main.tf): CloudTrail writes with the trail's aws:SourceArn; if reader_role_arns is set, the bucket policy grants them s3:GetObject and s3:ListBucket and the key policy grants them kms:Decrypt" }
 gotchas:
   - id: org-trail-validation-failures-dont-block
     severity: reliability
@@ -39,35 +39,40 @@ gotchas:
         bucket and calling update-trail.
     sources:
       - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
-      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-trail-organization-troubleshooting.html
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-troubleshooting.html
     verified_at: 2026-10-24
     roles: [audit-log, destination]
-    exams: [SCS-C03, SAA-C03]
+    exams: [SCS-C03]
   - id: org-bucket-policy-needs-org-statement
     severity: iam
     title:
-      es: La bucket policy de un trail de organización necesita su propia sentencia, y por defecto solo management lee los logs
-      en: An organization trail's bucket policy needs its own statement, and by default only management reads the logs
+      es: En el ejemplo oficial, la bucket policy de un trail de organización necesita su propia sentencia y los logs son accesibles solo para management
+      en: In the official example, an organization trail's bucket policy needs its own statement and the logs are accessible only to management
     body:
       es: >-
-        El bucket de un trail de organización necesita una policy que deje a CloudTrail escribir los logs de la
-        organización: el ejemplo oficial tiene tres sentencias (GetBucketAcl, PutObject en el prefijo de la cuenta de
-        management y PutObject en el prefijo AWSLogs/o-<id de la organización>/). El aws:SourceArn tiene que ser el
-        ARN de un trail de la cuenta de management, con el ID de esa cuenta. Esa policy no da acceso a usuarios de las
-        cuentas miembro: por defecto, los logs de la organización son accesibles solo para la cuenta de management.
-        Listá de forma explícita a quién querés dar lectura y no asumas que las cuentas miembro leen.
+        Alcance de la fuente: el ejemplo oficial es de un bucket que pertenece a la cuenta de management de la
+        organización; la documentación no cubre un bucket en otra cuenta (como la de log archive de este módulo), así
+        que probalo en un entorno de prueba. El bucket de un trail de organización necesita una policy que deje a
+        CloudTrail escribir los logs de la organización: el ejemplo oficial tiene tres sentencias (GetBucketAcl,
+        PutObject en el prefijo de la cuenta de management y PutObject en el prefijo AWSLogs/o-<id de la
+        organización>/). El aws:SourceArn tiene que ser el ARN de un trail de la cuenta de management, con el ID de
+        esa cuenta. Esa policy no da acceso a usuarios de las cuentas miembro: por defecto, los logs de la
+        organización son accesibles solo para la cuenta de management. Listá de forma explícita a quién querés dar
+        lectura y no asumas que las cuentas miembro leen.
       en: >-
-        The bucket of an organization trail needs a policy that lets CloudTrail write the organization's logs: the
-        official example has three statements (GetBucketAcl, PutObject on the management account prefix and PutObject
-        on the AWSLogs/o-<organization id>/ prefix). The aws:SourceArn must be the ARN of a trail owned by the
-        management account, using that account's ID. That policy doesn't give access to users in member accounts: by
-        default, the organization's log files are accessible only to the management account. List explicitly who you
-        want to grant read access to and don't assume member accounts can read.
+        Scope of the source: the official example is a bucket owned by the organization's management account; the
+        documentation doesn't cover a bucket in another account (such as this module's log archive account), so test
+        it in a non-production environment. The bucket of an organization trail needs a policy that lets CloudTrail
+        write the organization's logs: the official example has three statements (GetBucketAcl, PutObject on the
+        management account prefix and PutObject on the AWSLogs/o-<organization id>/ prefix). The aws:SourceArn must be
+        the ARN of a trail owned by the management account, using that account's ID. That policy doesn't give access
+        to users in member accounts: by default, the organization's log files are accessible only to the management
+        account. List explicitly who you want to grant read access to and don't assume member accounts can read.
     sources:
       - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create-s3-bucket-policy-for-cloudtrail.html
     verified_at: 2026-10-24
     roles: [destination, access]
-    exams: [SCS-C03, SAA-C03]
+    exams: [SCS-C03]
   - id: opt-in-home-region
     severity: reliability
     title:
@@ -88,7 +93,6 @@ gotchas:
         if an account doesn't show up in the bucket, check this point.
     sources:
       - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
-      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-trail-organization-troubleshooting.html
     verified_at: 2026-10-24
     roles: [audit-log]
     exams: [SCS-C03]
@@ -159,13 +163,16 @@ gotchas:
         afterwards.
     sources:
       - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create-s3-bucket-policy-for-cloudtrail.html
-      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-trail-organization-troubleshooting.html
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-troubleshooting.html
     verified_at: 2026-10-24
     roles: [audit-log, destination]
-    exams: [SAA-C03]
 cost:
   scales_to_zero: 'partial'
-  fixed_cost_drivers: []
+  fixed_cost_drivers:
+    - es: "Cada clave KMS que creás cuesta 1 USD por mes (prorrateado por hora), según la página de precios de AWS KMS."
+      en: "Each KMS key you create costs USD 1 per month (prorated hourly), according to the AWS KMS pricing page."
+    - es: "El almacenamiento de los logs en S3: se paga por los objetos almacenados, y la página de precios de CloudTrail indica que S3 se cobra aparte."
+      en: "Storing the logs in S3: you pay for the objects stored, and the CloudTrail pricing page says S3 is charged separately."
   notes:
-    es: Esta ficha no cuantifica costos. Un trail mal configurado suma cargos por los reintentos de entrega (ver el gotcha misconfigured-trail-redelivery-charges).
-    en: This card doesn't quantify costs. A misconfigured trail adds charges for delivery retries (see the misconfigured-trail-redelivery-charges gotcha).
+    es: Esta ficha no cuantifica costos. La clasificación partial de scales_to_zero es del autor, sin fuente que la respalde. Un trail mal configurado suma cargos por los reintentos de entrega (ver el gotcha misconfigured-trail-redelivery-charges).
+    en: This card doesn't quantify costs. The partial classification of scales_to_zero is the author's, with no source backing it. A misconfigured trail adds charges for delivery retries (see the misconfigured-trail-redelivery-charges gotcha).
