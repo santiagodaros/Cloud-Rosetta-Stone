@@ -93,19 +93,20 @@ gotchas:
   - id: pga-is-not-a-perimeter
     severity: networking
     title:
-      es: Private Google Access no restringe quién accede al bucket
-      en: Private Google Access doesn't restrict who reaches the bucket
+      es: Private Google Access da alcance a las APIs de Google; filtrar el origen del bucket es otro control
+      en: Private Google Access gives reach to Google APIs; filtering the bucket's origin is another control
     body:
       es: >-
-        Private Google Access solo permite que VMs sin IP pública lleguen a las APIs de Google. Para restringir
-        el origen necesitás bucket IP filtering o VPC Service Controls.
+        Las VMs que solo tienen IP interna pueden usar Private Google Access para llegar a las APIs y servicios
+        de Google. Eso resuelve el alcance, no el filtrado de origen. Bucket IP filtering permite restringir el
+        acceso al bucket según rangos de IP del cliente y redes VPC, y funciona junto con IAM.
       en: >-
-        Private Google Access only lets VMs without public IPs reach Google APIs. To restrict origin you need
-        bucket IP filtering or VPC Service Controls.
+        VM instances that only have internal IP addresses can use Private Google Access to reach Google APIs and
+        services. That solves reachability, not origin filtering. Bucket IP filtering lets you restrict access to
+        the bucket based on client IP ranges and VPC networks, and works alongside IAM.
     sources:
       - https://docs.cloud.google.com/vpc/docs/private-google-access
       - https://docs.cloud.google.com/storage/docs/ip-filtering-overview
-      - https://docs.cloud.google.com/vpc-service-controls/docs/overview
     verified_at: 2026-10-06
     roles: [private-access, perimeter]
     exams: [PCNE, PCA]

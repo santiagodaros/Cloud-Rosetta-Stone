@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-24T16:34:03Z",
+  "generated_at": "2026-10-24T17:48:58Z",
   "currency": "USD",
   "prices": {
     "aws-alb": {
@@ -225,6 +225,13 @@
       "source": "manual",
       "as_of": "2026-10-24",
       "ref": "https://cloud.google.com/vpc/network-pricing"
+    },
+    "gcp-ngfw-endpoint": {
+      "unit_price": 1.75,
+      "unit": "hour",
+      "source": "manual",
+      "as_of": "2026-10-24",
+      "ref": "https://cloud.google.com/firewall/pricing"
     },
     "gcp-secret-active-version": {
       "unit_price": 0.06,

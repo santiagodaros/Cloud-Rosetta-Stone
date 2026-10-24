@@ -117,17 +117,17 @@ gotchas:
   - id: rbac-scope-is-container
     severity: iam
     title:
-      es: El scope mínimo de RBAC es el contenedor, no el prefijo
-      en: The smallest RBAC scope is the container, not the prefix
+      es: Los role assignments son por cuenta o contenedor; por prefijo hacen falta condiciones ABAC
+      en: Role assignments are per account or container; by prefix you need ABAC conditions
     body:
       es: >-
-        En S3 acotás la policy a arn:...:bucket/incoming/* y en GCP usás IAM Conditions por prefijo. En Azure un
-        role assignment llega como mínimo al contenedor; para acotar por ruta necesitás condiciones ABAC sobre el
-        role assignment. Alternativa simple: un contenedor dedicado a la ingesta (lo que hace este módulo).
+        Azure Storage admite role assignments a nivel de cuenta y de contenedor. Para acotar por prefijo o ruta
+        hacen falta condiciones ABAC sobre el role assignment (atributos Blob prefix y Blob path). Alternativa
+        simple: un contenedor dedicado a la ingesta (lo que hace este módulo).
       en: >-
-        In S3 you scope the policy to arn:...:bucket/incoming/* and in GCP you use IAM Conditions by prefix. In
-        Azure a role assignment reaches the container at minimum; to scope by path you need ABAC conditions on
-        the role assignment. Simple alternative: a container dedicated to ingestion (what this module does).
+        Azure Storage supports role assignments for both storage accounts and blob containers. To scope by prefix or
+        path you need ABAC conditions on the role assignment (Blob prefix and Blob path attributes). Simple
+        alternative: a container dedicated to ingestion (what this module does).
     sources:
       - https://learn.microsoft.com/azure/storage/blobs/storage-auth-abac
       - https://learn.microsoft.com/azure/storage/blobs/storage-auth-abac-attributes
@@ -137,18 +137,18 @@ gotchas:
   - id: private-endpoint-needs-dns
     severity: networking
     title:
-      es: Private Endpoint sin zona DNS privada = 403 desde la VNet
-      en: Private Endpoint without a private DNS zone = 403 from the VNet
+      es: "Private Endpoint sin zona DNS privada: el firewall del servicio puede responder 403"
+      en: "Private Endpoint without a private DNS zone: the service firewall can answer 403"
     body:
       es: >-
         Crear el Private Endpoint no alcanza: el FQDN <cuenta>.blob.core.windows.net tiene que resolver a la IP
         privada vía la zona privatelink.blob.core.windows.net vinculada a la VNet (o a tu DNS híbrido). Si resuelve a
-        la IP pública, el firewall del servicio rechaza la request con 403 y parece un problema de permisos.
+        la IP pública y la cuenta tiene firewall, este rechaza la request con 403 y parece un problema de permisos.
       en: >-
         Creating the Private Endpoint is not enough: the FQDN <account>.blob.core.windows.net must resolve to the
         private IP via the privatelink.blob.core.windows.net zone linked to the VNet (or your hybrid DNS). If it
-        resolves to the public IP, the service firewall rejects the request with 403 and looks like a permissions
-        issue.
+        resolves to the public IP and the account has a firewall, it rejects the request with 403 and looks like a
+        permissions issue.
     sources:
       - https://learn.microsoft.com/azure/private-link/private-endpoint-dns
       - https://learn.microsoft.com/azure/private-link/private-endpoint-overview

@@ -105,19 +105,17 @@ gotchas:
   - id: project-number-and-propagation
     severity: reliability
     title:
-      es: Los identificadores usan el número de proyecto, y los permisos tardan minutos en propagarse
-      en: Identifiers use the project number, and permissions take minutes to propagate
+      es: Los principals usan el número de proyecto, y los permisos tardan minutos en propagarse
+      en: Principals use the project number, and permissions take minutes to propagate
     body:
       es: >-
-        El principalSet y el workload_identity_provider que le pasás a la action son
-        projects/NÚMERO/locations/global/..., no el ID del proyecto. Además, un
-        cambio de IAM suele aplicarse en 2 minutos pero puede tardar 7 o más, así que un pipeline que se acaba de
-        configurar puede fallar en la primera corrida sin que nada esté mal.
+        Al otorgar roles a identidades externas se usa el número de proyecto, no el ID: el principalSet es
+        principalSet://iam.googleapis.com/projects/NÚMERO_DE_PROYECTO/locations/global/workloadIdentityPools/....
+        Además, un cambio de IAM suele aplicarse en 2 minutos pero puede tardar 7 o más.
       en: >-
-        The principalSet and the workload_identity_provider you pass to the action are
-        projects/NUMBER/locations/global/..., not the project ID. Also, an
-        IAM change usually applies within 2 minutes but can take 7 or more, so a freshly configured pipeline can
-        fail its first run with nothing actually wrong.
+        When granting roles to external identities you use the project number, not the project ID: the principalSet
+        is principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/....
+        Also, an IAM change usually applies within 2 minutes but can take 7 or more.
     sources:
       - https://docs.cloud.google.com/iam/docs/workload-identity-federation
       - https://docs.cloud.google.com/iam/docs/granting-changing-revoking-access

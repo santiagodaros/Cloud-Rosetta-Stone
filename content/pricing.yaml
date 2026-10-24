@@ -83,6 +83,8 @@ meters:
     docs: https://azure.microsoft.com/pricing/details/azure-firewall/
   # La API de Retail Prices solo publica la hora del NAT Gateway Standard (global); no hay un meter horario para
   # StandardV2, el default del módulo de controlled-egress. Se usa el de Standard como referencia.
+  # Reverificado 2026-10-24 con serviceName eq 'NAT Gateway' (1 página, 5 ítems): el único StandardV2 es
+  # 'StandardV2 Log Enabled' (4.0 por mes, no por hora); sin hora de StandardV2, se mantiene la de Standard.
   - id: azure-nat-gateway-hour
     provider: azure
     label: { es: 'NAT Gateway (hora, SKU Standard)', en: 'NAT Gateway (hour, Standard SKU)' }
@@ -231,6 +233,13 @@ meters:
     gcp: { service: Compute Engine, description: 'External IP addresses used by Cloud NAT' }
     manual: { unit_price: 0.005, verified_at: 2026-10-24, source: 'https://cloud.google.com/vpc/network-pricing' }
     docs: https://cloud.google.com/vpc/network-pricing
+  - id: gcp-ngfw-endpoint
+    provider: gcp
+    label: { es: 'Cloud NGFW Enterprise — firewall endpoint (por hora)', en: 'Cloud NGFW Enterprise — firewall endpoint (hourly)' }
+    unit: hour
+    gcp: { service: Cloud NGFW, description: 'Cloud NGFW Enterprise endpoint deployment' }
+    manual: { unit_price: 1.75, verified_at: 2026-10-24, source: 'https://cloud.google.com/firewall/pricing' }
+    docs: https://cloud.google.com/firewall/pricing
 
 floors:
   object-storage-ttl:
@@ -307,4 +316,6 @@ floors:
     aws:
       - { meter: aws-tgw-vpc-attachment, count: 1 }
       - { meter: aws-network-firewall-endpoint, count: 2 }
-    gcp: []
+    # firewall_zones no tiene default: se asume 1 zona (el mínimo que valida el módulo), un endpoint por zona.
+    gcp:
+      - { meter: gcp-ngfw-endpoint, count: 1 }

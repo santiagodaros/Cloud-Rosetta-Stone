@@ -104,3 +104,58 @@ run "rejects_single_az" {
 
   expect_failures = [var.azs]
 }
+
+run "firewall_logging_is_opt_in" {
+  command = plan
+
+  assert {
+    condition     = length(aws_networkfirewall_logging_configuration.this) == 0
+    error_message = "Sin alert_log_group_name no se crea la configuración de logging."
+  }
+}
+
+run "firewall_logging_to_cloudwatch_when_requested" {
+  command = plan
+
+  variables {
+    alert_log_group_name = "/aws/network-firewall/hub"
+  }
+
+  assert {
+    condition     = [for d in aws_networkfirewall_logging_configuration.this[0].logging_configuration[0].log_destination_config : d.log_type] == ["ALERT"]
+    error_message = "El logging envía los eventos ALERT."
+  }
+}
+
+run "flow_logs_are_opt_in" {
+  command = plan
+
+  assert {
+    condition     = length(aws_flow_log.inspection) == 0
+    error_message = "Sin flow_log_group_arn no se crean flow logs."
+  }
+}
+
+run "flow_logs_when_requested" {
+  command = plan
+
+  variables {
+    flow_log_group_arn = "arn:aws:logs:us-east-1:123456789012:log-group:/aws/vpc/inspection"
+    flow_log_role_arn  = "arn:aws:iam::123456789012:role/flow-logs"
+  }
+
+  assert {
+    condition     = length(aws_flow_log.inspection) == 1 && aws_flow_log.inspection[0].traffic_type == "ALL" && aws_flow_log.inspection[0].log_destination_type == "cloud-watch-logs"
+    error_message = "Con destino hay un flow log de todo el tráfico hacia CloudWatch Logs."
+  }
+}
+
+run "flow_logs_require_role" {
+  command = plan
+
+  variables {
+    flow_log_group_arn = "arn:aws:logs:us-east-1:123456789012:log-group:/aws/vpc/inspection"
+  }
+
+  expect_failures = [var.flow_log_role_arn]
+}

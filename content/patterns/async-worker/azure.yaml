@@ -27,15 +27,13 @@ gotchas:
       en: Private networking on Service Bus requires Premium, which has a high fixed cost
     body:
       es: >-
-        Private Endpoints, reglas de VNet y CMK solo existen en Premium, que se cobra por messaging unit por hora
-        aunque no haya mensajes. Standard solo admite reglas de IP. Este patrón usa Standard con autenticación solo
-        Entra ID: si el requisito es red privada, hay que pasar a Premium. En AWS, SQS se conecta por un interface VPC
-        endpoint.
+        Private Endpoints, reglas de VNet y CMK requieren namespaces Premium, que se cobran por messaging unit.
+        Standard admite reglas de firewall por IP. Este patrón usa Standard con autenticación solo Entra ID: si el
+        requisito es red privada, hay que pasar a Premium. En AWS, SQS se conecta por un interface VPC endpoint.
       en: >-
-        Private Endpoints, VNet rules and CMK only exist in Premium, billed per messaging unit per hour even with zero
-        messages. Standard only supports IP rules. This pattern uses Standard with Entra ID-only auth: if the
-        requirement is private networking, you have to move to Premium. In AWS, SQS connects through an interface VPC
-        endpoint.
+        Private Endpoints, VNet rules and CMK require Premium-tier namespaces, which are billed per messaging unit.
+        Standard supports IP firewall rules. This pattern uses Standard with Entra ID-only auth: if the requirement
+        is private networking, you have to move to Premium. In AWS, SQS connects through an interface VPC endpoint.
     sources:
       - https://learn.microsoft.com/azure/service-bus-messaging/private-link-service
       - https://learn.microsoft.com/azure/service-bus-messaging/secure-service-bus
@@ -86,16 +84,15 @@ gotchas:
   - id: keda-scaler-identity
     severity: iam
     title:
-      es: El scaler también necesita identidad, no solo el contenedor
-      en: The scaler needs an identity too, not just the container
+      es: La regla de escalado se autentica con la propiedad identity, no con auth
+      en: The scale rule authenticates with the identity property, not auth
     body:
       es: >-
-        KEDA consulta el largo de la cola por su cuenta. Para que lo haga con identidad administrada, la regla de
-        escalado usa la propiedad identity en lugar de auth. El portal no permite configurarlo: hacelo por IaC o
-        CLI.
+        Para que la regla de escalado use una identidad administrada, se configura la propiedad identity en lugar de
+        auth. El portal no lo soporta: hacelo por IaC o CLI.
       en: >-
-        KEDA queries the queue length on its own. To have it use a managed identity, the scale rule uses the
-        identity property instead of auth. The portal can't configure it: use IaC or CLI.
+        For the scale rule to use a managed identity, set the identity property instead of auth. The portal doesn't
+        support it: use IaC or CLI.
     sources:
       - https://learn.microsoft.com/azure/container-apps/scale-app
       - https://learn.microsoft.com/azure/container-apps/managed-identity

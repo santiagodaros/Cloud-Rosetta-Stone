@@ -105,12 +105,16 @@ gotchas:
       en: '"Internal" is a network control; authentication is separate IAM'
     body:
       es: >-
-        Con ingress internal, Cloud Run rechaza requests que no vengan de VPCs del mismo proyecto (o perímetro de
-        VPC SC) o de otros servicios de Google, aun usando la URL run.app. Pero la autenticación IAM sigue
-        aplicando: el cliente tiene que presentar un ID token y su cuenta de servicio necesita roles/run.invoker.
+        Con ingress internal, Cloud Run solo acepta requests de fuentes como las VPCs del mismo proyecto, un
+        perímetro de VPC SC o un internal Application Load Balancer, y de productos como Cloud Scheduler, Cloud
+        Tasks, Eventarc, Pub/Sub o Workflows si están en el mismo proyecto o perímetro y usan la URL run.app por
+        defecto. Las demás fuentes, incluida internet, no llegan. Pero la autenticación IAM sigue aplicando: el cliente
+        tiene que presentar un ID token y su cuenta de servicio necesita roles/run.invoker.
       en: >-
-        With internal ingress, Cloud Run rejects requests not coming from VPCs in the same project (or VPC SC
-        perimeter) or from other Google services, even via the run.app URL. But IAM authentication still applies:
+        With internal ingress, Cloud Run only accepts requests from sources such as VPCs in the same project, a VPC
+        SC perimeter or an internal Application Load Balancer, and from products such as Cloud Scheduler, Cloud
+        Tasks, Eventarc, Pub/Sub or Workflows if they're in the same project or perimeter and use the default
+        run.app URL. Other sources, including the internet, can't reach it. But IAM authentication still applies:
         the client must present an ID token and its service account needs roles/run.invoker.
     sources:
       - https://docs.cloud.google.com/run/docs/securing/ingress

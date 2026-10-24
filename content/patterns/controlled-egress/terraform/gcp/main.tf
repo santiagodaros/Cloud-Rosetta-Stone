@@ -8,6 +8,15 @@ locals {
   priority_allow_fqdns  = 1000
   priority_allow_ranges = 1100
   priority_deny_all     = 65000
+
+  # layer4Configs[].ipProtocol no admite "all": solo los nombres tcp, udp, icmp, esp, ah, ipip, sctp o un número IANA.
+  # Fuente: https://cloud.google.com/compute/docs/reference/rest/v1/networkFirewallPolicies/addRule
+  #   "This value can either be one of the following well known protocol strings (tcp, udp, icmp, esp, ah, ipip, sctp),
+  #   or the IP protocol number."
+  # Fuente: https://cloud.google.com/firewall/docs/firewall-policies-rule-details
+  #   "You can use the following protocol names in firewall rules: tcp, udp, icmp (for IPv4 ICMP), esp, ah, sctp, and ipip."
+  # Se enumeran todos para cubrir cualquier protocolo IPv4 con nombre. Otros protocolos IP (por número) no quedan en el deny.
+  all_ip_protocols = ["tcp", "udp", "icmp", "esp", "ah", "sctp", "ipip"]
 }
 
 # --- Cloud NAT con IPs fijas ----------------------------------------------------------------------
@@ -110,8 +119,11 @@ resource "google_compute_network_firewall_policy_rule" "allow_ranges" {
   match {
     dest_ip_ranges = var.always_allowed_cidrs
 
-    layer4_configs {
-      ip_protocol = "all"
+    dynamic "layer4_configs" {
+      for_each = local.all_ip_protocols
+      content {
+        ip_protocol = layer4_configs.value
+      }
     }
   }
 }
@@ -129,8 +141,11 @@ resource "google_compute_network_firewall_policy_rule" "deny_all" {
   match {
     dest_ip_ranges = ["0.0.0.0/0"]
 
-    layer4_configs {
-      ip_protocol = "all"
+    dynamic "layer4_configs" {
+      for_each = local.all_ip_protocols
+      content {
+        ip_protocol = layer4_configs.value
+      }
     }
   }
 }

@@ -53,6 +53,20 @@ run "allow_by_fqdn_then_deny_all" {
   }
 }
 
+run "deny_all_covers_named_protocols" {
+  command = plan
+
+  assert {
+    condition     = toset([for c in google_compute_network_firewall_policy_rule.deny_all.match[0].layer4_configs : c.ip_protocol]) == toset(["tcp", "udp", "icmp", "esp", "ah", "sctp", "ipip"])
+    error_message = "El deny de egress enumera los protocolos que admite la API (no admite 'all')."
+  }
+
+  assert {
+    condition     = !contains([for c in google_compute_network_firewall_policy_rule.deny_all.match[0].layer4_configs : c.ip_protocol], "all")
+    error_message = "ipProtocol 'all' no está documentado en layer4Configs."
+  }
+}
+
 run "ranges_rule_only_when_requested" {
   command = plan
 
