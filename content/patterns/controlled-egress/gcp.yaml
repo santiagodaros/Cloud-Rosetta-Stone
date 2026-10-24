@@ -1,0 +1,151 @@
+provider: gcp
+bindings:
+  nat:
+    service: Cloud NAT
+    config: { es: "IPs externas estáticas (MANUAL_ONLY), asignación dinámica de puertos y logging de errores", en: "Static external IPs (MANUAL_ONLY), dynamic port allocation and error logging" }
+    from:
+      azure:
+        es: "Cloud NAT se configura sobre un Cloud Router y reparte puertos de origen por VM; en Azure el NAT Gateway entrega los puertos bajo demanda a toda la subnet."
+        en: "Cloud NAT is configured on a Cloud Router and allocates source ports per VM; in Azure the NAT gateway provides ports on demand to the whole subnet."
+  filter:
+    service: Cloud NGFW
+    config: { es: "Network firewall policy con regla de egress allow por FQDN y un deny de egress de menor prioridad", en: "Network firewall policy with an allow egress rule by FQDN and a lower-priority deny egress rule" }
+    equivalence: partial
+    notes:
+      es: "Los FQDN objects se convierten periódicamente a IPs por DNS; no se evalúa el SNI como en las reglas de aplicación de Azure Firewall ni en las listas de dominios de Network Firewall."
+      en: "FQDN objects are periodically resolved to IPs through DNS; the SNI is not evaluated as in Azure Firewall application rules or Network Firewall domain lists."
+gotchas:
+  - id: cloud-nat-ports-per-vm
+    severity: reliability
+    title:
+      es: "Cloud NAT reparte puertos por VM: el mínimo por defecto es bajo y cada destino tiene su tope de conexiones"
+      en: "Cloud NAT allocates ports per VM: the default minimum is low and each destination has its own connection cap"
+    body:
+      es: >-
+        Cada IP de NAT ofrece 64.512 puertos de origen TCP. Si no indicás el mínimo de puertos por VM se usa el valor
+        por defecto, 64 con asignación estática y 32 con dinámica, y en Public NAT la asignación por defecto es la
+        estática. Con asignación estática una VM no puede usar más que sus puertos asignados, ni siquiera en picos de
+        tráfico. Además, el gateway procesa hasta 1.024 conexiones simultáneas a cada 3-tupla de destino único. La doc
+        recomienda la asignación dinámica si el uso de egress varía, pero no se puede combinar con endpoint-independent
+        mapping y, mientras se asignan puertos adicionales, puede haber timeouts o latencia. Los paquetes descartados
+        solo se registran si activás el logging de errores de Cloud NAT. El módulo habilita asignación dinámica y
+        logging de errores.
+      en: >-
+        Each NAT IP address offers 64,512 TCP source ports. If you don't specify the minimum ports per VM, the default
+        applies: 64 with static allocation and 32 with dynamic, and for Public NAT the default allocation is static.
+        With static allocation a VM can't use more than its allocated ports, even during traffic bursts. In addition,
+        the gateway can process 1,024 simultaneous connections to each unique destination 3-tuple. The doc recommends
+        dynamic allocation if egress usage varies, but it can't be combined with endpoint-independent mapping and,
+        while additional ports are being allocated, you might see timeouts or latency. Dropped packets are logged only
+        if you turn on Cloud NAT error logging. The module enables dynamic allocation and error logging.
+    sources:
+      - https://docs.cloud.google.com/nat/docs/ports-and-addresses
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [PCNE, ACE]
+  - id: cloud-nat-billing
+    severity: cost
+    title:
+      es: "Cloud NAT suma cuatro cargos: gateway por hora, GiB procesado, IPs externas por hora y transferencia de salida"
+      en: "Cloud NAT adds up four charges: gateway per hour, GiB processed, external IPs per hour and outbound transfer"
+    body:
+      es: >-
+        Para Public NAT, la página de precios define el costo total como el cargo por hora del gateway más el costo por
+        GiB procesado por el gateway, el costo por hora de las IPs externas que usa y el costo de transferencia de datos
+        saliente. El cargo por hora del gateway depende de la cantidad de VMs que lo usan y tiene un tope en 32 VMs. Al
+        presupuestar, sumá las cuatro partes: con IPs estáticas reservadas para el allowlist, cada IP se cobra por hora.
+      en: >-
+        For Public NAT, the pricing page defines the total cost as the gateway's hourly cost plus the cost per GiB
+        processed by the gateway, the hourly cost of the external IP addresses it uses and the cost of outbound data
+        transfer. The gateway's hourly price depends on the number of VMs using it and is capped at 32 VMs. When
+        budgeting, add up all four parts: with static IPs reserved for the allowlist, each IP is charged hourly.
+    sources:
+      - https://cloud.google.com/nat/pricing
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [PCA, PCNE]
+  - id: egress-allowed-by-default
+    severity: security
+    title:
+      es: "La salida está permitida por regla implícita: Cloud NAT no es el control de destinos"
+      en: "Egress is allowed by an implied rule: Cloud NAT is not the destination control"
+    body:
+      es: >-
+        Las reglas implícitas de egress permiten tráfico a cualquier IP: una VM sin regla de egress puede enviar a
+        cualquier destino. La doc de Cloud NAT describe el acceso saliente como sujeto a las reglas de firewall de
+        egress, así que con solo NAT los workloads salen a todo internet con las IPs fijas. Para limitar los destinos
+        hace falta una regla de egress explícita que deniegue, con reglas allow de mayor prioridad para lo permitido
+        (el módulo arma las dos). Ojo con el deny: también corta lo que el workload necesite fuera de esa lista, por
+        eso el módulo pide los rangos que siempre se permiten.
+      en: >-
+        The implied egress rules allow traffic to any IP address: a VM with no egress rule can send to any
+        destination. The Cloud NAT doc describes outbound access as subject to egress firewall rules, so with NAT alone
+        workloads reach the whole internet from the fixed IPs. To limit destinations you need an explicit deny egress
+        rule, with higher-priority allow rules for what is permitted (the module builds both). Mind the deny: it also
+        cuts anything else the workload needs outside that list, which is why the module asks for the always-allowed
+        ranges.
+    sources:
+      - https://docs.cloud.google.com/firewall/docs/firewalls
+      - https://docs.cloud.google.com/nat/docs/overview
+    verified_at: 2026-10-24
+    roles: [filter, nat]
+    exams: [PCNE, ACE]
+  - id: fqdn-objects-limits
+    severity: security
+    title:
+      es: "Los FQDN objects se resuelven a IPs: sin comodines, con tope de 32 IPv4 y 32 IPv6, y no sirven para googleapis.com"
+      en: "FQDN objects resolve to IPs: no wildcards, capped at 32 IPv4 and 32 IPv6, and not suited for googleapis.com"
+    body:
+      es: >-
+        Cloud NGFW resuelve periódicamente cada FQDN object a IPs, siguiendo el orden de resolución de nombres de Cloud
+        DNS de la VPC. No admite comodines (`*`) ni dominios de primer nivel. Cada FQDN object se mapea a un máximo de
+        32 direcciones IPv4 y 32 IPv6, y las que sobran se descartan. Si la respuesta es NXDOMAIN, no trae IPs
+        utilizables o el servidor DNS no responde, el objeto se ignora. La doc pide evitar registros A con TTL menor a
+        90 segundos y aclara que la mayoría de los dominios de Google, como googleapis.com, caen en estas situaciones:
+        recomienda usar IPs o address groups. Tampoco se puede usar si la VPC tiene una outbound server policy.
+        Una consulta DNS puede devolver respuestas distintas según la ubicación del cliente, así que las IPs
+        programadas pueden no incluir todas las del dominio. Usá FQDN para APIs de terceros con DNS estable y
+        verificá el TTL de cada dominio.
+      en: >-
+        Cloud NGFW periodically resolves each FQDN object to IPs, following the VPC's Cloud DNS name resolution
+        order. It doesn't support wildcards (`*`) or top-level domains. Each FQDN object maps to a maximum of 32
+        IPv4 and 32 IPv6 addresses, and the extra ones are dropped. If the answer is NXDOMAIN, has no usable IP or the
+        DNS server is unreachable, the object is ignored. The doc says to avoid A records with a TTL under 90 seconds
+        and notes that most Google domain names, such as googleapis.com, fall under these situations: it recommends
+        IP addresses or address groups. It also can't be used if the VPC has an outbound server policy. A DNS query
+        can return different answers depending on the client's location, so the programmed IPs may not include every
+        address of the domain. Use FQDNs for third-party APIs with stable DNS and check each domain's TTL.
+    sources:
+      - https://docs.cloud.google.com/firewall/docs/fqdn-objects-overview
+    verified_at: 2026-10-24
+    roles: [filter]
+    exams: [PCNE]
+  - id: google-apis-bypass-nat
+    severity: networking
+    title:
+      es: "El tráfico a las APIs de Google no sale por Cloud NAT: va por Private Google Access"
+      en: "Traffic to Google APIs doesn't leave through Cloud NAT: it goes through Private Google Access"
+    body:
+      es: >-
+        La doc de Cloud NAT dice que el tráfico hacia las APIs y servicios de Google se enruta por Private Google
+        Access, incluso cuando la VM usa Public NAT. Esas llamadas no salen con las IPs del NAT, así que un control que
+        dependa de la IP de salida no aplica a esos destinos. No esperes ver la IP del NAT en esas llamadas, y
+        tratá los dominios de Google aparte en las reglas de egress.
+      en: >-
+        The Cloud NAT doc says that traffic sent to Google APIs and services is routed through Private Google
+        Access, even when the VM uses Public NAT. Those calls don't leave with the NAT IPs, so a control that depends
+        on the egress IP doesn't apply to those destinations. Don't expect to see the NAT IP on those calls, and treat
+        Google domains separately in the egress rules.
+    sources:
+      - https://docs.cloud.google.com/nat/docs/overview
+    verified_at: 2026-10-24
+    roles: [nat]
+    exams: [PCNE]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Cloud NAT (por hora, según las VMs que lo usan)", en: "Cloud NAT (hourly, by the VMs using it)" }
+    - { es: "IPs externas del NAT (por hora)", en: "NAT external IPs (hourly)" }
+  notes:
+    es: El gateway y sus IPs externas se cobran por hora; además hay un cargo por GiB procesado y la transferencia de datos saliente. Las reglas de la firewall policy con FQDN pueden sumar el cargo de procesamiento de Cloud NGFW Standard.
+    en: The gateway and its external IPs are billed hourly; there is also a per-GiB processed charge and outbound data transfer. Firewall policy rules with FQDNs may add the Cloud NGFW Standard data processing charge.

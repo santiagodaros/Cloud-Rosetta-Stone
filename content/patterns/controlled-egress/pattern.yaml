@@ -1,0 +1,42 @@
+id: controlled-egress
+status: draft
+category: networking
+title:
+  es: Salida a internet controlada (egress / NAT)
+  en: Controlled internet egress (NAT)
+summary:
+  es: Workloads en subnets privadas salen a internet con IPs públicas fijas para allowlists de terceros, sin IPs públicas en las VMs y con control de los destinos permitidos.
+  en: Workloads in private subnets reach the internet from fixed public IPs for third-party allowlists, with no public IPs on the VMs and control over the allowed destinations.
+problem:
+  es: >-
+    Los workloads viven en subnets privadas, pero tienen que llamar a APIs de terceros y bajar actualizaciones. El
+    tercero exige un allowlist de IPs, así que la IP de salida tiene que ser fija y conocida; seguridad exige que las
+    VMs no tengan IP pública y que solo se pueda salir a los dominios aprobados. Los requisitos son: IPs de salida
+    estables, resiliencia ante la caída de una zona, filtrado por destino y un costo fijo que se entienda de antemano.
+  en: >-
+    Workloads live in private subnets, but they must call third-party APIs and download updates. The third party
+    requires an IP allowlist, so the egress IP must be fixed and known; security requires that VMs have no public IP
+    and that only approved domains can be reached. Requirements: stable egress IPs, resilience to a zone failure,
+    filtering by destination, and a fixed cost that is understood up front.
+roles:
+  - id: workloads
+    kind: actor
+    label: { es: Workloads en subnets privadas, en: Workloads in private subnets }
+  - id: filter
+    kind: capability
+    capability: egress-fqdn-filtering
+    label: { es: Filtro de salida por dominio, en: Outbound domain filter }
+  - id: nat
+    kind: capability
+    capability: nat-egress
+    label: { es: NAT con IPs fijas, en: NAT with fixed IPs }
+  - id: internet
+    kind: actor
+    label: { es: Destinos en internet (allowlist del tercero), en: Internet destinations (third-party allowlist) }
+edges:
+  - { from: workloads, to: filter, label: { es: 0.0.0.0/0 pasa por el filtro, en: 0.0.0.0/0 goes through the filter } }
+  - { from: filter, to: nat, label: { es: solo dominios permitidos, en: allowed domains only } }
+  - { from: nat, to: internet, label: { es: sale con IP fija, en: leaves from a fixed IP } }
+paths:
+  - { id: egress, label: { es: "Workload → internet", en: "Workload → internet" }, roles: [workloads, filter, nat, internet] }
+tags: [networking, egress, nat, firewall]
