@@ -43,15 +43,13 @@ gotchas:
       en: Forwarding from on-premises to the VPC's .2 address isn't supported
     body:
       es: >-
-        El resolver de la VPC (base del CIDR + 2) contesta a los recursos de la VPC. AWS indica que reenviarle
-        consultas desde on-premises u otros DNS no está soportado y puede dar resultados inestables, aunque a veces
-        parezca funcionar. Para eso existe el inbound endpoint, igual que el de Azure o la inbound
-        policy de GCP.
+        AWS indica que reenviar consultas DNS privadas a cualquier dirección base del CIDR de la VPC + 2 desde
+        on-premises u otros servidores DNS de VPC no está soportado y puede dar resultados inestables. En su lugar,
+        AWS recomienda usar un inbound endpoint de Resolver.
       en: >-
-        The VPC resolver (CIDR base + 2) answers resources in the VPC. AWS states that forwarding queries to it from
-        on-premises or other DNS servers isn't supported and can give unstable results, even if it sometimes seems
-        to work. That's what the inbound endpoint is for, just like Azure's or GCP's inbound
-        policy.
+        AWS states that forwarding private DNS queries to any VPC CIDR base + 2 address from on-premises or other VPC
+        DNS servers isn't supported and can cause unstable results. Instead, AWS recommends using a Resolver inbound
+        endpoint.
     sources:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html
     verified_at: 2026-10-06
@@ -64,13 +62,11 @@ gotchas:
       en: The private hosted zone must be associated with the inbound endpoint's VPC
     body:
       es: >-
-        El inbound endpoint resuelve con lo que ve su VPC. Si la zona está asociada solo a las VPCs de aplicación,
-        on-premises recibe NXDOMAIN aunque desde las VMs todo resuelva bien. En multi-cuenta, la zona también tiene que
-        estar asociada a la VPC del hub.
+        Para que el Resolver de la VPC resuelva las consultas entrantes con los registros de una private hosted zone,
+        la zona tiene que estar asociada a la VPC donde creaste el inbound endpoint.
       en: >-
-        The inbound endpoint resolves with what its VPC sees. If the zone is associated only with application VPCs,
-        on-premises gets NXDOMAIN even though everything resolves fine from the VMs. In multi-account setups, the zone
-        must also be associated with the hub VPC.
+        For the VPC Resolver to resolve inbound DNS queries using the records in a private hosted zone, the zone must
+        be associated with the VPC where you created the inbound endpoint.
     sources:
       - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-choose-vpc.html
     verified_at: 2026-10-06

@@ -82,21 +82,19 @@ gotchas:
   - id: thumbprint-not-used
     severity: operations
     title:
-      es: Para GitHub, el thumbprint ya no se usa (y no hace falta cargarlo)
-      en: For GitHub, the thumbprint is no longer used (and you don't need to set it)
+      es: Para GitHub, IAM no usa el thumbprint para verificar (y no hace falta cargarlo)
+      en: For GitHub, IAM doesn't use the thumbprint to verify (and you don't need to set it)
     body:
       es: >-
         IAM valida el certificado de GitHub contra su librería de CAs raíz confiables, así que thumbprint_list es
         opcional y, en el provider de Terraform, para IdPs como GitHub se guarda pero no se usa para verificar.
         Los thumbprints solo entran en juego si el IdP usa un certificado que no firma una de esas CAs, o si AWS
-        no puede obtener el certificado TLS o se requiere TLS v1.3. Muchos módulos viejos todavía hardcodean un
-        thumbprint "que hay que actualizar": para GitHub no es lo que rompe el login.
+        no puede obtener el certificado TLS o se requiere TLS v1.3.
       en: >-
         IAM validates GitHub's certificate against its library of trusted root CAs, so thumbprint_list is optional
         and, in the Terraform provider, for IdPs like GitHub it's stored but not used for verification.
         Thumbprints only come into play if the IdP uses a certificate not signed by one of those CAs, or if AWS
-        can't retrieve the TLS certificate or TLS v1.3 is required. Many old modules still hardcode a thumbprint
-        "that must be rotated": for GitHub that's not what breaks login.
+        can't retrieve the TLS certificate or TLS v1.3 is required.
     sources:
       - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
       - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_openid_connect_provider

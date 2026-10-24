@@ -89,17 +89,19 @@ gotchas:
   - id: secure-defaults-since-2023
     severity: security
     title:
-      es: Block Public Access y ACLs deshabilitadas ya son default (pero declaralos igual)
-      en: Block Public Access and disabled ACLs are already default (but declare them anyway)
+      es: Block Public Access y ACLs deshabilitadas son default en buckets nuevos (pero declaralos igual)
+      en: Block Public Access and disabled ACLs are default on new buckets (but declare them anyway)
     body:
       es: >-
-        Desde abril de 2023 S3 habilita Block Public Access y deshabilita las ACLs en todos los buckets nuevos
-        (Object Ownership en BucketOwnerEnforced). Ya no es "la" diferencia con Azure. Igual declaralos en IaC: los
-        buckets existentes no cambiaron, y declarar el estado evita drift si alguien los toca desde la consola.
+        Por default, Object Ownership es BucketOwnerEnforced y todas las ACLs están deshabilitadas. AWS anunció que,
+        a partir de abril de 2023, S3 habilitaría Block Public Access y deshabilitaría las ACLs en todos los buckets
+        nuevos, sin cambios para los existentes. Igual declaralos en IaC: declarar el estado evita drift si alguien
+        los toca desde la consola.
       en: >-
-        Since April 2023 S3 enables Block Public Access and disables ACLs on all new buckets (Object Ownership set
-        to BucketOwnerEnforced). It's no longer "the" difference with Azure. Still declare them in IaC: existing
-        buckets didn't change, and declaring the state prevents drift if someone edits them in the console.
+        By default, Object Ownership is BucketOwnerEnforced and all ACLs are disabled. AWS announced that, starting
+        in April 2023, S3 would enable Block Public Access and disable ACLs on all new buckets, with no change for
+        existing ones. Still declare them in IaC: declaring the state prevents drift if someone edits them in the
+        console.
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html

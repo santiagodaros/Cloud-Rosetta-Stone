@@ -48,12 +48,10 @@ gotchas:
     body:
       es: >-
         El token vence a los 15 minutos y se usa solo para autenticar: no afecta la sesión una vez establecida,
-        pero un token vencido hace que se rechace una conexión nueva. Una app que abre una conexión por request
-        tiene que generar un token fresco cada vez; mantené un pool y renová el token al abrir conexiones nuevas.
+        pero si intentás conectarte con un token vencido, la conexión se rechaza.
       en: >-
         The token expires after 15 minutes and is used only to authenticate: it doesn't affect the session once
-        established, but an expired token makes a new connection request fail. An app that opens a connection per
-        request must generate a fresh token each time; keep a pool and refresh the token when opening new connections.
+        established, but if you try to connect with an expired token, the connection is rejected.
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Connecting.html
@@ -67,14 +65,15 @@ gotchas:
       en: Fargate in a private subnet without NAT needs several paid VPC endpoints
     body:
       es: >-
-        Para bajar la imagen y mandar logs sin salida a internet, la tarea necesita interface endpoints de ECR (api
-        y dkr) y CloudWatch Logs, más el gateway endpoint de S3 (donde ECR guarda las capas). Cada interface
-        endpoint se cobra por hora por AZ. La alternativa (NAT
+        Para bajar la imagen sin salida a internet, la tarea necesita interface endpoints de ECR (api y dkr), más el
+        gateway endpoint de S3 (donde ECR guarda las capas). Si usa el driver de logs awslogs, también necesita el
+        interface endpoint de CloudWatch Logs. Cada interface endpoint se cobra por hora por AZ. La alternativa (NAT
         Gateway) también tiene cargo por hora y por GB.
       en: >-
-        To pull the image and ship logs without internet egress, the task needs ECR (api and dkr) and CloudWatch Logs
-        interface endpoints, plus the S3 gateway endpoint (where ECR stores layers). Each interface endpoint is billed
-        hourly per AZ. The alternative (NAT Gateway) is also billed hourly and per GB.
+        To pull the image without internet egress, the task needs ECR (api and dkr) interface endpoints, plus the S3
+        gateway endpoint (where ECR stores layers). If it uses the awslogs log driver, it also needs the CloudWatch
+        Logs interface endpoint. Each interface endpoint is billed hourly per AZ. The alternative (NAT Gateway) is
+        also billed hourly and per GB.
     sources:
       - https://repost.aws/knowledge-center/ecs-fargate-tasks-private-subnet
       - https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html
@@ -86,18 +85,19 @@ gotchas:
   - id: internal-alb-certificate
     severity: security
     title:
-      es: HTTPS en un ALB interno igual necesita un certificado de un dominio que controles
-      en: HTTPS on an internal ALB still needs a certificate for a domain you control
+      es: HTTPS en un ALB interno igual necesita un certificado de servidor SSL
+      en: HTTPS on an internal ALB still needs an SSL server certificate
     body:
       es: >-
         Para crear un listener HTTPS hay que desplegar al menos un certificado de servidor SSL (de ACM o de IAM).
-        ACM exige probar la propiedad del dominio de un certificado público por DNS, mail o HTTP, y no puede
-        validar recursos en una private hosted zone de VPC ni en ningún otro dominio privado, aunque el ALB sea
-        interno.
+        ACM no puede validar recursos en una private hosted zone de VPC ni en ningún otro dominio privado, aunque
+        el ALB sea interno. ACM no valida la propiedad del dominio en certificados importados ni firmados por una CA
+        privada.
       en: >-
         To create an HTTPS listener you must deploy at least one SSL server certificate (from ACM or IAM). ACM
-        requires proving domain ownership for a public certificate via DNS, email or HTTP, and cannot validate
-        resources in a VPC private hosted zone or any other private domain, even if the ALB is internal.
+        cannot validate resources in a VPC private hosted zone or any other private domain, even if the ALB is
+        internal. ACM does not validate domain ownership for imported certificates or for certificates signed by a
+        private CA.
     sources:
       - https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
       - https://docs.aws.amazon.com/acm/latest/userguide/domain-ownership-validation.html
@@ -107,8 +107,8 @@ gotchas:
   - id: master-password-in-secrets-manager
     severity: security
     title:
-      es: El master user existe siempre; que su contraseña la gestione Secrets Manager
-      en: The master user always exists; let Secrets Manager manage its password
+      es: Que la contraseña del master user la gestione Secrets Manager
+      en: Let Secrets Manager manage the master user password
     body:
       es: >-
         Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets Manager. El
