@@ -13,3 +13,7 @@ dist/
 !*.tfvars.example
 crash.log
 .lighthouseci/
+
+# Contexto de marketing para los skills de .claude/skills (posicionamiento, objetivos):
+# vive solo en local, nunca en el repo público.
+.agents/
