@@ -89,8 +89,7 @@ plugins de tflint, según `renovate.json`. Es el único bot de dependencias del 
 2. Renovate abre un PR de onboarding en el primer ciclo; revisalo y mergealo.
 3. Comprobá que los PRs lleguen con el label `dependencies` (y `terraform` para los providers).
 
-Nota: el CI es la red de seguridad de esos PRs (validate, test, tflint y checkov). Mientras el CI de GitHub no corra
-por la facturación, no mergees PRs de Renovate sin correr `pnpm verify` y los tests de Terraform en local.
+Nota: el CI es la red de seguridad de esos PRs (validate, test, tflint y checkov) y desde que el repo es público vuelve a correr en cada PR. Pasá siempre por los checks antes de mergear un PR de Renovate.
 
 ## 7. Medir retención (F4-21): decidido, solo métricas proxy
 
@@ -110,7 +109,10 @@ GitHub solo guarda 14 días de tráfico: para tener historia hay que anotar los 
 issues de gente externa. Se revisa la decisión si el proyecto llega a ~1.000 estrellas (el benchmark de `docs/PLAN.md`,
 sección 5) o si aparece una pregunta que estas señales no puedan responder.
 
-## 8. Visibilidad del repo (hoy es privado)
+## 8. Visibilidad del repo (era privado; pasó a público el 2026-10-24)
+
+> **Hecho el 2026-10-24.** El repo es público, el reporte privado de vulnerabilidades está activado y `main` tiene una protección mínima (PR obligatorio sin aprobaciones, sin force-push ni borrado). `main` exige además los checks "Contenido + sitio" y "Checkov (seguridad IaC)" (los más deterministas; no se exigen los que dependen de la red, como los links o los precios, para que un fallo de conexión no bloquee un merge). Pendiente: revisar el acceso de la app de Renovate. Lo que sigue es el análisis que llevó a la decisión.
+
 
 Verificado el 2026-10-24 con `gh repo view`: `visibility: PRIVATE`. Eso explica varias cosas que parecían problemas separados:
 

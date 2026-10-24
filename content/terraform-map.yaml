@@ -724,7 +724,7 @@ entries:
         under the level where it is attached.
     sources:
       - https://learn.microsoft.com/azure/governance/policy/concepts/exemption-structure
-      - https://docs.cloud.google.com/resource-manager/docs/organization-policy/understanding-hierarchy
+      - https://docs.cloud.google.com/organization-policy/hierarchy-evaluation
       - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_evaluation.html
 
   # --- Audit logging centralizado (patrón centralized-audit-logging) -----------------------

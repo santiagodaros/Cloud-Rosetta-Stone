@@ -11,7 +11,7 @@ El estado vivo (qué está hecho y qué falta) está en [`STATE.md`](./STATE.md)
 - **La verificación pasó a ser el cuello de botella, y se endureció.** La pre-verificación automática de los 74 gotchas encontró que cerca de un tercio tenía alguna afirmación que su fuente no respaldaba (`PRE-VERIFICACION.md`). Desde entonces: campo `verified_by` y badge "sin revisor externo", regla del validador que impide publicar un patrón sin al menos una revisión externa por nube, y un proceso de tres pasos para todo contenido nuevo (un agente escribe, otro lo verifica contra las fuentes oficiales, un tercero corrige). Guía para revisores en `REVISORES.md`.
 - **Los patrones nuevos entran en borrador** y se publican solo con revisión humana: `app-secrets`, `controlled-egress`, `hub-and-spoke`, `preventive-guardrails`, `centralized-audit-logging` y `protected-origin-cdn`.
 - **Renovate es el único bot de dependencias** (se descartó Dependabot). La app todavía no abrió su primer PR.
-- **El CI de GitHub no corre** por un problema de facturación de la cuenta; mientras tanto todo se valida en local con las mismas versiones y comandos del CI (Terraform, tflint, checkov, lychee, Lighthouse).
+- **El repo pasó a público el 2026-10-24** y con eso el CI de GitHub volvió a correr (estaba bloqueado por un límite de la cuenta en repos privados). Todo lo anterior se había validado en local con las mismas versiones y comandos del CI; la primera corrida real sobre `main` pasó 40 de 40 jobs (uno tras un reintento por un error de conexión del runner).
 
 
 ---
