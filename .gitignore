@@ -24,3 +24,8 @@ tfplan
 *.tfplan
 plan.json
 whatif.json
+
+
+# Contexto de marketing para los skills de .claude/skills (posicionamiento, objetivos):
+# vive solo en local, nunca en el repo público.
+.agents/
