@@ -1,0 +1,50 @@
+id: preventive-guardrails
+status: draft
+category: governance
+title:
+  es: Guardrails preventivos a nivel organización
+  en: Organization-level preventive guardrails
+summary:
+  es: Una política aplicada sobre toda la jerarquía impide que se cree una configuración peligrosa, con excepciones controladas que dejan registro.
+  en: A policy applied across the whole hierarchy prevents a dangerous configuration from being created, with controlled exceptions that leave a record.
+problem:
+  es: >-
+    Cada equipo despliega por su cuenta y un error de configuración (el ejemplo clásico: almacenamiento de objetos con
+    acceso público) se descubre cuando ya existe, en una auditoría o en un incidente. Los requisitos son: que la
+    configuración peligrosa se rechace antes de existir, que la regla se defina una vez y alcance a todo lo que cuelga
+    de la jerarquía, que haya una vía de excepción con dueño y vencimiento, y poder demostrar qué cumple y qué quedó
+    exento. Lo difícil no es escribir la regla sino su alcance: cada nube deja huecos distintos (qué identidades o
+    cuentas quedan fuera, qué pasa con lo que ya existía) y las excepciones mal diseñadas anulan el guardrail sin que
+    nadie se entere.
+  en: >-
+    Each team deploys on its own, and a configuration mistake (the classic example: object storage with public access)
+    is found once it already exists, in an audit or an incident. Requirements: the dangerous configuration is rejected
+    before it exists, the rule is defined once and reaches everything under the hierarchy, there is an exception path
+    with an owner and an expiry, and it's possible to show what complies and what is exempt. The hard part isn't
+    writing the rule but its reach: each cloud leaves different gaps (which identities or accounts fall outside, what
+    happens to what already existed) and badly designed exceptions cancel the guardrail without anyone noticing.
+roles:
+  - id: deployer
+    kind: actor
+    label: { es: Equipo que despliega, en: Deploying team }
+  - id: policy
+    kind: capability
+    capability: governance-guardrails
+    label: { es: Política preventiva sobre la jerarquía, en: Preventive policy over the hierarchy }
+  - id: exception
+    kind: capability
+    capability: access-control
+    label: { es: Excepción controlada (break-glass), en: Controlled exception (break-glass) }
+  - id: audit
+    kind: capability
+    capability: governance-guardrails
+    label: { es: Auditoría del cumplimiento, en: Compliance audit }
+edges:
+  - { from: deployer, to: policy, label: { es: crea o modifica un recurso, en: creates or changes a resource } }
+  - { from: deployer, to: exception, label: { es: pide una excepción, en: requests an exception } }
+  - { from: exception, to: policy, label: { es: scope exento con vencimiento, en: exempt scope with an expiry } }
+  - { from: policy, to: audit, label: { es: estado de cumplimiento, en: compliance state } }
+paths:
+  - { id: blocked, label: { es: "Despliegue rechazado por la política", en: "Deployment rejected by the policy" }, roles: [deployer, policy, audit] }
+  - { id: exempt, label: { es: "Despliegue con excepción", en: "Deployment with an exception" }, roles: [deployer, exception, policy, audit] }
+tags: [governance, guardrails, policy, scp, org-policy, storage, public-access]

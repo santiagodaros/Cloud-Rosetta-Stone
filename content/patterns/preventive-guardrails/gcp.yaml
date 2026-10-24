@@ -1,0 +1,140 @@
+provider: gcp
+bindings:
+  policy:
+    service: { es: "Organization Policy Service: constraint storage.publicAccessPrevention", en: "Organization Policy Service: storage.publicAccessPrevention constraint" }
+    config: { es: "enforce = TRUE en la organización (recomendado) o en una carpeta; proyectos y carpetas debajo la heredan", en: "enforce = TRUE on the organization (recommended) or on a folder; projects and folders below inherit it" }
+  exception:
+    service: { es: "Organization policy en el proyecto + IAM Conditions para delegar su administración", en: "Organization policy on the project + IAM Conditions to delegate its administration" }
+    config: { es: "Policy en el proyecto que contiene el bucket con la constraint apagada; el rol Organization Policy Administrator se puede delegar con una condición por tag", en: "Policy on the project that contains the bucket with the constraint turned off; the Organization Policy Administrator role can be delegated with a tag-based condition" }
+    equivalence: partial
+    notes:
+      es: "La excepción es una policy del proyecto que apaga la constraint; no hay un objeto de excepción con vencimiento en la documentación consultada."
+      en: "The exception is a project policy that turns the constraint off; the documentation consulted has no exception object with an expiry."
+  audit:
+    service: { es: "Cloud Asset Inventory (policies IAM de los buckets)", en: "Cloud Asset Inventory (buckets' IAM policies)" }
+    config: { es: "Inventario de los buckets con allUsers o allAuthenticatedUsers en una organización, carpeta o proyecto", en: "Inventory of buckets with allUsers or allAuthenticatedUsers across an organization, folder or project" }
+    equivalence: partial
+    notes:
+      es: "Cloud Asset Inventory muestra las policies IAM de los buckets; no es un informe de cumplimiento de la constraint."
+      en: "Cloud Asset Inventory shows the buckets' IAM policies; it isn't a compliance report for the constraint."
+gotchas:
+  - id: existing-public-grants-are-overridden-not-removed
+    severity: security
+    title:
+      es: "Con la constraint enforced, los permisos para allUsers que ya existían quedan en su lugar, anulados"
+      en: "With the constraint enforced, allUsers permissions that already existed stay in place, overridden"
+    body:
+      es: >-
+        Con public access prevention aplicada, las requests autorizadas con allUsers y allAuthenticatedUsers fallan
+        con un 401 o 403, y las IAM policies y ACL existentes que otorgan acceso a esos principals quedan en su lugar
+        pero anuladas. Si más adelante se desactiva la prevención para el proyecto, la carpeta o la organización, esos
+        permisos existentes entran en vigencia y los datos quedan accesibles al público. En sentido inverso, aplicarla
+        sobre recursos existentes puede romper una aplicación que dependa de allUsers. Antes de aplicarla, inventariá
+        los recursos públicos (Cloud Asset Inventory muestra las policies de todos los buckets de un proyecto, carpeta
+        u organización; los usage logs ayudan a ver quién los lee) y limpiá los bindings públicos en vez de dejarlos
+        anulados.
+      en: >-
+        With public access prevention applied, requests authorized with allUsers and allAuthenticatedUsers fail with a
+        401 or 403, and existing IAM policies and ACLs that grant access to those principals remain in place but are
+        overridden. If prevention is later turned off for the project, folder or organization, those existing
+        permissions take effect and the data becomes accessible to the public. In the other direction, applying it to
+        existing resources can break an application that depends on allUsers. Before applying it, inventory the public
+        resources (Cloud Asset Inventory shows the policies of all buckets in a project, folder or organization; usage
+        logs help see who reads them) and clean up the public bindings instead of leaving them overridden.
+    sources:
+      - https://docs.cloud.google.com/storage/docs/public-access-prevention
+      - https://docs.cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+    verified_at: 2026-10-24
+    roles: [policy, audit]
+    exams: [PCSE]
+  - id: exception-is-per-project-and-bucket-setting-wins
+    severity: iam
+    title:
+      es: "La excepción a la constraint se hace por proyecto, y un bucket con el setting enforced sigue protegido"
+      en: "The exception to the constraint is made per project, and a bucket with the enforced setting stays protected"
+    body:
+      es: >-
+        Para hacer excepciones en una organización que aplica public access prevention (por ejemplo, para un bucket de
+        static website hosting), la documentación indica desactivarla en el proyecto que contiene el bucket. Un bucket
+        solo puede estar en estado enforced o inherited: si es inherited, la prevención la determina la constraint del
+        proyecto, y si en el proyecto está en false no se aplica a ese bucket. Los buckets con el setting enforced
+        siguen con la prevención aunque la desactives en el proyecto, la carpeta o la organización. Consecuencia: la
+        excepción alcanza a todos los buckets inherited del proyecto, no solo al que la motivó, y no sirve para un
+        bucket enforced. Poné los buckets públicos legítimos en un proyecto propio, con el bucket en inherited, y
+        revisá ese proyecto como una excepción de todo el proyecto.
+      en: >-
+        To make exceptions in an organization that enforces public access prevention (for example, for a static
+        website hosting bucket), the documentation says to disable it on the project that contains the bucket. A
+        bucket can only be in the enforced or inherited state: if it's inherited, prevention is determined by the
+        project's constraint, and if it's false on the project it doesn't apply to that bucket. Buckets with the
+        enforced setting keep prevention even if you disable it on the project, folder or organization. Consequence:
+        the exception reaches all inherited buckets in the project, not just the one that motivated it, and it doesn't
+        work for an enforced bucket. Put legitimate public buckets in a project of their own, with the bucket set to
+        inherited, and review that project as a project-wide exception.
+    sources:
+      - https://docs.cloud.google.com/storage/docs/public-access-prevention
+    verified_at: 2026-10-24
+    roles: [exception]
+    exams: [PCSE]
+  - id: no-dry-run-for-public-access-prevention
+    severity: operations
+    title:
+      es: "La constraint storage.publicAccessPrevention no figura entre las que admiten dry-run"
+      en: "The storage.publicAccessPrevention constraint isn't among those that support dry-run"
+    body:
+      es: >-
+        Una organization policy en modo dry-run registra las violaciones en los audit logs sin denegar las acciones.
+        La documentación lista como únicas constraints disponibles para dry-run las custom, las managed y cuatro
+        legacy (Restrict service usage, Restrict endpoint usage, Restrict TLS versions y Restrict TLS cipher suites),
+        y aclara que crear una policy en dry-run con cualquier otra constraint da error. El catálogo de constraints
+        incluye storage.publicAccessPrevention entre las legacy managed, y no está en esa lista. Entonces el impacto
+        no se mide con dry-run: usá antes el inventario de recursos públicos y los usage logs que recomienda la
+        documentación de public access prevention.
+      en: >-
+        An organization policy in dry-run mode records violations in the audit logs without denying the actions. The
+        documentation lists as the only constraints available for dry-run the custom ones, the managed ones and four
+        legacy ones (Restrict service usage, Restrict endpoint usage, Restrict TLS versions and Restrict TLS cipher
+        suites), and says that creating a dry-run policy with any other constraint results in an error. The
+        constraints catalog lists storage.publicAccessPrevention among the legacy managed constraints, and it isn't in
+        that list. So the impact can't be measured with dry-run: use the inventory of public resources and the usage
+        logs that the public access prevention documentation recommends beforehand.
+    sources:
+      - https://docs.cloud.google.com/resource-manager/docs/organization-policy/dry-run-policy
+      - https://docs.cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+      - https://docs.cloud.google.com/storage/docs/public-access-prevention
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [PCSE]
+  - id: enforcement-delay-and-signed-urls
+    severity: security
+    title:
+      es: "La prevención tarda en aplicarse y no afecta a las URL firmadas"
+      en: "Prevention takes time to apply and doesn't affect signed URLs"
+    body:
+      es: >-
+        La documentación indica que el enforcement puede tardar hasta 10 minutos en aplicarse y que, una vez que
+        empieza, los objetos pueden seguir accesibles públicamente desde una caché de internet durante un tiempo que
+        depende de su Cache-Control (con el max-age por defecto de 3600 segundos, ese tiempo). Las URL firmadas, que
+        dan acceso acotado en el tiempo a quien las use, no se ven afectadas por public access prevention, y el acceso
+        a buckets privados a través de Cloud Load Balancing y Cloud CDN tampoco. Esa documentación explica que el
+        acceso de estas funciones se otorga con permisos acotados de service account. No cuentes con un efecto
+        inmediato, y controlá quién puede firmar URLs revisando esos permisos.
+      en: >-
+        The documentation says enforcement can take up to 10 minutes to take effect and that, once it begins, objects
+        might still be publicly accessible through an internet cache for a time that depends on their Cache-Control
+        (with the default max-age of 3600 seconds, that long). Signed URLs, which give time-limited access to anyone
+        who uses them, aren't affected by public access prevention, and neither is private bucket access through Cloud
+        Load Balancing and Cloud CDN. That documentation explains that access for these features is granted through
+        scoped service account permissions. Don't count on an immediate effect, and control who can sign URLs by
+        reviewing those permissions.
+    sources:
+      - https://docs.cloud.google.com/storage/docs/public-access-prevention
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [PCSE]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: "El patrón no despliega cómputo ni red: son organization policies. La facturación del servicio no se verificó en este borrador."
+    en: "The pattern deploys no compute or network: it's organization policies. The service's billing wasn't verified in this draft."
