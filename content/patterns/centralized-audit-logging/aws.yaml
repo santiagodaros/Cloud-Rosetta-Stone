@@ -166,6 +166,7 @@ gotchas:
       - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-troubleshooting.html
     verified_at: 2026-10-24
     roles: [audit-log, destination]
+    exams: [SCS-C03]
 cost:
   scales_to_zero: 'partial'
   fixed_cost_drivers:
