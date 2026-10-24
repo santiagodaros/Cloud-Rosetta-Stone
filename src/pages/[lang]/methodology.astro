@@ -62,6 +62,18 @@ const checks = [
     </section>
 
     <section class="mb-8">
+      <h2 class="mb-2 text-lg font-semibold">{es ? 'Qué garantiza el sitio y qué no' : 'What the site guarantees and what it does not'}</h2>
+      <p class="text-muted">
+        {es
+          ? 'Los chequeos automáticos garantizan que cada gotcha tiene una fuente oficial, una fecha y que el Terraform compila. No garantizan que lo que dice el gotcha sea cierto: eso lo confirma una persona leyendo la fuente. Hoy los gotchas los verifica el mantenedor; los que no tienen revisor externo lo dicen en su tarjeta ("sin revisor externo"). Cuando alguien con experiencia en esa nube los revisa, la tarjeta muestra su usuario de GitHub.'
+          : 'Automated checks guarantee that every gotcha has an official source, a date, and that the Terraform compiles. They do not guarantee that what the gotcha says is true: a person confirms that by reading the source. Today the maintainer verifies the gotchas; those without an external reviewer say so on their card ("no external reviewer"). When someone with experience in that cloud reviews them, the card shows their GitHub handle.'}
+      </p>
+      <p class="mt-3 text-sm text-muted">
+        {es ? 'Si encontrás un error, usá "Reportar desactualizado" en la tarjeta. Si querés revisar una nube, mirá CONTRIBUTING.' : 'If you find a mistake, use "Report outdated" on the card. If you want to review a cloud, see CONTRIBUTING.'}
+      </p>
+    </section>
+
+    <section class="mb-8">
       <h2 class="mb-2 text-lg font-semibold">{es ? 'Qué se chequea en cada PR' : 'What every PR is checked for'}</h2>
       <dl class="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface text-sm">
         {

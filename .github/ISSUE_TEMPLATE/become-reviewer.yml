@@ -1,0 +1,31 @@
+name: Quiero revisar una nube
+description: Tengo experiencia real en Azure, AWS o GCP y quiero re-verificar gotchas.
+labels: [reviewer, content]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Un revisor re-verifica gotchas contra la fuente oficial y deja su usuario en `verified_by`. No hace falta
+        revisar todo: con unos pocos por mes ya cambia la confianza del sitio. La cola está en `pnpm freshness --review`.
+  - type: dropdown
+    id: cloud
+    attributes:
+      label: Nube que conocés
+      options: [Azure, AWS, GCP]
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: Experiencia con esa nube
+      description: Años, tipo de trabajo, certificaciones si las tenés. Sin nombres de clientes ni datos de cuentas reales.
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Acuerdo
+      options:
+        - label: Voy a revisar contra la fuente oficial, no de memoria
+          required: true
+        - label: Acepto figurar en CODEOWNERS de esa nube

@@ -195,6 +195,14 @@ export const Gotcha = z.strictObject({
   body: Localized,
   sources: z.array(SourceUrl).min(1, 'cada gotcha necesita al menos una fuente oficial'),
   verified_at: z.iso.date(),
+  /**
+   * Usuario de GitHub (sin @) de quien re-verificó el gotcha además del mantenedor, idealmente con experiencia
+   * en esa nube. Sin campo = lo verificó el mantenedor, sin revisor externo.
+   */
+  verified_by: z
+    .string()
+    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/, 'verified_by es un usuario de GitHub, sin @')
+    .optional(),
   /** Roles del patrón a los que aplica (para el diagrama interactivo). */
   roles: z.array(slug).default([]),
   /** Códigos de examen donde este conocimiento suma (AZ-104, SAA-C03, ACE...). Deben existir en `content/exams.yaml`. */

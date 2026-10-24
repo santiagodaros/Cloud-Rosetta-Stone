@@ -40,6 +40,13 @@ describe('Gotcha', () => {
   it('exige fecha ISO', () => {
     expect(Gotcha.safeParse({ ...base, verified_at: '01/01/2026' }).success).toBe(false);
   });
+
+  it('verified_by es opcional y solo acepta un usuario de GitHub sin @', () => {
+    expect(Gotcha.safeParse(base).success).toBe(true);
+    expect(Gotcha.safeParse({ ...base, verified_by: 'some-reviewer' }).success).toBe(true);
+    expect(Gotcha.safeParse({ ...base, verified_by: '@some-reviewer' }).success).toBe(false);
+    expect(Gotcha.safeParse({ ...base, verified_by: '-bad-' }).success).toBe(false);
+  });
 });
 
 describe('crossValidate', () => {

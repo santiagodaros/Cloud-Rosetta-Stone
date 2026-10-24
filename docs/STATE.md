@@ -13,10 +13,11 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 ## Pendiente (plan, en orden)
 
 ### 1. Confianza del contenido (D2/D3) — prioridad
-- [ ] Revisor por nube para AWS y GCP (F3-05, convocatoria en #18): difundir en AWS UG y GDG LATAM.
-- [ ] Campo de quién verificó en cada gotcha (`verified_by`) y fechas escalonadas, no todas el 2026-10-06. Decidir si entra al schema.
-- [ ] Re-verificación priorizada por severidad: los gotchas de mayor severidad primero (issues `good first issue`).
-- [ ] Declarar en README y `/methodology` qué verifica el schema (hay fuente oficial) y qué no (que sea cierto).
+- [ ] Revisor por nube para AWS y GCP (F3-05, convocatoria en #18): difundir en AWS UG y GDG LATAM. Ya existe el issue "Quiero revisar una nube" (`become-reviewer.yml`); falta publicarlo y difundirlo.
+- [x] Campo `verified_by` opcional en el schema, badge en la tarjeta ("revisado por @x" / "sin revisor externo"), dataset y MCP. Los 74 gotchas actuales quedan sin el campo: no se afirma una revisión que no pasó.
+- [ ] Re-verificar de verdad (acción humana): `pnpm freshness --review` lista la cola por nube, los más severos primero. Al revisar uno, actualizar `verified_at` y sumar `verified_by`. Así las fechas dejan de ser todas el 2026-10-06.
+- [x] Declarar en README, `/methodology` y CONTRIBUTING qué verifica el schema (hay fuente oficial) y qué no (que sea cierto).
+- [ ] Al incorporar un revisor: descomentar su nube en `.github/CODEOWNERS`.
 
 ### 2. Patrones (meta: 12 a seis meses; hoy 5)
 - [ ] #15 hub-and-spoke, #16 secretos, #17 egress/NAT.
