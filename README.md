@@ -65,6 +65,8 @@ Fase 3 en curso: 5 patrones en las 3 nubes, 74 gotchas con fuente oficial, 28 ca
 | Ingesta privada de objetos con expiración (TTL) | Blob + lifecycle + Private Endpoint | S3 + lifecycle + Gateway Endpoint | GCS + lifecycle + PGA |
 | Web API privada Zero Trust (PostgreSQL sin contraseñas) | ACA interno + PG Flexible (Entra) | ECS Fargate + ALB interno + RDS IAM | Cloud Run internal + Cloud SQL IAM |
 | Worker asíncrono con escala a cero y dead-letter | ACA Jobs + Service Bus | Lambda + SQS | Cloud Run + Pub/Sub push |
+| Despliegue desde CI sin secretos (federación OIDC) | Federated identity credential | IAM OIDC provider + rol | Workload Identity Federation + service account |
+| DNS privado híbrido (on-premises ↔ nube) | DNS Private Resolver | Route 53 Resolver | Cloud DNS (inbound policy + forwarding) |
 
 ## Desarrollo local
 
