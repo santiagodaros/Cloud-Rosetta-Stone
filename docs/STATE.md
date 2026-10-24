@@ -15,6 +15,9 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 ### 1. Confianza del contenido (D2/D3) — prioridad
 - [ ] Revisor por nube para AWS y GCP (F3-05, convocatoria en #18): difundir en AWS UG y GDG LATAM. Ya existe el issue "Quiero revisar una nube" (`become-reviewer.yml`); falta publicarlo y difundirlo.
 - [x] Campo `verified_by` opcional en el schema, badge en la tarjeta ("revisado por @x" / "sin revisor externo"), dataset y MCP. Los 74 gotchas actuales quedan sin el campo: no se afirma una revisión que no pasó.
+- [x] Pre-verificación automática de los 74 gotchas contra sus fuentes (2026-10-24): `docs/PRE-VERIFICACION.md`. 44 confirmados, 28 parciales, 1 dudoso (`rds-iam-connection-rate`, AWS), 1 no verificable. No es una revisión: no cambió `verified_at` ni `verified_by`.
+- [x] Workflow semanal con segundo issue "Cola de revisión por nube" y convocatoria de revisores en `docs/launch/convocatoria-revisores.md`.
+- [ ] Resolver los 28 parciales y el dudoso: agregar una fuente que respalde la afirmación o recortarla (casi siempre números, atributos de Terraform y códigos de error). Empezar por `security` e `iam`.
 - [ ] Re-verificar de verdad (acción humana): `pnpm freshness --review` lista la cola por nube, los más severos primero. Al revisar uno, actualizar `verified_at` y sumar `verified_by`. Así las fechas dejan de ser todas el 2026-10-06.
 - [x] Declarar en README, `/methodology` y CONTRIBUTING qué verifica el schema (hay fuente oficial) y qué no (que sea cierto).
 - [ ] Al incorporar un revisor: descomentar su nube en `.github/CODEOWNERS`.

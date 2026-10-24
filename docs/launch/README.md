@@ -8,6 +8,7 @@ Todo lo necesario para lanzar Letra Chica. Los textos se pegan tal cual; los lin
 | [`linkedin.md`](./linkedin.md) | 3 posts (expectativa, lanzamiento, letra chica) × 2 variantes, más versión en inglés |
 | [`show-hn-y-reddit.md`](./show-hn-y-reddit.md) | Show HN (título + comentario del autor) y posts por subreddit |
 | [`gotcha-de-la-semana.md`](./gotcha-de-la-semana.md) | 12 semanas de posts generados desde el contenido (`pnpm launch:weekly`) |
+| [`convocatoria-revisores.md`](./convocatoria-revisores.md) | Convocatoria de revisores por nube (AWS UG, GDG LATAM, LinkedIn) y respuesta tipo |
 | [`assets/`](./assets/) | Screenshots para los posts y `social-preview.png` para el repo |
 
 ## Checklist antes del día L
