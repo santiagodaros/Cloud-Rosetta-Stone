@@ -3,6 +3,11 @@ max_retries = 3
 retry_wait_time = 5
 timeout = 30
 max_concurrency = 8
+# docs.cloud.google.com corta conexiones de forma intermitente cuando se le piden muchas URLs a la vez desde los
+# runners de GitHub ("Connection failed" en URLs distintas en cada corrida, que responden 200 desde otra red).
+# Se limitan los pedidos simultáneos por host y se espacian.
+host_concurrency = 2
+host_request_interval = "250ms"
 accept = ["200..=299", "429"]
 user_agent = "Mozilla/5.0 (compatible; letra-chica-linkcheck; +https://github.com/santiagodaros/Cloud-Rosetta-Stone)"
 exclude = [
