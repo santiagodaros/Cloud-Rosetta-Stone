@@ -264,6 +264,16 @@ export function crossValidate(data: ContentData, today = new Date()): Issue[] {
 
     const capabilityRoles = pattern.roles.filter((r) => r.kind === 'capability').map((r) => r.id);
 
+    // Regla de publicación: un patrón publicado necesita al menos una revisión externa (verified_by) por nube.
+    if (pattern.status === 'published') {
+      const unreviewed = PROVIDERS.filter((p) => implementations[p] && !implementations[p]!.gotchas.some((g) => g.verified_by));
+      if (unreviewed.length) {
+        const msg = `publicado sin revisión externa (ningún gotcha con verified_by) en: ${unreviewed.join(', ')}`;
+        if (pattern.legacy_unreviewed) warn('pattern.yaml', `${msg} (legacy_unreviewed)`);
+        else err('pattern.yaml', `${msg}: para publicar, una persona con experiencia en esa nube tiene que revisar al menos un gotcha (docs/REVISORES.md)`);
+      }
+    }
+
     for (const provider of PROVIDERS) {
       const impl = implementations[provider];
       const file = `${provider}.yaml`;

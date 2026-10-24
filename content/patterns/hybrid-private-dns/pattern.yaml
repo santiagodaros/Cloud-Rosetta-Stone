@@ -1,5 +1,6 @@
 id: hybrid-private-dns
 status: published
+legacy_unreviewed: true
 category: networking
 title:
   es: DNS privado híbrido (on-premises ↔ nube)

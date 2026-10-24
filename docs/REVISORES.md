@@ -57,5 +57,7 @@ descomenta tu nube en `.github/CODEOWNERS` y empezás por la cola.
 
 - Al sumar un revisor: descomentar su nube en `.github/CODEOWNERS` y reemplazar el placeholder.
 - Los textos de convocatoria están en [`launch/convocatoria-revisores.md`](./launch/convocatoria-revisores.md).
-- Un patrón en borrador se publica cuando: el CI del Terraform está verde, hay al menos una revisión humana de su nube
-  por gotcha y están cargados sus pisos de costo y su mapa de Terraform.
+- Un patrón en borrador se publica cuando: el CI del Terraform está verde, al menos un gotcha de cada nube lleva
+  `verified_by` (el validador lo exige: `pnpm validate` da error si falta) y están cargados sus pisos de costo y su mapa
+  de Terraform. Los 5 patrones publicados antes de la regla llevan `legacy_unreviewed: true` y aparecen como warning en
+  `pnpm validate`: la deuda queda visible hasta que se revisen.

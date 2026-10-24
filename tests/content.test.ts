@@ -102,6 +102,45 @@ describe('crossValidate', () => {
     expect(errors(d)).toEqual(['falta la implementación de azure', 'falta la implementación de aws', 'falta la implementación de gcp']);
   });
 
+  describe('regla de revisión externa para publicar', () => {
+    const gotcha = (verified_by?: string) => ({
+      id: 'g', severity: 'cost' as const, title: { es: 't', en: 't' }, body: { es: 'b', en: 'b' },
+      sources: ['https://docs.aws.amazon.com/x'], verified_at: '2026-10-01', exams: [], roles: [], ...(verified_by ? { verified_by } : {}),
+    });
+    const published = (reviewer?: string, legacy = false) => {
+      const d = minimal();
+      d.patterns[0].pattern.status = 'published';
+      if (legacy) d.patterns[0].pattern.legacy_unreviewed = true;
+      d.patterns[0].implementations.aws = {
+        provider: 'aws',
+        bindings: { q: { service: 'SQS', equivalence: 'full' } },
+        gotchas: [gotcha(reviewer)],
+        cost: { scales_to_zero: 'yes', fixed_cost_drivers: [], notes: { es: 'n' } },
+      };
+      return d;
+    };
+
+    it('un patrón publicado sin ningún verified_by en una nube es un error', () => {
+      expect(errors(published()).join('\n')).toMatch(/publicado sin revisión externa .* en: aws/);
+    });
+
+    it('con un verified_by en esa nube ya no es un error', () => {
+      expect(errors(published('some-reviewer')).join('\n')).not.toMatch(/sin revisión externa/);
+    });
+
+    it('un patrón legacy_unreviewed solo da warning', () => {
+      const issues = crossValidate(published(undefined, true), new Date('2026-10-06'));
+      expect(issues.filter((i) => i.level === 'error').map((i) => i.message).join('\n')).not.toMatch(/sin revisión externa/);
+      expect(issues.some((i) => i.level === 'warning' && /sin revisión externa .*legacy_unreviewed/.test(i.message))).toBe(true);
+    });
+
+    it('un draft no necesita revisión externa', () => {
+      const d = published();
+      d.patterns[0].pattern.status = 'draft';
+      expect(errors(d).join('\n')).not.toMatch(/sin revisión externa/);
+    });
+  });
+
   it('detecta capabilities y roles inexistentes', () => {
     const d = minimal();
     d.patterns[0].pattern.roles[1] = { id: 'q', kind: 'capability', capability: 'nope', label: { es: 'q' } };
