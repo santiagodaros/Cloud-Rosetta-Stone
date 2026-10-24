@@ -1,0 +1,24 @@
+id: nat-egress
+category: networking
+name:
+  es: "NAT de salida a internet"
+  en: "Outbound internet NAT"
+description:
+  es: "Traducción de direcciones para que recursos sin IP pública salgan a internet con IPs públicas fijas, sin aceptar conexiones entrantes no solicitadas."
+  en: "Address translation so resources with no public IP can reach the internet from fixed public IPs, without accepting unsolicited inbound connections."
+providers:
+  azure:
+    services:
+      - service: "Azure NAT Gateway"
+        docs: https://learn.microsoft.com/azure/nat-gateway/nat-overview
+  aws:
+    services:
+      - service: "NAT gateway (Amazon VPC)"
+        docs: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
+  gcp:
+    services:
+      - service: "Cloud NAT"
+        docs: https://docs.cloud.google.com/nat/docs/overview
+caveats:
+  - es: "En Azure el NAT Gateway se asocia a la subnet y no requiere configuración de rutas en su tabla. En AWS vive en una subnet pública y las subnets privadas necesitan una ruta que apunte a él. En GCP se configura sobre un Cloud Router y, según la doc, no está basado en VMs proxy ni en appliances."
+    en: "In Azure the NAT gateway is attached to the subnet and needs no routing configuration in its route table. In AWS it lives in a public subnet and private subnets need a route that points to it. In GCP it is configured on a Cloud Router and, per the docs, is not based on proxy VMs or appliances."
