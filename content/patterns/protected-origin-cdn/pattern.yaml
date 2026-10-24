@@ -1,0 +1,42 @@
+id: protected-origin-cdn
+status: draft
+category: networking
+title:
+  es: Contenido servido por CDN con el origen protegido
+  en: CDN-served content with a protected origin
+summary:
+  es: Un CDN global sirve contenido estático desde un bucket que solo el CDN puede leer; los visitantes no llegan al origen directamente.
+  en: A global CDN serves static content from a bucket that only the CDN can read; visitors can't reach the origin directly.
+problem:
+  es: >-
+    El contenido se sirve por un CDN para acercarlo a los visitantes y cachearlo en el borde, pero el almacenamiento
+    que lo guarda no debería ser una segunda puerta de entrada. Los requisitos son: que los visitantes lleguen solo
+    por el CDN, que el origen rechace los pedidos que no vengan de él, y que se pueda aplicar a la entrada global lo
+    que se define para la entrada (WAF, certificado, dominio propio). Lo difícil no es poner el CDN adelante sino
+    cerrar el origen: cada nube lo protege con un mecanismo distinto (identidad del CDN, enlace privado, URLs
+    firmadas), y cada uno deja un hueco o un paso manual que conviene conocer antes de publicar.
+  en: >-
+    Content is served through a CDN to bring it closer to visitors and cache it at the edge, but the storage that
+    holds it shouldn't be a second way in. Requirements: visitors reach it only through the CDN, the origin rejects
+    requests that don't come from it, and what is defined for the entry point (WAF, certificate, custom domain) can
+    be applied to the global entry. The hard part isn't putting the CDN in front but closing the origin: each cloud
+    protects it with a different mechanism (CDN identity, private link, signed URLs), and each leaves a gap or a
+    manual step worth knowing before you publish.
+roles:
+  - id: client
+    kind: actor
+    label: { es: Visitantes, en: Visitors }
+  - id: cdn-edge
+    kind: capability
+    capability: cdn-edge
+    label: { es: CDN (entrada global), en: CDN (global entry point) }
+  - id: object-storage
+    kind: capability
+    capability: object-storage
+    label: { es: Origen (almacenamiento de objetos), en: Origin (object storage) }
+edges:
+  - { from: client, to: cdn-edge, label: { es: HTTPS, en: HTTPS } }
+  - { from: cdn-edge, to: object-storage, label: { es: lectura con la identidad o el enlace del CDN, en: read with the CDN's identity or link } }
+paths:
+  - { id: served, label: { es: "Visitante → CDN → origen", en: "Visitor → CDN → origin" }, roles: [client, cdn-edge, object-storage] }
+tags: [cdn, edge, origin-protection, object-storage, static-content]

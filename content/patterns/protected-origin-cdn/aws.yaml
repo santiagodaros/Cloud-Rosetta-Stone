@@ -1,0 +1,94 @@
+provider: aws
+bindings:
+  cdn-edge:
+    service: Amazon CloudFront
+    config: { es: "Distribución con origen S3 regular, origin access control (signing_behavior = always) y viewer protocol policy redirect-to-https", en: "Distribution with a regular S3 origin, origin access control (signing_behavior = always) and the redirect-to-https viewer protocol policy" }
+    from:
+      azure:
+        es: "No hay enlace privado en este patrón: CloudFront firma los pedidos al bucket con su OAC y la policy del bucket los acepta solo en nombre de tu distribución."
+        en: "There is no private link in this pattern: CloudFront signs its requests to the bucket with its OAC, and the bucket policy accepts them only on behalf of your distribution."
+  object-storage:
+    service: Amazon S3
+    config: { es: "Bucket regular (no website endpoint), con Block Public Access y una policy que permite s3:GetObject al servicio cloudfront.amazonaws.com con AWS:SourceArn", en: "Regular bucket (not a website endpoint), with Block Public Access and a policy that allows s3:GetObject to the cloudfront.amazonaws.com service with AWS:SourceArn" }
+gotchas:
+  - id: sourcearn-condition-scopes-the-origin
+    severity: security
+    title:
+      es: El acceso de CloudFront al bucket se limita a tu distribución con la condición AWS:SourceArn
+      en: CloudFront's access to the bucket is limited to your distribution with the AWS:SourceArn condition
+    body:
+      es: >-
+        Con origin access control, la policy del bucket da permiso al principal de servicio cloudfront.amazonaws.com.
+        AWS indica usar un elemento Condition para que CloudFront acceda al bucket solo cuando el pedido es en
+        nombre de la distribución que contiene el origen S3; el ejemplo oficial usa StringEquals sobre AWS:SourceArn
+        con el ARN de esa distribución. La condición es lo que limita el acceso a esa distribución. La policy se
+        agrega después de crear la distribución y antes de sumar el OAC al origen. Además, con OAC sobre un bucket S3
+        el Object Ownership tiene que ser Bucket owner enforced (el valor por defecto de los buckets nuevos), o
+        Bucket owner preferred si necesitás ACLs. Incluí la condición en la policy del bucket con el ARN de tu
+        distribución.
+      en: >-
+        With origin access control, the bucket policy grants permission to the cloudfront.amazonaws.com service
+        principal. AWS says to use a Condition element so CloudFront can access the bucket only when the request is on
+        behalf of the distribution that contains the S3 origin; the official example uses StringEquals on
+        AWS:SourceArn with that distribution's ARN. The condition is what limits access to that distribution. The
+        policy is added after creating the distribution and before adding the OAC to the origin. Also, with OAC on
+        an S3 bucket, Object Ownership must be Bucket owner enforced (the default for new buckets), or Bucket owner
+        preferred if you need ACLs. Include the condition in the bucket policy with your distribution's
+        ARN.
+    sources:
+      - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [SAA-C03, SCS-C03]
+  - id: website-endpoint-cannot-use-oac
+    severity: networking
+    title:
+      es: Un bucket configurado como website endpoint no puede usar OAC
+      en: A bucket configured as a website endpoint can't use OAC
+    body:
+      es: >-
+        Si el origen es un bucket S3 configurado como website endpoint, hay que configurarlo en CloudFront como
+        custom origin, y eso significa que no se puede usar OAC (ni OAI). La documentación pide que el origen sea un
+        bucket regular, no uno configurado como website endpoint. Además, OAC no admite origin redirect con
+        Lambda@Edge. Usá el endpoint regular del bucket como origen; si necesitás el comportamiento de website,
+        ese origen queda fuera de la protección por OAC.
+      en: >-
+        If the origin is an S3 bucket configured as a website endpoint, it must be set up in CloudFront as a custom
+        origin, which means you can't use OAC (or OAI). The documentation requires the origin to be a regular
+        bucket, not one configured as a website endpoint. Also, OAC doesn't support origin redirect with
+        Lambda@Edge. Use the bucket's regular endpoint as the origin; if you need website behavior, that origin
+        is left outside OAC protection.
+    sources:
+      - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [SAA-C03]
+  - id: sse-kms-needs-key-policy
+    severity: iam
+    title:
+      es: Con SSE-KMS la distribución también necesita permiso sobre la clave
+      en: With SSE-KMS the distribution also needs permission on the key
+    body:
+      es: >-
+        OAC admite SSE-KMS (OAI no). Si los objetos del bucket están cifrados con SSE-KMS, hay que asegurarse de que
+        la distribución tenga permiso para usar la clave de KMS: se agrega un statement a la key policy. El ejemplo
+        oficial da kms:Decrypt, kms:Encrypt y kms:GenerateDataKey* al principal cloudfront.amazonaws.com, con la
+        misma condición AWS:SourceArn del ARN de la distribución. La key policy vive con la clave, no con el
+        bucket: si la gestiona otro equipo, pedile el statement con el ARN de la distribución.
+      en: >-
+        OAC supports SSE-KMS (OAI doesn't). If the objects in the bucket are encrypted with SSE-KMS, you must make
+        sure the distribution has permission to use the KMS key: add a statement to the key policy. The official
+        example gives kms:Decrypt, kms:Encrypt and kms:GenerateDataKey* to the cloudfront.amazonaws.com principal,
+        with the same AWS:SourceArn condition on the distribution's ARN. The key policy lives with the key, not the
+        bucket: if another team manages it, ask them for the statement with the distribution's ARN.
+    sources:
+      - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [SCS-C03]
+cost:
+  scales_to_zero: 'partial'
+  fixed_cost_drivers: []
+  notes:
+    es: "Con facturación pay-as-you-go cada servicio se factura por separado según el uso real: la distribución, el bucket y, si lo asociás, WAF."
+    en: "With pay-as-you-go billing each service is billed separately by actual usage: the distribution, the bucket and, if you attach it, WAF."
