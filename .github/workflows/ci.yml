@@ -23,11 +23,11 @@ jobs:
     name: Contenido + sitio
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0 # el changelog ("Qué cambió") se calcula desde el historial de git
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -51,11 +51,11 @@ jobs:
     name: Lighthouse (performance, a11y, SEO)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -64,7 +64,7 @@ jobs:
       - name: Lighthouse CI (budget en lighthouserc.json)
         run: pnpm lighthouse
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: lighthouse-reports
           path: .lighthouseci
@@ -76,9 +76,9 @@ jobs:
     outputs:
       matrix: ${{ steps.m.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -98,8 +98,8 @@ jobs:
       run:
         working-directory: ${{ matrix.module.dir }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
@@ -111,25 +111,26 @@ jobs:
         run: terraform validate
       - name: terraform test (mock providers, sin credenciales)
         run: terraform test
-      - uses: terraform-linters/setup-tflint@v4
+      - uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4
       - name: tflint
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }} # solo para bajar plugins sin rate limit; contents: read alcanza
+          MODULE_PROVIDER: ${{ matrix.module.provider }}
         run: |
-          tflint --init --config "$GITHUB_WORKSPACE/.tflint/${{ matrix.module.provider }}.hcl"
-          tflint --config "$GITHUB_WORKSPACE/.tflint/${{ matrix.module.provider }}.hcl" --format compact
+          tflint --init --config "$GITHUB_WORKSPACE/.tflint/${MODULE_PROVIDER}.hcl"
+          tflint --config "$GITHUB_WORKSPACE/.tflint/${MODULE_PROVIDER}.hcl" --format compact
 
   terraform-map:
     name: Mapa Terraform contra el schema de los providers
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -152,9 +153,9 @@ jobs:
     name: Precios de lista (selectores contra las APIs)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -168,8 +169,8 @@ jobs:
     name: Checkov (seguridad IaC)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - run: pip install "checkov==${CHECKOV_VERSION}"
@@ -181,8 +182,8 @@ jobs:
     name: Fuentes oficiales vivas
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: lycheeverse/lychee-action@v2
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
           # Solo las fuentes del contenido: son las que respaldan cada gotcha.
           args: --config lychee.toml 'content/**/*.yaml'
