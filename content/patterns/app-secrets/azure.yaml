@@ -83,8 +83,7 @@ gotchas:
         Para que la VNet llegue al vault por el Private Endpoint hace falta una zona privada llamada exactamente
         privatelink.vaultcore.azure.net, enlazada a esa VNet y con el registro A del vault. Si la zona no está enlazada,
         la consulta devuelve la IP pública. Con el acceso de red público deshabilitado y sin allow-list en el
-        firewall, el servicio rechaza todas las solicitudes en ese ingress, así que el síntoma es un error de acceso y
-        no tráfico público. Desde on-premises hacen falta forwarders condicionales para vault.azure.net y
+        firewall, el servicio rechaza todas las solicitudes en ese ingress. Desde on-premises hacen falta forwarders condicionales para vault.azure.net y
         vaultcore.azure.net hacia un resolver con acceso a la resolución de Azure (ver el patrón DNS privado híbrido).
         El nombre del vault sigue resolviendo en DNS público aunque sea privado: no pongas entorno ni cliente en el
         nombre si eso es parte de tu modelo de amenazas.
@@ -92,7 +91,7 @@ gotchas:
         For the VNet to reach the vault through the Private Endpoint you need a private zone named exactly
         privatelink.vaultcore.azure.net, linked to that VNet and holding the vault's A record. If the zone isn't
         linked, the query returns the public IP. With public network access disabled and no firewall allow-list, the
-        service rejects every request at that ingress, so the symptom is an access error, not public traffic. From
+        service rejects every request at that ingress. From
         on-premises you need conditional forwarders for vault.azure.net and vaultcore.azure.net to a resolver with
         access to Azure resolution (see the hybrid private DNS pattern). The vault name still resolves in public DNS
         even when the vault is private: don't put environment or customer in the name if that's part of your threat
@@ -113,17 +112,15 @@ gotchas:
         Event Grid. Para rotar, tenés que crear la suscripción al evento y aportar la función que crea la versión
         nueva en el vault y actualiza el servicio externo. El tutorial de Microsoft lo muestra para una contraseña de
         SQL Server. Entre esos dos pasos puede haber un desfase en el que el secreto del vault no autentica, y si un
-        paso falla Event Grid reintenta durante dos horas. El evento depende de que el secreto tenga fecha de
-        expiración. Si el vault es privado, la función tiene que llegar a él: el template del tutorial de dos
-        credenciales pide plan Premium solo cuando el vault está detrás de un firewall.
+        paso falla Event Grid reintenta durante dos horas. El template del tutorial de dos credenciales pide plan
+        Premium solo cuando el vault está detrás de un firewall.
       en: >-
         Thirty days before a secret's expiration date, Key Vault publishes the SecretNearExpiry event to Event Grid.
         To rotate, you have to create the event subscription and provide the function that creates the new version in
         the vault and updates the external service. Microsoft's tutorial shows it for a SQL Server password. Between
         those two steps there can be a lag during which the vault's secret doesn't authenticate, and if a step fails
-        Event Grid retries for two hours. The event depends on the secret having an expiration date. If the vault is
-        private, the function has to reach it: the two-credential tutorial's template asks for a Premium plan only
-        when the vault is behind a firewall.
+        Event Grid retries for two hours. The two-credential tutorial's template asks for a Premium plan only when
+        the vault is behind a firewall.
     sources:
       - https://learn.microsoft.com/azure/key-vault/secrets/tutorial-rotation
       - https://learn.microsoft.com/azure/key-vault/secrets/tutorial-rotation-dual
@@ -156,8 +153,8 @@ gotchas:
   - id: vault-keys-do-not-encrypt-its-secrets
     severity: security
     title:
-      es: En Key Vault no elegís la clave que cifra los secretos; en AWS y GCP sí
-      en: In Key Vault you don't pick the key that encrypts the secrets; in AWS and GCP you do
+      es: Key Vault cifra los secretos con una jerarquía de claves del servicio; en AWS y GCP elegís una clave tuya
+      en: Key Vault encrypts secrets with a service-owned key hierarchy; in AWS and GCP you pick a key of your own
     body:
       es: >-
         Key Vault guarda todos los secretos como datos cifrados, con una jerarquía de claves del servicio, y la
@@ -208,5 +205,5 @@ cost:
   fixed_cost_drivers:
     - { es: "Private Endpoint (por hora)", en: "Private Endpoint (hourly)" }
   notes:
-    es: El Private Endpoint se cobra por hora aunque nadie lea el secreto; el vault cobra por operación.
-    en: The Private Endpoint is billed hourly even if nobody reads the secret; the vault bills per operation.
+    es: El Private Endpoint se cobra por hora; el vault cobra por operación.
+    en: The Private Endpoint is billed hourly; the vault bills per operation.

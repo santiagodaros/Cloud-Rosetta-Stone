@@ -11,7 +11,7 @@ bindings:
     config: { es: "Secreto con CMK y política que exige el endpoint VPC", en: "Secret with a CMK and a policy that requires the VPC endpoint" }
   key:
     service: AWS KMS
-    config: { es: "CMK simétrica con rotación automática", en: "Symmetric CMK with automatic rotation" }
+    config: { es: "CMK simétrica", en: "Symmetric CMK" }
     from:
       azure:
         es: "Acá elegís la clave de KMS que cifra cada secreto; en Key Vault los secretos los cifra el servicio con su propia jerarquía."
@@ -139,8 +139,8 @@ gotchas:
   - id: billing-per-secret-replica-key-and-az
     severity: cost
     title:
-      es: Se cobra por secreto, por réplica, por clave KMS y por hora y AZ del endpoint, aunque nadie lea
-      en: You pay per secret, per replica, per KMS key and per endpoint hour and AZ, even if nobody reads
+      es: Se cobra por secreto, por réplica, por clave KMS y por hora y AZ del endpoint
+      en: You pay per secret, per replica, per KMS key and per endpoint hour and AZ
     body:
       es: >-
         Secrets Manager cobra según la cantidad de secretos guardados y las llamadas a la API. Una réplica cuenta
@@ -171,5 +171,5 @@ cost:
     - { es: "Clave KMS (por mes)", en: "KMS key (monthly)" }
     - { es: "Secreto (por mes)", en: "Secret (monthly)" }
   notes:
-    es: El endpoint, la clave y el secreto se cobran aunque nadie lea; las lecturas se cobran por llamada a la API.
-    en: The endpoint, the key and the secret are billed even if nobody reads; reads are billed per API call.
+    es: El endpoint, la clave y el secreto se cobran; las lecturas se cobran por llamada a la API.
+    en: The endpoint, the key and the secret are billed; reads are billed per API call.

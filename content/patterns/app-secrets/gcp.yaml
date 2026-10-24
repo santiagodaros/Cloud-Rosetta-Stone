@@ -5,24 +5,24 @@ bindings:
     config: { es: "roles/secretmanager.secretAccessor sobre el secreto, no sobre el proyecto", en: "roles/secretmanager.secretAccessor on the secret, not on the project" }
   private-access:
     service: Private Google Access
-    config: { es: "private_ip_google_access en la subnet del workload; Private Service Connect para endpoints regionales", en: "private_ip_google_access on the workload's subnet; Private Service Connect for regional endpoints" }
+    config: { es: "private_ip_google_access en la subnet del workload", en: "private_ip_google_access on the workload's subnet" }
     notes:
       es: "Es un flag por subnet que deja a las VMs sin IP externa llegar a las APIs de Google. No cubre los endpoints regionales *.rep.googleapis.com."
       en: "It's a per-subnet flag that lets VMs without external IPs reach Google APIs. It doesn't cover the regional *.rep.googleapis.com endpoints."
     equivalence: partial
     from:
       azure:
-        es: "No creás un endpoint por recurso: es un flag de la subnet, y no cubre los endpoints regionales, que necesitan Private Service Connect."
-        en: "You don't create a per-resource endpoint: it's a subnet flag, and it doesn't cover regional endpoints, which need Private Service Connect."
+        es: "No creás un endpoint por recurso: es un flag de la subnet, y no cubre los endpoints regionales."
+        en: "You don't create a per-resource endpoint: it's a subnet flag, and it doesn't cover regional endpoints."
       aws:
-        es: "No creás un endpoint con política propia: es un flag de la subnet, y no cubre los endpoints regionales, que necesitan Private Service Connect."
-        en: "You don't create an endpoint with its own policy: it's a subnet flag, and it doesn't cover regional endpoints, which need Private Service Connect."
+        es: "No creás un endpoint con política propia: es un flag de la subnet, y no cubre los endpoints regionales."
+        en: "You don't create an endpoint with its own policy: it's a subnet flag, and it doesn't cover regional endpoints."
   store:
     service: Secret Manager
     config: { es: "Replicación automática con CMEK, acceso por versión fija", en: "Automatic replication with CMEK, access by pinned version" }
   key:
     service: Cloud KMS
-    config: { es: "Clave simétrica en global con rotación automática", en: "Symmetric key in global with automatic rotation" }
+    config: { es: "Clave simétrica en global", en: "Symmetric key in global" }
     from:
       azure:
         es: "Podés cifrar los secretos con tu propia clave (CMEK); en Key Vault los secretos los cifra el servicio con su propia jerarquía."
@@ -31,22 +31,22 @@ gotchas:
   - id: latest-alias-outage
     severity: reliability
     title:
-      es: El alias latest despliega un valor malo de inmediato; en producción referenciá un número de versión
-      en: The latest alias rolls out a bad value immediately; in production reference a version number
+      es: El alias latest puede desplegar un valor malo de inmediato; en producción referenciá un número de versión
+      en: The latest alias can roll out a bad value immediately; in production reference a version number
     body:
       es: >-
         El alias latest apunta a la versión agregada más recientemente. Google lo describe como cómodo para desarrollo
         pero problemático para algunas cargas de producción, porque un valor malo puede desplegarse de inmediato y
         causar una caída de todo el servicio. La guía de best practices pide referenciar los secretos por número de
         versión y desplegar los cambios con tu proceso de release, y deshabilitar una versión antes de destruirla para
-        que el paso sea reversible. Cada rotación agrega una versión y mueve latest: resolvé el número al rotar,
+        que el paso sea reversible. Cada rotación agrega una versión: resolvé el número al rotar,
         guardalo en la configuración del deploy y leelo al arrancar.
       en: >-
         The latest alias points to the most recently added version. Google describes it as convenient for development
         but problematic for some production workloads, because a bad value can be rolled out immediately and cause a
         service-wide outage. The best practices guide asks to reference secrets by version number and deploy changes
         through your release process, and to disable a version before destroying it so the step is reversible. Every
-        rotation adds a version and moves latest: resolve the number when rotating, store it in the deploy
+        rotation adds a version: resolve the number when rotating, store it in the deploy
         configuration and read it at startup.
     sources:
       - https://docs.cloud.google.com/secret-manager/docs/rotation-recommendations
@@ -91,13 +91,13 @@ gotchas:
       es: >-
         AccessSecretVersion requiere un permiso DATA_READ y genera un Data Access audit log. Esos logs están
         deshabilitados por defecto para todos los servicios salvo algunos de BigQuery, así que hay que habilitarlos
-        explícitamente. Mientras tanto, los Admin Activity logs registran los cambios sobre el secreto pero no quién
-        leyó el valor. La guía de best practices recomienda habilitar los data access logs para analizar los pedidos
+        explícitamente. Las operaciones que modifican versiones (agregar, deshabilitar, destruir) son de tipo
+        ADMIN_WRITE y van a Admin Activity. La guía de best practices recomienda habilitar los data access logs para analizar los pedidos
         AccessSecretVersion, y hacerlo a nivel de carpeta u organización para no configurarlo en cada proyecto.
       en: >-
         AccessSecretVersion requires a DATA_READ permission and generates a Data Access audit log. Those logs are
-        disabled by default for all services except some BigQuery ones, so you have to enable them explicitly. In the
-        meantime, Admin Activity logs record changes to the secret but not who read the value. The best practices
+        disabled by default for all services except some BigQuery ones, so you have to enable them explicitly. Operations
+        that modify versions (add, disable, destroy) are ADMIN_WRITE and go to Admin Activity. The best practices
         guide recommends enabling data access logs to analyze AccessSecretVersion requests, and doing it at the folder
         or organization level so you don't configure it in every project.
     sources:
@@ -119,15 +119,15 @@ gotchas:
         pierden el acceso. No soporta los endpoints regionales y multirregionales, los que terminan en
         rep.googleapis.com. El servicio regional de Secret Manager se accede con un endpoint regional
         (secretmanager.<location>.rep.googleapis.com en los ejemplos de la documentación) y sus secretos solo se
-        pueden acceder desde esa región. Para eso hace falta un endpoint de Private Service Connect hacia los
-        endpoints regionales.
+        pueden acceder desde esa región. Google documenta cómo usar endpoints de Private Service Connect para llegar a
+        los endpoints regionales.
       en: >-
         Private Google Access is a per-subnet setting: it lets VMs that only have an internal IP reach the external
         IPs of Google APIs, and has no effect on instances with an external IP. If you disable it, those VMs lose
         access. It doesn't support regional and multi-regional endpoints, the ones ending in rep.googleapis.com.
         Secret Manager's regional service is accessed through a regional endpoint
         (secretmanager.<location>.rep.googleapis.com in the documentation's examples) and its secrets can only be
-        accessed from that region. For that you need a Private Service Connect endpoint to the regional endpoints.
+        accessed from that region. Google documents how to use Private Service Connect endpoints to reach regional endpoints.
     sources:
       - https://docs.cloud.google.com/vpc/docs/private-google-access
       - https://docs.cloud.google.com/vpc/docs/access-regional-google-apis-endpoints
