@@ -53,7 +53,7 @@ gotchas:
         to work. That's what the inbound endpoint is for, just like Azure's or GCP's inbound
         policy.
     sources:
-      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html
+      - https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html
     verified_at: 2026-10-06
     roles: [inbound]
     exams: [ANS-C01]
