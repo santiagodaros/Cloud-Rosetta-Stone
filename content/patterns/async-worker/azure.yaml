@@ -89,13 +89,12 @@ gotchas:
       en: The scaler needs an identity too, not just the container
     body:
       es: >-
-        KEDA consulta el largo de la cola por su cuenta. Si el namespace tiene local auth deshabilitada, la regla de
-        escalado tiene que usar la identidad administrada (identity_id en la regla); con un connection string no
-        funciona. El portal no permite configurarlo: hacelo por IaC o CLI.
+        KEDA consulta el largo de la cola por su cuenta. Para que lo haga con identidad administrada, la regla de
+        escalado usa la propiedad identity en lugar de auth. El portal no permite configurarlo: hacelo por IaC o
+        CLI.
       en: >-
-        KEDA queries the queue length on its own. If the namespace has local auth disabled, the scale rule must use
-        the managed identity (identity_id on the rule); a connection string won't work. The portal can't configure
-        it: use IaC or CLI.
+        KEDA queries the queue length on its own. To have it use a managed identity, the scale rule uses the
+        identity property instead of auth. The portal can't configure it: use IaC or CLI.
     sources:
       - https://learn.microsoft.com/azure/container-apps/scale-app
       - https://learn.microsoft.com/azure/container-apps/managed-identity

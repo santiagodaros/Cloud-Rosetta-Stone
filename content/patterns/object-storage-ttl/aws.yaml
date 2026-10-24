@@ -90,16 +90,17 @@ gotchas:
       en: Block Public Access and disabled ACLs are already default (but declare them anyway)
     body:
       es: >-
-        Desde abril de 2023 los buckets nuevos se crean con Block Public Access activo y Object Ownership en
-        BucketOwnerEnforced. Ya no es "la" diferencia con Azure. Igual declaralos en IaC: los buckets viejos no
-        cambiaron, y declarar el estado evita drift si alguien los toca desde la consola.
+        Desde abril de 2023 S3 habilita Block Public Access y deshabilita las ACLs en todos los buckets nuevos
+        (Object Ownership en BucketOwnerEnforced). Ya no es "la" diferencia con Azure. Igual declaralos en IaC: los
+        buckets existentes no cambiaron, y declarar el estado evita drift si alguien los toca desde la consola.
       en: >-
-        Since April 2023 new buckets are created with Block Public Access on and Object Ownership set to
-        BucketOwnerEnforced. It's no longer "the" difference with Azure. Still declare them in IaC: older buckets
-        didn't change, and declaring the state prevents drift if someone edits them in the console.
+        Since April 2023 S3 enables Block Public Access and disables ACLs on all new buckets (Object Ownership set
+        to BucketOwnerEnforced). It's no longer "the" difference with Azure. Still declare them in IaC: existing
+        buckets didn't change, and declaring the state prevents drift if someone edits them in the console.
     sources:
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html
       - https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
+      - https://aws.amazon.com/about-aws/whats-new/2022/12/amazon-s3-automatically-enable-block-public-access-disable-access-control-lists-buckets-april-2023/
     verified_at: 2026-10-06
     roles: [bucket]
     exams: [SAA-C03]

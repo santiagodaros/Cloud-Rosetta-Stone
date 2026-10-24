@@ -43,18 +43,17 @@ gotchas:
       en: If the job declares an environment, the sub no longer contains the branch
     body:
       es: >-
-        GitHub arma el sub con prioridad: environment, después pull_request y recién después la ref. Un job en main
-        con environment production presenta repo:org/repo:environment:production, así que una trust policy que
-        espera repo:org/repo:ref:refs/heads/main rechaza el AssumeRoleWithWebIdentity. Pasa lo mismo en Azure y
-        GCP; acá el error es "Not authorized to perform sts:AssumeRoleWithWebIdentity".
+        GitHub incluye el environment en el sub cuando el job lo referencia; pull_request y la ref solo entran si el
+        job no referencia un environment. Un job en main con environment production presenta
+        repo:org/repo:environment:production, así que una trust policy que espera
+        repo:org/repo:ref:refs/heads/main rechaza el AssumeRoleWithWebIdentity.
       en: >-
-        GitHub builds the sub in priority order: environment, then pull_request, and only then the ref. A job on
-        main with environment production presents repo:org/repo:environment:production, so a trust policy expecting
-        repo:org/repo:ref:refs/heads/main rejects AssumeRoleWithWebIdentity. Same on Azure and GCP; here the error
-        is "Not authorized to perform sts:AssumeRoleWithWebIdentity".
+        GitHub includes the environment in the sub when the job references one; pull_request and the ref only
+        appear if the job doesn't reference an environment. A job on main with environment production presents
+        repo:org/repo:environment:production, so a trust policy expecting repo:org/repo:ref:refs/heads/main
+        rejects AssumeRoleWithWebIdentity.
     sources:
       - https://docs.github.com/en/actions/reference/security/oidc
-      - https://repost.aws/knowledge-center/iam-idp-access-error
     verified_at: 2026-10-06
     roles: [federation]
     exams: [SCS-C03]

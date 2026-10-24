@@ -89,13 +89,14 @@ gotchas:
       en: HTTPS on an internal ALB still needs a certificate for a domain you control
     body:
       es: >-
-        El listener HTTPS requiere un certificado en ACM. Un certificado público de ACM se valida contra DNS o mail
-        de un dominio real aunque el ALB sea interno; la alternativa es AWS Private CA, que tiene cargo mensual.
-        En ACA y Cloud Run el certificado del dominio por defecto lo gestiona la plataforma.
+        Para crear un listener HTTPS hay que desplegar al menos un certificado de servidor SSL (de ACM o de IAM).
+        ACM exige probar la propiedad del dominio de un certificado público por DNS, mail o HTTP, y no puede
+        validar recursos en una private hosted zone de VPC ni en ningún otro dominio privado, aunque el ALB sea
+        interno.
       en: >-
-        The HTTPS listener needs an ACM certificate. A public ACM certificate is validated via DNS or email for a
-        real domain even if the ALB is internal; the alternative is AWS Private CA, which has a monthly fee. In ACA
-        and Cloud Run the platform manages the default domain's certificate.
+        To create an HTTPS listener you must deploy at least one SSL server certificate (from ACM or IAM). ACM
+        requires proving domain ownership for a public certificate via DNS, email or HTTP, and cannot validate
+        resources in a VPC private hosted zone or any other private domain, even if the ALB is internal.
     sources:
       - https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html
       - https://docs.aws.amazon.com/acm/latest/userguide/domain-ownership-validation.html
@@ -110,14 +111,13 @@ gotchas:
     body:
       es: >-
         Con manage_master_user_password = true, RDS genera la contraseña del master y la guarda en Secrets
-        Manager: nunca pasa por variables ni por el estado de Terraform. Es incompatible con pasar password a mano,
-        y no está soportado en algunos escenarios (por ejemplo Blue/Green deployments), así que decidilo de entrada.
+        Manager. El provider de Terraform no permite combinarlo con password, y RDS no lo soporta en algunos escenarios (por ejemplo Blue/Green deployments), así que decidilo de entrada.
       en: >-
         With manage_master_user_password = true, RDS generates the master password and stores it in Secrets
-        Manager: it never goes through variables or Terraform state. It's incompatible with passing a password
-        manually, and isn't supported in some scenarios (for example Blue/Green deployments), so decide upfront.
+        Manager. The Terraform provider doesn't allow combining it with password, and RDS doesn't support it in some scenarios (for example Blue/Green deployments), so decide upfront.
     sources:
       - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html
+      - https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance
     verified_at: 2026-10-06
     roles: [database]
     exams: [SAA-C03, SCS-C03]
