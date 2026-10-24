@@ -52,6 +52,9 @@ Habilita: que el "verificado hace N días" y el gotcha del día no queden congel
 
 Comprobar: `gh workflow run rebuild.yml --repo OWNER/REPO` y ver un deploy nuevo en Vercel.
 
+> Aplicado el 2026-10-24 con `gh`: descripción y topics del repo, Discussions y los labels `dependencies`, `terraform`, `reviewer` y `review-queue`.
+> Pendiente: el reporte privado de vulnerabilidades (la API devolvió 404; activarlo en Settings → Code security) y "Allow GitHub Actions to create and approve pull requests" (sección 2), que se dejó sin tocar a propósito porque es un interruptor de seguridad.
+
 ## 4. Repo: topics, Discussions, reporte privado de vulnerabilidades
 
 ```bash

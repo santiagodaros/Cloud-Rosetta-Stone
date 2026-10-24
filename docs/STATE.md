@@ -44,10 +44,10 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 
 ### 4. Pendientes de la maintainer (Settings de GitHub / Vercel)
 - [ ] Env `VERCEL_DEEP_CLONE=true` y secret `VERCEL_DEPLOY_HOOK_URL` (rebuild semanal).
-- [ ] Topic `hacktoberfest` en el repo.
-- [ ] Discussions (lo referencia el template de issues y F4-20).
-- [ ] Private vulnerability reporting (lo referencia SECURITY.md).
-- [ ] Labels `freshness`, `good first issue`, `dependencies`, `terraform`.
+- [x] Topics (incl. `hacktoberfest`) y descripción del repo aplicados (2026-10-24).
+- [x] Discussions habilitado (2026-10-24).
+- [ ] Private vulnerability reporting (lo referencia SECURITY.md): la API de GitHub responde 404 (lectura y escritura) con el token actual; se activa desde Settings → Code security → Private vulnerability reporting.
+- [x] Labels `freshness`, `good first issue`, `dependencies`, `terraform`, `reviewer` y `review-queue` creados (2026-10-24).
 - [ ] Decidir F4-21 (medir retención vs. "sin trackers"); si se adopta, actualizar README y D8.
 
 ### 5. Higiene técnica

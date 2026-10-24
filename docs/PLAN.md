@@ -1,7 +1,18 @@
 # Letra Chica — Plan de producto y ejecución
 
 > Plan vivo. Se actualiza al cerrar cada fase. Base: [`ANALISIS-END-TO-END.md`](./ANALISIS-END-TO-END.md).
-> Última actualización: 2026-10-06 (cierre de Fase 1).
+> Última actualización: 2026-10-24 (pausa de la Fase 4; foco en la confianza del contenido).
+
+## Estado al 2026-10-24
+
+El estado vivo (qué está hecho y qué falta) está en [`STATE.md`](./STATE.md); acá quedan las decisiones que cambian el plan.
+
+- **Fase 4 en pausa.** Ya hay más plataforma (PWA, MCP, widgets, matriz de decisión, ADR) que contenido revisado: 5 patrones publicados y 6 en borrador. No se agregan funciones nuevas hasta que haya revisores por nube.
+- **La verificación pasó a ser el cuello de botella, y se endureció.** La pre-verificación automática de los 74 gotchas encontró que cerca de un tercio tenía alguna afirmación que su fuente no respaldaba (`PRE-VERIFICACION.md`). Desde entonces: campo `verified_by` y badge "sin revisor externo", regla del validador que impide publicar un patrón sin al menos una revisión externa por nube, y un proceso de tres pasos para todo contenido nuevo (un agente escribe, otro lo verifica contra las fuentes oficiales, un tercero corrige). Guía para revisores en `REVISORES.md`.
+- **Los patrones nuevos entran en borrador** y se publican solo con revisión humana: `app-secrets`, `controlled-egress`, `hub-and-spoke`, `preventive-guardrails`, `centralized-audit-logging` y `protected-origin-cdn`.
+- **Renovate es el único bot de dependencias** (se descartó Dependabot). La app todavía no abrió su primer PR.
+- **El CI de GitHub no corre** por un problema de facturación de la cuenta; mientras tanto todo se valida en local con las mismas versiones y comandos del CI (Terraform, tflint, checkov, lychee, Lighthouse).
+
 
 ---
 
@@ -19,7 +30,7 @@ equivalente → Terraform verificado → piso de costo._ Las tablas 1:1 ya exist
 |---|---|---|
 | D1 | **Patrones, no servicios** | La unidad de contenido es `pattern.yaml` con topología abstracta compartida |
 | D2 | **Cada claim con fuente oficial** | `SourceUrl` solo acepta dominios oficiales; `sources.min(1)`; lychee en CI |
-| D3 | **Contenido fechado** | `verified_at` obligatorio; badge en UI; workflow semanal abre issue de frescura |
+| D3 | **Contenido fechado y revisado** | `verified_at` obligatorio; badge en UI; workflow semanal abre issue de frescura y de cola de revisión; `verified_by` y una revisión externa por nube para publicar (lo exige el validador) |
 | D4 | **IaC que compila y es seguro** | fmt + validate + `terraform test` (mock) + tflint + checkov en cada PR |
 | D5 | **Neutral** | Guía editorial "sin ganador"; CODEOWNERS por nube (ver §6) |
 | D6 | **Español primero, bilingüe** | `Localized.es` obligatorio; `en` con fallback visible |
@@ -121,9 +132,9 @@ el repo); el checklist está en [`docs/launch/README.md`](./launch/README.md).
 | F3-01 | **Modo quiz** a ciegas | ✅ | `/practice/`: el gotcha con nombres de producto tapados en build time (`src/lib/mask.ts`), el usuario adivina la nube; test que garantiza que ningún gotcha deja ver la marca |
 | F3-02 | Flashcards por examen | ✅ | Mismo `/practice/`, filtro por examen (`?exam=AZ-104`), "la sabía / repasar" |
 | F3-03 | Página por examen | ✅ | `content/exams.yaml` con estado derivado de `retires_on` (vigente → se retira → retirado). Re-etiquetado: AZ-500 → SC-500, AZ-204 → AI-200, SCS-C02 → SCS-C03. `/exams/`, `/exams/<código>/` y `/api/v1/exams.json` |
-| F3-04 | 5 patrones nuevos | 🟡 2 de 5 | ✅ **OIDC CI/CD → nube** (15 gotchas) · ✅ **DNS privado híbrido** (14 gotchas) · abiertos para contribuidores: hub-and-spoke (#15), secretos (#16), egress/NAT (#17) |
+| F3-04 | 5 patrones nuevos | 🟡 2 publicados, 6 en borrador | ✅ **OIDC CI/CD → nube** (15 gotchas) · ✅ **DNS privado híbrido** (14 gotchas) · en borrador, a la espera de revisión humana: hub-and-spoke (#15), secretos (#16), egress/NAT (#17), guardrails preventivos, auditoría centralizada y CDN con origen protegido |
 | F3-05 | Reviewers de AWS y GCP | 🟡 | Convocatoria en #18; falta difundirla en AWS UG y GDG LATAM |
-| F3-06 | Hacktoberfest | ✅ | 13 issues con `hacktoberfest` + [guía](HACKTOBERFEST.md). Falta el topic del repo (acción del maintainer) |
+| F3-06 | Hacktoberfest | ✅ | 13 issues con `hacktoberfest` + [guía](HACKTOBERFEST.md). Topics y descripción del repo ya aplicados |
 
 ### Fase 4 — Plataforma (en curso, desde 2026-10-06)
 
