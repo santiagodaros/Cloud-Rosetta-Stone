@@ -617,3 +617,164 @@ entries:
     sources:
       - https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings
       - https://docs.cloud.google.com/logging/docs/routing/overview
+
+  # --- CDN y entrada global (patrón protected-origin-cdn) ---------------------------------
+  - id: cdn-distribution
+    title: { es: Distribución CDN hacia un origen, en: CDN distribution in front of an origin }
+    capability: cdn-edge
+    match: partial
+    resources:
+      azure:
+        - azurerm_cdn_frontdoor_profile
+        - azurerm_cdn_frontdoor_origin_group
+        - azurerm_cdn_frontdoor_origin
+        - azurerm_cdn_frontdoor_route
+      aws: [aws_cloudfront_distribution]
+      gcp:
+        - google_compute_backend_bucket
+        - google_compute_url_map
+        - google_compute_target_https_proxy
+        - google_compute_global_forwarding_rule
+    notes:
+      es: >-
+        En CloudFront una sola distribución declara orígenes, cache behaviors y seguridad. Front Door lo reparte
+        en profile, origin group, origin y route. En GCP no hay un recurso de CDN aparte: Cloud CDN se habilita
+        en un backend bucket que cuelga de un Application Load Balancer externo (url map, proxy HTTPS y
+        forwarding rule), y si no se habilita en ese paso el balanceador sirve desde Cloud Storage sin cache.
+      en: >-
+        In CloudFront a single distribution declares origins, cache behaviors and security. Front Door splits that
+        into profile, origin group, origin and route. GCP has no separate CDN resource: Cloud CDN is enabled on a
+        backend bucket behind an external Application Load Balancer (URL map, HTTPS proxy and forwarding rule),
+        and if it isn't enabled at that step the load balancer serves straight from Cloud Storage with no cache.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/front-door-overview
+      - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-overview.html
+      - https://docs.cloud.google.com/cdn/docs/setting-up-cdn-with-bucket
+  - id: cdn-origin-lockdown
+    title: { es: Que solo la CDN pueda leer el origen, en: Letting only the CDN read the origin }
+    capability: cdn-edge
+    match: partial
+    resources:
+      azure: [azurerm_cdn_frontdoor_origin.private_link]
+      aws: [aws_cloudfront_origin_access_control]
+      gcp: [google_storage_bucket_iam_member]
+    notes:
+      es: >-
+        Tres mecanismos distintos. Front Door Premium crea un private endpoint hacia el storage (bloque
+        private_link del origin) y hay que aprobar la conexión del lado del origen antes de que pase tráfico.
+        CloudFront firma cada pedido a S3 con un OAC y el bucket necesita una policy que permita al principal
+        cloudfront.amazonaws.com con una condición sobre la distribución. En GCP no hay un recurso equivalente al
+        OAC: hay que dar lectura sobre el bucket a la cuenta de servicio de Cloud CDN, que recién existe cuando se
+        agrega la primera signed URL key al backend bucket.
+      en: >-
+        Three different mechanisms. Front Door Premium creates a private endpoint to the storage (the origin's
+        private_link block) and the connection must be approved on the origin side before traffic flows.
+        CloudFront signs every request to S3 with an OAC and the bucket needs a policy that allows the
+        cloudfront.amazonaws.com principal with a condition on the distribution. GCP has no OAC-like resource:
+        you grant read on the bucket to the Cloud CDN service account, which only exists once the first signed
+        URL key is added to the backend bucket.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/private-link
+      - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html
+      - https://docs.cloud.google.com/cdn/docs/using-signed-urls
+  - id: cdn-waf
+    title: { es: WAF en el borde de la CDN, en: WAF at the CDN edge }
+    capability: cdn-edge
+    match: partial
+    resources:
+      azure: [azurerm_cdn_frontdoor_firewall_policy, azurerm_cdn_frontdoor_security_policy]
+      aws: [aws_wafv2_web_acl]
+      gcp: [google_compute_security_policy]
+    notes:
+      es: >-
+        En Front Door la WAF policy es un recurso y se asocia al endpoint o dominio con un security policy
+        aparte; las managed rules son solo de Premium. En CloudFront se crea un web ACL de AWS WAF y se lo
+        asocia a la distribución. En GCP, a un backend bucket solo se le pueden aplicar edge security policies de
+        Cloud Armor (type CLOUD_ARMOR_EDGE), que se adjuntan al backend service.
+      en: >-
+        In Front Door the WAF policy is a resource and is tied to the endpoint or domain through a separate
+        security policy; managed rules are Premium only. In CloudFront you create an AWS WAF web ACL and
+        associate it with the distribution. In GCP only Cloud Armor edge security policies (type
+        CLOUD_ARMOR_EDGE) can be applied to backend buckets, and they attach to the backend service.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/web-application-firewall
+      - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-awswaf.html
+      - https://docs.cloud.google.com/armor/docs/security-policy-overview
+
+  # --- Guardrails preventivos (patrón preventive-guardrails) -------------------------------
+  - id: policy-exemption
+    title: { es: Excepción a un guardrail con vencimiento, en: Time-bound exception to a guardrail }
+    capability: governance-guardrails
+    match: gap
+    resources:
+      azure: [azurerm_subscription_policy_exemption]
+      aws: []
+      gcp: [google_org_policy_policy]
+    notes:
+      es: >-
+        Azure Policy tiene un objeto exemption propio, con categoría (waiver o mitigated), vencimiento opcional
+        (expiresOn; al vencer no se borra, deja de honrarse) y metadata de quién lo pidió y aprobó. En GCP no
+        hay objeto de excepción: se pone una org policy en el recurso hijo, que reemplaza a la heredada. En AWS no
+        hay recurso equivalente: un Deny de una SCP aplica a todo lo que cuelga del nivel donde está adjunta.
+      en: >-
+        Azure Policy has its own exemption object, with a category (waiver or mitigated), an optional expiry
+        (expiresOn; when it passes the object isn't deleted, it just stops being honored) and metadata on who
+        requested and approved it. GCP has no exception object: you set an org policy on the child resource,
+        which replaces the inherited one. AWS has no equivalent resource: an SCP Deny applies to everything
+        under the level where it is attached.
+    sources:
+      - https://learn.microsoft.com/azure/governance/policy/concepts/exemption-structure
+      - https://docs.cloud.google.com/resource-manager/docs/organization-policy/understanding-hierarchy
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_evaluation.html
+
+  # --- Audit logging centralizado (patrón centralized-audit-logging) -----------------------
+  - id: audit-log-routing
+    title: { es: Enviar los logs de auditoría a un destino central, en: Sending audit logs to a central destination }
+    capability: centralized-logging
+    match: partial
+    resources:
+      azure: [azurerm_monitor_diagnostic_setting]
+      aws: [aws_cloudtrail]
+      gcp: [google_logging_organization_sink, google_logging_folder_sink]
+    notes:
+      es: >-
+        En AWS un organization trail (is_organization_trail, creado desde la cuenta de management) registra los
+        eventos de todas las cuentas en un mismo bucket de S3. En GCP un sink agregado en la organización o una
+        carpeta (include_children) enruta los logs de todo lo que cuelga de ahí, y su writer identity necesita
+        permisos en el destino. En Azure el activity log es por suscripción y sale con un diagnostic setting
+        por suscripción; el de un management group no cubre todos los eventos de nivel suscripción.
+      en: >-
+        In AWS an organization trail (is_organization_trail, created from the management account) logs the events
+        of all accounts into a single S3 bucket. In GCP an aggregated sink on the organization or a folder
+        (include_children) routes the logs of everything under it, and its writer identity needs permissions on
+        the destination. In Azure the activity log is per subscription and leaves through a per-subscription
+        diagnostic setting; a management group one doesn't cover every subscription-level event.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
+      - https://docs.cloud.google.com/logging/docs/export/aggregated_sinks
+      - https://learn.microsoft.com/azure/azure-monitor/fundamentals/activity-log
+  - id: audit-data-access
+    title: { es: Registrar lecturas y escrituras de datos, en: Logging data reads and writes }
+    capability: centralized-logging
+    match: partial
+    resources:
+      azure: [azurerm_monitor_diagnostic_setting.enabled_log]
+      aws: [aws_cloudtrail.event_selector]
+      gcp: [google_organization_iam_audit_config, google_folder_iam_audit_config]
+    notes:
+      es: >-
+        Los eventos de plano de datos no se registran por defecto en ninguna nube. En GCP los Data Access audit
+        logs vienen apagados (salvo algunos de BigQuery) y se activan por servicio y tipo (ADMIN_READ, DATA_READ,
+        DATA_WRITE) en la organización, carpeta o proyecto; los Admin Activity no se pueden apagar. En Azure los
+        resource logs se activan con las categorías de un diagnostic setting por recurso. En CloudTrail son los
+        data events del trail, que se eligen por recurso.
+      en: >-
+        Data-plane events aren't recorded by default in any cloud. In GCP Data Access audit logs are off (except
+        some BigQuery services) and are enabled per service and type (ADMIN_READ, DATA_READ, DATA_WRITE) at
+        organization, folder or project level; Admin Activity logs can't be turned off. In Azure resource logs are
+        enabled through the categories of a per-resource diagnostic setting. In CloudTrail they are the trail's
+        data events, chosen per resource.
+    sources:
+      - https://docs.cloud.google.com/logging/docs/audit/configure-data-access
+      - https://learn.microsoft.com/azure/azure-monitor/fundamentals/activity-log
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
