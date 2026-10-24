@@ -40,9 +40,20 @@ resource "aws_ec2_transit_gateway_route_table" "inspection" {
 # --- VPC de inspección -------------------------------------------------------------
 
 resource "aws_vpc" "inspection" {
-  #checkov:skip=CKV2_AWS_11:Los flow logs de la VPC de inspección se configuran con el logging centralizado del hub, fuera del alcance del patrón.
   cidr_block = var.inspection_vpc_cidr
   tags       = { Name = "${var.name}-inspection" }
+}
+
+# Flow logs de la VPC de inspección a CloudWatch Logs (opcional: log group y rol ya existen).
+resource "aws_flow_log" "inspection" {
+  count = var.flow_log_group_arn == null ? 0 : 1
+
+  vpc_id               = aws_vpc.inspection.id
+  traffic_type         = "ALL"
+  log_destination_type = "cloud-watch-logs"
+  log_destination      = var.flow_log_group_arn
+  iam_role_arn         = var.flow_log_role_arn
+  tags                 = { Name = "${var.name}-inspection" }
 }
 
 resource "aws_default_security_group" "inspection" {
@@ -147,7 +158,6 @@ resource "aws_networkfirewall_firewall_policy" "this" {
 # (gotcha: tgw-and-firewall-hourly-charges).
 resource "aws_networkfirewall_firewall" "this" {
   #checkov:skip=CKV_AWS_345:Sin var.kms_key_arn se usa la clave propiedad de AWS; con ella el bloque dinámico cifra con la CMK (el análisis estático no lo resuelve).
-  #checkov:skip=CKV2_AWS_63:El destino de logs (CloudWatch, S3 o Firehose) lo decide el logging centralizado del hub; el módulo no crea uno.
   name                = var.name
   firewall_policy_arn = aws_networkfirewall_firewall_policy.this.arn
   vpc_id              = aws_vpc.inspection.id
@@ -165,6 +175,21 @@ resource "aws_networkfirewall_firewall" "this" {
     content {
       type   = "CUSTOMER_KMS"
       key_id = encryption_configuration.value
+    }
+  }
+}
+
+# Logs de alertas a CloudWatch Logs (opcional: el log group es de la cuenta, no lo crea el módulo).
+resource "aws_networkfirewall_logging_configuration" "this" {
+  count = var.alert_log_group_name == null ? 0 : 1
+
+  firewall_arn = aws_networkfirewall_firewall.this.arn
+
+  logging_configuration {
+    log_destination_config {
+      log_destination      = { logGroup = var.alert_log_group_name }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "ALERT"
     }
   }
 }

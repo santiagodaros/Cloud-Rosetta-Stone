@@ -57,6 +57,29 @@ variable "delete_protection" {
   default     = true
 }
 
+variable "alert_log_group_name" {
+  description = "Log group de CloudWatch Logs (ya existente) para los logs ALERT del firewall. null = sin logging."
+  type        = string
+  default     = null
+}
+
+variable "flow_log_group_arn" {
+  description = "ARN del log group de CloudWatch Logs (ya existente) para los flow logs de la VPC de inspección. null = sin flow logs."
+  type        = string
+  default     = null
+}
+
+variable "flow_log_role_arn" {
+  description = "ARN del rol IAM que permite a VPC Flow Logs escribir en el log group. Obligatorio si flow_log_group_arn no es null."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.flow_log_group_arn == null || var.flow_log_role_arn != null
+    error_message = "flow_log_role_arn: obligatorio cuando se define flow_log_group_arn."
+  }
+}
+
 variable "tags" {
   description = "Tags comunes."
   type        = map(string)
