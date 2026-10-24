@@ -19,7 +19,7 @@
     "validate": "tsx scripts/validate-content.ts",
     "freshness": "tsx scripts/freshness-report.ts",
     "tf:matrix": "tsx scripts/terraform-matrix.ts",
-    "verify": "pnpm validate && pnpm check && pnpm test && pnpm build",
+    "verify": "pnpm validate && pnpm check && pnpm lint && pnpm test && pnpm build",
     "new:pattern": "tsx scripts/new-pattern.ts",
     "lighthouse": "lhci autorun",
     "launch:weekly": "tsx scripts/gotcha-of-the-week.ts",

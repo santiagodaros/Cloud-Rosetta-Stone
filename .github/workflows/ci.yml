@@ -36,6 +36,8 @@ jobs:
         run: pnpm validate
       - name: Typecheck
         run: pnpm check
+      - name: Lint
+        run: pnpm lint
       - name: Tests unitarios
         run: pnpm test
       - name: Build
