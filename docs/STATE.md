@@ -47,7 +47,7 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [ ] Env `VERCEL_DEEP_CLONE=true` y secret `VERCEL_DEPLOY_HOOK_URL` (rebuild semanal).
 - [x] Topics (incl. `hacktoberfest`) y descripción del repo aplicados (2026-10-24).
 - [x] Discussions habilitado (2026-10-24).
-- [ ] Private vulnerability reporting (lo referencia SECURITY.md): la API de GitHub responde 404 (lectura y escritura) con el token actual; se activa desde Settings → Code security → Private vulnerability reporting.
+- [x] Private vulnerability reporting activado (2026-10-24), una vez que el repo pasó a público: antes la API respondía 404 porque esa función no existe en repos privados.
 - [x] Labels `freshness`, `good first issue`, `dependencies`, `terraform`, `reviewer` y `review-queue` creados (2026-10-24).
 - [x] F4-21 decidido (2026-10-24): solo métricas proxy, sin analytics; README y D8 no cambian. Cómo leerlas: `docs/MANTENEDOR-SETUP.md`, sección 7.
 
@@ -57,8 +57,8 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] `Retry-After` respetado en el 429/503 de `scripts/fetch-prices.ts` (tope 60 s).
 - [x] Test que compara los conteos del README con el contenido (`tests/readme-counts.test.ts`).
 - [x] Decidido: se queda Renovate (`renovate.json`) y se borró `.github/dependabot.yml`. Renovate cubre npm, acciones de GitHub, providers de Terraform y plugins de tflint. Falta instalar la app (ver `docs/MANTENEDOR-SETUP.md`, sección 6): hasta entonces no hay ningún bot de dependencias activo.
-- [ ] **Decidir la visibilidad del repo (hoy PRIVADO).** Explica el 404 del reporte privado de vulnerabilidades, la falta de protección de ramas, el CI bloqueado y que los revisores externos no ven los issues #25 y #26. Auditoría previa a publicar hecha (sin secretos en el historial, licencias en orden): `docs/MANTENEDOR-SETUP.md`, sección 8.
-- [ ] El CI de GitHub no corre: la cuenta tiene un problema de facturación ("recent account payments have failed or your spending limit needs to be increased"). Hasta resolverlo, ninguna rama pasó CI real; todo se validó localmente con las versiones del CI.
+- [x] **El repo pasó a PÚBLICO el 2026-10-24** (decisión tomada tras una auditoría previa: sin secretos en los 119 commits, licencias en orden, aviso MIT de terceros en `NOTICE.md`). Efectos: reporte privado de vulnerabilidades activado, `main` protegida (PR obligatorio sin aprobaciones, sin force-push ni borrado; todavía sin checks obligatorios), y los revisores externos ya pueden ver los issues #25 y #26. Detalle en `docs/MANTENEDOR-SETUP.md`, sección 8.
+- [x] El CI de GitHub volvió a correr al hacer público el repo (2026-10-24): el bloqueo era un límite de la cuenta por usar Actions en repos privados. Primera corrida sobre `main`: 39 de 40 jobs en verde (contenido y sitio, Lighthouse, checkov, precios, mapa de Terraform y los 33 módulos de Terraform); "Fuentes oficiales vivas" falló por un error de conexión del runner en 4 URLs de `docs.cloud.google.com` y pasó al reintentar. Hasta entonces todo se había validado en local con las mismas versiones.
 
 ### Congelado (no empezar)
 - F4-04 Infracost, F4-06 deploy sandbox, F4-07 IA, F4-08 OCI, F4-20 votación.
