@@ -41,8 +41,6 @@ resource "aws_kms_alias" "secrets" {
 # --- Secreto ---------------------------------------------------------------------
 
 resource "aws_secretsmanager_secret" "this" {
-  #checkov:skip=CKV2_AWS_57:La rotación depende de la función Lambda de cada credencial (var.rotation_lambda_arn); el módulo no la inventa.
-  #checkov:skip=CKV_AWS_149:Falso positivo: el secreto usa la CMK del módulo (kms_key_id).
   name = "${var.name}/app-secret"
 
   # Nombre y descripción no se cifran: nada sensible acá (gotcha: metadata-not-encrypted).

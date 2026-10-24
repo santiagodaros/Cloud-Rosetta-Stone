@@ -27,6 +27,23 @@ resource "azurerm_subnet" "private_endpoints" {
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.app.name
   address_prefixes     = [var.private_endpoint_subnet_prefix]
+
+  # Sin esto el NSG de abajo no se aplica a los Private Endpoints de la subnet.
+  private_endpoint_network_policies = "Enabled"
+}
+
+# NSG de la subnet de Private Endpoints. Sin reglas propias rigen las de default (tráfico dentro de la VNet,
+# deny del resto de Internet); sirve de punto de enganche para endurecerlas.
+resource "azurerm_network_security_group" "private_endpoints" {
+  name                = "nsg-${var.name}-private-endpoints"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "private_endpoints" {
+  subnet_id                 = azurerm_subnet.private_endpoints.id
+  network_security_group_id = azurerm_network_security_group.private_endpoints.id
 }
 
 # --- Identidad del workload ------------------------------------------------------
@@ -84,11 +101,10 @@ resource "azurerm_private_dns_zone" "vault" {
 
 # Sin este link, la VNet resuelve la IP pública del vault (gotcha: private-endpoint-needs-linked-zone).
 resource "azurerm_private_dns_zone_virtual_network_link" "vault" {
-  name                  = "app"
-  resource_group_name   = azurerm_resource_group.this.name
-  private_dns_zone_name = azurerm_private_dns_zone.vault.name
-  virtual_network_id    = azurerm_virtual_network.app.id
-  tags                  = var.tags
+  name                = "app"
+  private_dns_zone_id = azurerm_private_dns_zone.vault.id
+  virtual_network_id  = azurerm_virtual_network.app.id
+  tags                = var.tags
 }
 
 resource "azurerm_private_endpoint" "vault" {
@@ -138,7 +154,6 @@ resource "azurerm_role_assignment" "deployer_manages_keys" {
 }
 
 resource "azurerm_key_vault_key" "app" {
-  #checkov:skip=CKV_AZURE_112:Vault standard: claves protegidas por software. Usá sku premium si hace falta HSM.
   count = var.create_app_key ? 1 : 0
 
   name         = "app-key"

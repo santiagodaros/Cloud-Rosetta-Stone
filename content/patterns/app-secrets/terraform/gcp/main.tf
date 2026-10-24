@@ -24,6 +24,25 @@ resource "google_compute_network" "workload" {
   auto_create_subnetworks = false
 }
 
+# Deny explícito de todo el ingress, con log. La VPC ya niega el ingress por una regla implícita que no se ve ni
+# se loguea; las reglas de allow que agregues después tienen que tener prioridad menor a 65534.
+resource "google_compute_firewall" "deny_all_ingress" {
+  name      = "${var.name}-deny-all-ingress"
+  network   = google_compute_network.workload.id
+  direction = "INGRESS"
+  priority  = 65534
+
+  source_ranges = ["0.0.0.0/0"]
+
+  deny {
+    protocol = "all"
+  }
+
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+}
+
 # Flag por subnet. Solo sirve a VMs sin IP externa y no cubre los endpoints regionales *.rep.googleapis.com
 # (gotcha: pga-skips-regional-endpoints).
 resource "google_compute_subnetwork" "workload" {
