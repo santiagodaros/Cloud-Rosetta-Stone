@@ -53,7 +53,7 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] Acciones de GitHub fijadas por SHA (`@sha # tag`) y permisos revisados: ya estaban al mínimo. Una interpolación de `${{ }}` en un `run:` pasó a `env:`.
 - [x] `Retry-After` respetado en el 429/503 de `scripts/fetch-prices.ts` (tope 60 s).
 - [x] Test que compara los conteos del README con el contenido (`tests/readme-counts.test.ts`).
-- [ ] Decidir entre Renovate (`renovate.json`) y Dependabot (`.github/dependabot.yml`): hoy coexisten y pueden duplicar PRs. Ningún bot abrió PRs todavía, así que parece que Renovate no está instalado.
+- [x] Decidido: se queda Renovate (`renovate.json`) y se borró `.github/dependabot.yml`. Renovate cubre npm, acciones de GitHub, providers de Terraform y plugins de tflint. Falta instalar la app (ver `docs/MANTENEDOR-SETUP.md`, sección 6): hasta entonces no hay ningún bot de dependencias activo.
 - [ ] El CI de GitHub no corre: la cuenta tiene un problema de facturación ("recent account payments have failed or your spending limit needs to be increased"). Hasta resolverlo, ninguna rama pasó CI real; todo se validó localmente con las versiones del CI.
 
 ### Congelado (no empezar)
