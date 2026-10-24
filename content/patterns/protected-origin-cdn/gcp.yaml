@@ -1,0 +1,95 @@
+provider: gcp
+bindings:
+  cdn-edge:
+    service: { es: "Cloud CDN sobre un backend bucket de un Application Load Balancer externo global", en: "Cloud CDN on a backend bucket of a global external Application Load Balancer" }
+    config: { es: "Backend bucket con enable_cdn, cache_mode CACHE_ALL_STATIC y una clave de URLs firmadas; proxy HTTPS con certificado administrado", en: "Backend bucket with enable_cdn, cache_mode CACHE_ALL_STATIC and a signed URL key; HTTPS proxy with a managed certificate" }
+    from:
+      aws:
+        es: "Además de que Cloud CDN lea el bucket con su propia cuenta de servicio, el acceso del visitante se controla firmando URLs en el backend bucket."
+        en: "Besides Cloud CDN reading the bucket with its own service account, visitor access is controlled by signing URLs on the backend bucket."
+  object-storage:
+    service: Cloud Storage
+    config: { es: "Bucket con acceso uniforme y public_access_prevention enforced; roles/storage.objectViewer para la cuenta de servicio de Cloud CDN", en: "Bucket with uniform access and public_access_prevention enforced; roles/storage.objectViewer for the Cloud CDN service account" }
+gotchas:
+  - id: cdn-service-account-appears-with-first-key
+    severity: iam
+    title:
+      es: Cloud CDN lee el bucket con su cuenta de servicio, que aparece al agregar la primera clave
+      en: Cloud CDN reads the bucket with its own service account, which appears when you add the first key
+    body:
+      es: >-
+        Si el bucket restringe quién lee los objetos, Cloud CDN necesita permiso de lectura, y se le da a su cuenta
+        de servicio service-PROJECT_NUMBER@cloud-cdn-fill.iam.gserviceaccount.com con roles/storage.objectViewer. Esa
+        cuenta se crea automáticamente la primera vez que se agrega una clave a un backend bucket del proyecto; antes
+        de eso el comando de permisos falla. Tampoco aparece en la lista de cuentas de servicio del proyecto, porque
+        es de Cloud CDN. Si el proyecto tiene la política de organización de uso compartido restringido por dominio,
+        la documentación sugiere deshabilitarla un momento o permitir la organización dueña del proyecto
+        cloud-cdn-fill. En el IaC, hacé que el permiso dependa de la clave.
+      en: >-
+        If the bucket restricts who can read objects, Cloud CDN needs read permission, granted to its service account
+        service-PROJECT_NUMBER@cloud-cdn-fill.iam.gserviceaccount.com with roles/storage.objectViewer. That account
+        is created automatically the first time you add a key to a backend bucket in the project; before that, the
+        permissions command fails. It also doesn't appear in the project's list of service accounts, because it
+        belongs to Cloud CDN. If the project has the domain restricted sharing organization policy, the documentation
+        suggests temporarily disabling it or allowlisting the organization that owns the cloud-cdn-fill project. In
+        IaC, make the permission depend on the key.
+    sources:
+      - https://docs.cloud.google.com/cdn/docs/using-signed-urls
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [PCNE, PCSE]
+  - id: public-bucket-defeats-signed-urls
+    severity: security
+    title:
+      es: Si el bucket sigue siendo público, las URLs firmadas no protegen el contenido
+      en: If the bucket stays public, signed URLs don't protect the content
+    body:
+      es: >-
+        Para que las URLs firmadas protejan el contenido, el origen no debe dar acceso público: la documentación
+        indica sacar los permisos de lectura de allUsers (y allAuthenticatedUsers, si aplica) del bucket, que es
+        habitual dejar públicos durante las pruebas. Aun sin acceso público, quien ya tiene permiso sobre el bucket,
+        por ejemplo OWNER, puede acceder a Cloud Storage sin URL firmada. Y una URL firmada da acceso por tiempo
+        limitado a cualquiera que la tenga, sea o no usuario de Google. Revisá que el bucket no tenga allUsers ni
+        allAuthenticatedUsers antes de dar la entrada por cerrada, y firmá solo URLs HTTPS.
+      en: >-
+        For signed URLs to protect the content, the origin must not grant public access: the documentation says to
+        remove the allUsers (and allAuthenticatedUsers, if applicable) read permissions from the bucket, which is
+        commonly left public during testing. Even without public access, anyone who already has permission on the
+        bucket, such as OWNER, can access Cloud Storage without a signed URL. And a signed URL gives time-limited
+        access to anyone who holds it, whether or not they have a Google Account. Check that the bucket has neither
+        allUsers nor allAuthenticatedUsers before calling the entry closed, and sign only HTTPS URLs.
+    sources:
+      - https://docs.cloud.google.com/cdn/docs/using-signed-urls
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [PCSE, PCNE]
+  - id: signed-url-responses-ignore-cache-control
+    severity: operations
+    title:
+      es: Cloud CDN cachea las respuestas a pedidos firmados sin mirar el Cache-Control del origen
+      en: Cloud CDN caches responses to signed requests regardless of the origin's Cache-Control
+    body:
+      es: >-
+        Cloud CDN cachea las respuestas a pedidos firmados sin importar el header Cache-Control del backend. El
+        tiempo máximo que esas respuestas pueden cachearse sin revalidar lo fija el flag signed-url-cache-max-age,
+        que por defecto es de una hora. El Cache-Control del objeto no lo acorta. Fijá el máximo según cuánto
+        toleres que una respuesta se siga sirviendo desde el caché, y no cuentes con el Cache-Control del
+        objeto para controlarlo en pedidos firmados.
+      en: >-
+        Cloud CDN caches responses to signed requests regardless of the backend's Cache-Control header. The maximum
+        time those responses can be cached without revalidation is set by the signed-url-cache-max-age flag, which
+        defaults to one hour. The object's Cache-Control doesn't shorten it. Set the maximum according to how long
+        you can tolerate a response still being served from cache, and don't count on the object's Cache-Control
+        to control it on signed requests.
+    sources:
+      - https://docs.cloud.google.com/cdn/docs/using-signed-urls
+    verified_at: 2026-10-24
+    roles: [cdn-edge]
+    exams: [PCNE]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Regla de reenvío global del balanceador (por hora)", en: "The load balancer's global forwarding rule (hourly)" }
+  notes:
+    es: Las reglas de reenvío globales se facturan por hora; Cloud CDN suma ancho de banda y pedidos, y el bucket su almacenamiento y operaciones.
+    en: Global forwarding rules are billed hourly; Cloud CDN adds bandwidth and requests, and the bucket adds its storage and operations.

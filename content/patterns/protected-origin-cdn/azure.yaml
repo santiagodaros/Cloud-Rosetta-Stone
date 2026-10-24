@@ -1,0 +1,123 @@
+provider: azure
+bindings:
+  cdn-edge:
+    service: Azure Front Door Premium
+    config: { es: "Perfil Premium_AzureFrontDoor con un origin group exclusivo de orígenes privados, ruta con redirección a HTTPS y política WAF", en: "Premium_AzureFrontDoor profile with an origin group reserved for private origins, a route with HTTPS redirect and a WAF policy" }
+    from:
+      aws:
+        es: "El origen no se protege con una identidad del CDN sino con un private endpoint que Front Door crea y que hay que aprobar en la Storage Account."
+        en: "The origin isn't protected with a CDN identity but with a private endpoint that Front Door creates and that must be approved on the Storage Account."
+  object-storage:
+    service: Azure Blob Storage
+    config: { es: "Storage Account con public_network_access Disabled y un contenedor con acceso anónimo a blobs; origen de Front Door con Private Link al sub-recurso blob", en: "Storage Account with public_network_access Disabled and a container with anonymous blob access; Front Door origin with Private Link to the blob sub-resource" }
+gotchas:
+  - id: premium-private-link-pending-approval
+    severity: networking
+    title:
+      es: Private Link al origen está en Front Door Premium y la conexión del private endpoint hay que aprobarla
+      en: Private Link to the origin is in Front Door Premium and the private endpoint connection must be approved
+    body:
+      es: >-
+        La tabla de comparación de niveles marca "Private Link connection to origin" en Front Door Premium y no en
+        Standard. Al habilitar Private Link en un origen, Front Door crea un private endpoint de su red regional
+        administrada y llega al origen una solicitud pendiente: hay que aprobar la conexión antes de que el tráfico
+        pase de forma privada, desde el portal, la CLI o PowerShell. Tras aprobarla, la conexión puede tardar unos
+        minutos en establecerse y, mientras tanto, los pedidos al origen reciben un mensaje de error de Front Door.
+        Planificá la aprobación como un paso del despliegue y no esperes contenido hasta que la conexión figure
+        establecida.
+      en: >-
+        The tier comparison table marks "Private Link connection to origin" under Front Door Premium and not under
+        Standard. When you enable Private Link on an origin, Front Door creates a private endpoint from its managed
+        regional private network and a pending request arrives at the origin: you must approve the connection before
+        traffic can pass privately, using the portal, the CLI or PowerShell. After approval, the connection can take
+        a few minutes to establish and, meanwhile, requests to the origin receive a Front Door error message. Plan
+        the approval as a deployment step and don't expect content until the connection shows as established.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/private-link
+      - https://learn.microsoft.com/azure/frontdoor/standard-premium/tier-comparison
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [AZ-700]
+  - id: private-link-origin-needs-anonymous-or-sas
+    severity: security
+    title:
+      es: Con Private Link al storage, un contenedor sin acceso anónimo requiere autorizar los pedidos, por ejemplo con SAS
+      en: With Private Link to storage, a container without anonymous access requires authorized requests, for example with SAS
+    body:
+      es: >-
+        La guía de Front Door para un origen de Storage indica que, si el blob o el contenedor no permiten acceso
+        anónimo, los pedidos contra ellos deben autorizarse, por ejemplo con shared access signatures, y lista como
+        error común no usar SAS contra una cuenta que no permite acceso anónimo. Según la misma guía, el acceso desde
+        internet público a la cuenta queda deshabilitado una vez que se habilita el private endpoint. Entonces hay
+        que elegir: contenedor con lectura anónima de blobs, que solo se alcanza por el private endpoint, o SAS en
+        los pedidos. Decidilo de forma explícita y no dejes el contenedor privado sin SAS.
+      en: >-
+        Front Door's guide for a Storage origin says that if the blob or container doesn't permit anonymous access,
+        requests against it must be authorized, for example with shared access signatures, and lists as a common
+        mistake not using SAS against an account that doesn't allow anonymous access. According to the same guide,
+        public internet access to the account is disabled once the private endpoint is enabled. So you have to
+        choose: a container with anonymous blob read, reachable only through the private endpoint, or SAS on
+        requests. Decide explicitly and don't leave the container private without SAS.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-enable-private-link-storage-account
+    verified_at: 2026-10-24
+    roles: [cdn-edge, object-storage]
+    exams: [AZ-700, AZ-104]
+  - id: no-mixed-public-private-origin-group
+    severity: operations
+    title:
+      es: Un origin group no puede mezclar orígenes públicos y orígenes con Private Link
+      en: An origin group can't mix public origins and Private Link origins
+    body:
+      es: >-
+        Front Door no permite mezclar orígenes públicos y privados en el mismo origin group; la guía lista como error
+        común agregar un origen con Private Link a un grupo que ya tiene orígenes públicos. Si se habilita Private
+        Link en más de un origen público del mismo grupo a la vez, la operación puede fallar con "Origin Group can
+        only have origins with private links or origins without private links. They cannot have a mix of both",
+        porque los orígenes se actualizan de a uno. Mantené los públicos en un grupo y los privados en otro, y si
+        migrás un grupo existente, habilitá Private Link de a un origen: dejá uno solo, habilitalo y aprobá su
+        conexión, y recién después sumá el siguiente.
+      en: >-
+        Front Door doesn't allow mixing public and private origins in the same origin group; the guide lists as a
+        common mistake adding a Private Link origin to a group that already has public origins. If you enable
+        Private Link on more than one public origin in the same group at once, the operation can fail with "Origin
+        Group can only have origins with private links or origins without private links. They cannot have a mix of
+        both", because origins are updated one at a time. Keep public origins in one group and private ones in
+        another, and if you migrate an existing group, enable Private Link one origin at a time: leave a single
+        one, enable it and approve its connection, and only then add the next.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/private-link
+      - https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-enable-private-link-storage-account
+    verified_at: 2026-10-24
+    roles: [cdn-edge]
+    exams: [AZ-700]
+  - id: premium-base-fee-for-private-link
+    severity: cost
+    title:
+      es: Private Link al origen implica el nivel Premium, que tiene un cargo base mayor
+      en: Private Link to the origin means the Premium tier, which has a higher base fee
+    body:
+      es: >-
+        Cada perfil de Front Door cobra una tarifa por hora, por cada hora o fracción en que el perfil está
+        desplegado, y la tarifa depende del nivel. Premium tiene un cargo base y un cargo de procesamiento de
+        pedidos mayores. La documentación aclara que no se paga extra por el tráfico de Private Link frente al de un
+        endpoint público del origen, ni por los conjuntos de reglas administrados de WAF en Premium. Si el origen no
+        necesita Private Link, comprobá antes de elegir Premium qué usás realmente del nivel.
+      en: >-
+        Each Front Door profile incurs an hourly fee, billed for each hour or partial hour the profile is deployed,
+        and the rate depends on the tier. Premium has a higher base fee and request processing fee. The
+        documentation states you don't pay extra for Private Link traffic compared to an origin's public endpoint,
+        nor for managed WAF rule sets in Premium. If the origin doesn't need Private Link, check what you actually
+        use from the tier before choosing Premium.
+    sources:
+      - https://learn.microsoft.com/azure/frontdoor/billing
+    verified_at: 2026-10-24
+    roles: [cdn-edge]
+    exams: [AZ-305]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Tarifa base por hora del perfil de Front Door Premium", en: "Hourly base fee of the Front Door Premium profile" }
+  notes:
+    es: El perfil se factura por hora mientras exista, más pedidos y transferencia. La Storage Account suma su almacenamiento y operaciones.
+    en: The profile is billed hourly while it exists, plus requests and data transfer. The Storage Account adds its storage and operations.
