@@ -35,11 +35,11 @@ const previous = existsSync(pricesFile) ? Prices.parse(JSON.parse(readFileSync(p
 type Resolved = { unit_price: number; unit: PriceUnit; ref: string };
 class ResolveError extends Error {}
 
-async function getJson(url: string): Promise<unknown> {
+async function getJson(url: string, headers: Record<string, string> = {}): Promise<unknown> {
   for (let attempt = 1; ; attempt++) {
-    const res = await fetch(url, { headers: { accept: 'application/json' } });
+    const res = await fetch(url, { headers: { accept: 'application/json', ...headers } });
     if (res.ok) return res.json();
-    if (attempt >= 4 || (res.status < 500 && res.status !== 429)) throw new Error(`${res.status} ${res.statusText} — ${url.replace(/key=[^&]+/, 'key=***')}`);
+    if (attempt >= 4 || (res.status < 500 && res.status !== 429)) throw new Error(`${res.status} ${res.statusText} — ${url}`);
     await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
   }
 }
@@ -160,7 +160,7 @@ async function gcpPaged<T>(url: string, key: string): Promise<T[]> {
   const out: T[] = [];
   let token = '';
   do {
-    const page = (await getJson(`${url}${url.includes('?') ? '&' : '?'}key=${gcpKey}&pageSize=5000${token ? `&pageToken=${token}` : ''}`)) as Record<string, unknown>;
+    const page = (await getJson(`${url}${url.includes('?') ? '&' : '?'}pageSize=5000${token ? `&pageToken=${token}` : ''}`, { 'x-goog-api-key': gcpKey! })) as Record<string, unknown>;
     out.push(...((page[key] as T[]) ?? []));
     token = (page.nextPageToken as string) ?? '';
   } while (token);
