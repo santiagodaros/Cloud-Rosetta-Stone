@@ -1,0 +1,142 @@
+provider: aws
+bindings:
+  hub:
+    service: AWS Transit Gateway
+    config: { es: "Un attachment por spoke y uno para la VPC de inspección, con una subnet por AZ", en: "One attachment per spoke and one for the inspection VPC, with one subnet per AZ" }
+    from:
+      azure:
+        es: "El Transit Gateway rutea entre attachments: con las route tables por defecto todos los spokes se ven entre sí, sin UDR. La inspección hay que forzarla con route tables propias."
+        en: "The Transit Gateway routes between attachments: with the default route tables all spokes see each other, with no UDRs. Inspection has to be forced with route tables of your own."
+  routing:
+    service: { es: "Route tables del Transit Gateway", en: "Transit Gateway route tables" }
+    config: { es: "Asociación y propagación por defecto deshabilitadas; spokes con 0.0.0.0/0 estático hacia el attachment de inspección", en: "Default association and propagation disabled; spokes with a static 0.0.0.0/0 to the inspection attachment" }
+  inspection:
+    service: AWS Network Firewall
+    config: { es: "VPC de inspección con un firewall endpoint por AZ; appliance mode en su attachment", en: "Inspection VPC with one firewall endpoint per AZ; appliance mode on its attachment" }
+gotchas:
+  - id: appliance-mode-for-symmetric-inspection
+    severity: reliability
+    title:
+      es: Sin appliance mode en el attachment de inspección, ida y vuelta pueden cruzar AZs distintas
+      en: Without appliance mode on the inspection attachment, request and response can cross different AZs
+    body:
+      es: >-
+        Cuando el modo appliance no está habilitado, el Transit Gateway mantiene el tráfico en la AZ de origen. Con
+        el modo habilitado, elige una única interfaz de red de la VPC de inspección por flow hash para toda la vida
+        del flujo y usa la misma para el retorno, de modo que el tráfico bidireccional es simétrico. Un firewall
+        stateful necesita ver el pedido y la respuesta. Habilitalo en el attachment de la VPC de inspección (en
+        Terraform, appliance_mode_support = "enable") y conectá un solo Transit Gateway a esa VPC: con varios, AWS
+        no garantiza la persistencia del flujo. Cambiarlo en un attachment existente puede alterar su ruteo actual.
+      en: >-
+        When appliance mode isn't enabled, the transit gateway keeps traffic in the originating AZ. With it enabled,
+        it selects a single network interface in the inspection VPC using a flow hash for the life of the flow and
+        uses the same one for return traffic, so bidirectional traffic is symmetric. A stateful firewall needs to
+        see both the request and the response. Enable it on the inspection VPC's attachment (in Terraform,
+        appliance_mode_support = "enable") and connect exactly one transit gateway to that VPC: with several, AWS
+        doesn't guarantee flow stickiness. Changing it on an existing attachment can alter its current routing.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/tgw/how-transit-gateways-work.html
+    verified_at: 2026-10-24
+    roles: [hub, inspection]
+    exams: [ANS-C01]
+  - id: default-route-table-bypasses-inspection
+    severity: security
+    title:
+      es: Con la route table por defecto todos los attachments se ven entre sí y la inspección no se ejecuta
+      en: With the default route table every attachment sees every other, and inspection never runs
+    body:
+      es: >-
+        El Transit Gateway trae una route table por defecto que es a la vez la de asociación y la de propagación, y
+        los CIDR de cada VPC se propagan a ella: cada attachment puede enrutar paquetes a todos los demás. Eso
+        conecta los spokes entre sí sin pasar por el firewall. Para forzar la inspección, deshabilitá la asociación
+        y la propagación por defecto, creá una route table para los spokes con una ruta estática 0.0.0.0/0 hacia el
+        attachment de inspección, y otra para el attachment de inspección que reciba las rutas propagadas de los
+        spokes. Cada attachment se asocia a una sola route table.
+      en: >-
+        The transit gateway comes with a default route table that is both the association and the propagation
+        table, and each VPC's CIDR blocks propagate to it: every attachment can route packets to all the others.
+        That connects spokes to each other without going through the firewall. To force inspection, disable the
+        default association and propagation, create a route table for the spokes with a static 0.0.0.0/0 route to
+        the inspection attachment, and another for the inspection attachment that receives the spokes' propagated
+        routes. Each attachment is associated with a single route table.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/tgw/how-transit-gateways-work.html
+    verified_at: 2026-10-24
+    roles: [routing, hub]
+    exams: [ANS-C01, SAA-C03]
+  - id: attachment-az-coverage
+    severity: reliability
+    title:
+      es: Solo los recursos en AZs con una ENI del attachment alcanzan el Transit Gateway
+      en: Only resources in AZs with an attachment ENI can reach the transit gateway
+    body:
+      es: >-
+        Al adjuntar una VPC hay que habilitar una o más AZs especificando exactamente una subnet por AZ; el
+        Transit Gateway pone una interfaz de red en esa subnet. El tráfico llega a todas las subnets de la AZ, pero
+        solo los recursos en AZs con attachment pueden alcanzar el Transit Gateway. AWS recomienda habilitar
+        varias AZs para disponibilidad. Incluí en el alta de cada spoke una subnet por cada AZ donde haya
+        workloads, y reservá subnets dedicadas al attachment.
+      en: >-
+        When attaching a VPC you must enable one or more AZs by specifying exactly one subnet per AZ; the transit
+        gateway places a network interface in that subnet. Traffic can reach all subnets in the AZ, but only
+        resources in AZs with an attachment can reach the transit gateway. AWS recommends enabling multiple AZs for
+        availability. Include in each spoke's onboarding one subnet for every AZ that has workloads, and reserve
+        subnets dedicated to the attachment.
+    sources:
+      - https://docs.aws.amazon.com/vpc/latest/tgw/how-transit-gateways-work.html
+    verified_at: 2026-10-24
+    roles: [hub]
+    exams: [ANS-C01]
+  - id: firewall-subnet-dedicated-same-az
+    severity: networking
+    title:
+      es: Un firewall endpoint no filtra el tráfico de su propia subnet, y usar el de otra AZ genera cargos entre zonas
+      en: A firewall endpoint can't filter its own subnet's traffic, and using another AZ's endpoint adds cross-zone charges
+    body:
+      es: >-
+        Un firewall endpoint no puede filtrar el tráfico que entra o sale de la subnet donde vive, así que las
+        subnets de firewall no se usan para nada más. Además, si un endpoint de una AZ filtra tráfico de otra zona,
+        pueden aplicar cargos de tráfico entre zonas. Poné un endpoint por AZ en subnets propias, y que la ruta de
+        cada AZ de la VPC de inspección apunte al endpoint de su misma AZ.
+      en: >-
+        A firewall endpoint can't filter traffic coming into or going out of the subnet it resides in, so firewall
+        subnets are used for nothing else. Also, if an endpoint in one AZ filters traffic from another zone,
+        cross-zone traffic charges can apply. Put one endpoint per AZ in subnets of their own, and make each AZ's
+        route in the inspection VPC point to the endpoint in the same AZ.
+    sources:
+      - https://docs.aws.amazon.com/network-firewall/latest/developerguide/what-is-aws-network-firewall.html
+    verified_at: 2026-10-24
+    roles: [inspection]
+    exams: [ANS-C01]
+  - id: tgw-and-firewall-hourly-charges
+    severity: cost
+    title:
+      es: Cada attachment y cada firewall endpoint se cobran por hora, y los datos se cobran por GB en los dos servicios
+      en: Each attachment and each firewall endpoint is billed hourly, and data is billed per GB on both services
+    body:
+      es: >-
+        El Transit Gateway cobra por cada hora que una VPC está adjunta (una hora parcial se factura completa) y
+        por cada GB que se envía desde una VPC, Direct Connect, VPN o Network Firewall. Network Firewall cobra una
+        tarifa horaria por cada firewall endpoint por región y AZ, y por cada GB que procesa el endpoint. Un spoke
+        suma su attachment, y el tráfico que pasa por la inspección paga procesamiento en los dos servicios. Mientras
+        existan, attachments y endpoints se facturan por hora: dimensioná AZs y endpoints al riesgo que querés cubrir.
+      en: >-
+        Transit Gateway charges for each hour a VPC is attached (a partial hour is billed as a full hour) and for
+        each GB sent from a VPC, Direct Connect, VPN or Network Firewall. Network Firewall charges an hourly rate
+        for each firewall endpoint per region and AZ, and for each GB the endpoint processes. A spoke adds its
+        attachment, and traffic going through inspection pays processing on both services. While they exist,
+        attachments and endpoints are billed hourly: size AZs and endpoints to the risk you want to cover.
+    sources:
+      - https://aws.amazon.com/transit-gateway/pricing/
+      - https://aws.amazon.com/network-firewall/pricing/
+    verified_at: 2026-10-24
+    roles: [hub, inspection]
+    exams: [ANS-C01]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Attachment del Transit Gateway (por hora, uno por spoke y uno de inspección)", en: "Transit Gateway attachment (hourly, one per spoke and one for inspection)" }
+    - { es: "Firewall endpoint de Network Firewall (por hora, uno por AZ)", en: "Network Firewall endpoint (hourly, one per AZ)" }
+  notes:
+    es: Los attachments y los endpoints se facturan por hora mientras existen, más procesamiento por GB en el Transit Gateway y en el firewall.
+    en: Attachments and endpoints are billed hourly while they exist, plus per-GB processing on the Transit Gateway and the firewall.

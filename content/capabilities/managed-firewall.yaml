@@ -1,0 +1,24 @@
+id: managed-firewall
+category: networking
+name:
+  es: Firewall gestionado de red (L3-L7)
+  en: Managed network firewall (L3-L7)
+description:
+  es: Firewall stateful como servicio para inspeccionar y filtrar tráfico entre redes, hacia internet y desde on-premises, con reglas y política centralizadas.
+  en: Stateful firewall as a service to inspect and filter traffic between networks, to the internet and from on-premises, with centralized rules and policy.
+providers:
+  azure:
+    services:
+      - service: Azure Firewall
+        docs: https://learn.microsoft.com/azure/firewall/overview
+  aws:
+    services:
+      - service: AWS Network Firewall
+        docs: https://docs.aws.amazon.com/network-firewall/latest/developerguide/what-is-aws-network-firewall.html
+  gcp:
+    services:
+      - service: Cloud NGFW (firewall endpoints)
+        docs: https://docs.cloud.google.com/firewall/docs/about-intrusion-prevention
+caveats:
+  - es: "El modelo de despliegue difiere. Azure Firewall es un recurso que vive en una subnet dedicada de la VNet. Network Firewall crea endpoints en subnets de la VPC y el tráfico llega ahí por las route tables. Cloud NGFW intercepta de forma transparente el tráfico que selecciona una regla de la política y manda los paquetes a un firewall endpoint zonal para la inspección de capa 7."
+    en: "The deployment model differs. Azure Firewall is a resource that lives in a dedicated subnet of the VNet. Network Firewall creates endpoints in VPC subnets and traffic reaches them through route tables. Cloud NGFW transparently intercepts the traffic that a policy rule selects and sends the packets to a zonal firewall endpoint for layer 7 inspection."

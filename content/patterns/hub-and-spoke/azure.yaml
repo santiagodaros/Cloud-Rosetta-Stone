@@ -1,0 +1,141 @@
+provider: azure
+bindings:
+  hub:
+    service: Azure Virtual Network
+    config: { es: "VNet hub regional con AzureFirewallSubnet (/26); un hub por región", en: "Regional hub VNet with AzureFirewallSubnet (/26); one hub per region" }
+    from:
+      aws:
+        es: "No hay un router central: el peering no es transitivo, así que el tráfico entre spokes pasa por el hub solo si lo forzás con UDR hacia el firewall."
+        en: "There is no central router: peering isn't transitive, so spoke-to-spoke traffic goes through the hub only if you force it with UDRs to the firewall."
+  routing:
+    service: { es: "VNet peering + rutas definidas por el usuario (UDR)", en: "VNet peering + user-defined routes (UDR)" }
+    config: { es: "UDR 0.0.0.0/0 en cada subnet de spoke hacia el firewall; peering con forwarded traffic permitido", en: "0.0.0.0/0 UDR on each spoke subnet pointing to the firewall; peering with forwarded traffic allowed" }
+  inspection:
+    service: Azure Firewall
+    config: { es: "SKU Standard o Premium con Firewall Policy; IP privada como next hop de las UDR", en: "Standard or Premium SKU with Firewall Policy; private IP as the UDRs' next hop" }
+gotchas:
+  - id: spoke-to-spoke-needs-udr-and-forwarded-traffic
+    severity: networking
+    title:
+      es: Spoke a spoke por el firewall exige una UDR en cada spoke y peerings que acepten tráfico reenviado
+      en: Spoke-to-spoke through the firewall needs a UDR in every spoke and peerings that accept forwarded traffic
+    body:
+      es: >-
+        El peering entre VNets es una relación no transitiva: dos spokes peereados con el mismo hub no se ven entre
+        sí. Para que el hub los conecte, las subnets de cada spoke necesitan una UDR que apunte al Azure Firewall
+        como gateway por defecto, y los peerings tienen que aceptar tráfico reenviado. Si falta cualquiera de las
+        dos cosas, el tráfico entre spokes no llega o no pasa por el firewall. Cargá la UDR como parte del alta de
+        cada spoke, no como un paso manual aparte.
+      en: >-
+        VNet peering is a nontransitive relationship: two spokes peered with the same hub can't see each other. For
+        the hub to connect them, the subnets in each spoke need a UDR pointing to Azure Firewall as the default
+        gateway, and the peerings must accept forwarded traffic. If either is missing, spoke-to-spoke traffic
+        either doesn't arrive or doesn't go through the firewall. Make the UDR part of onboarding each spoke, not a
+        separate manual step.
+    sources:
+      - https://learn.microsoft.com/azure/architecture/networking/architecture/hub-spoke
+      - https://learn.microsoft.com/azure/firewall/firewall-faq
+    verified_at: 2026-10-24
+    roles: [routing, inspection]
+    exams: [AZ-700, AZ-305]
+  - id: peering-routes-beat-summarized-udr
+    severity: security
+    title:
+      es: Una UDR resumida pierde contra la ruta de peering más específica, y el tráfico esquiva el firewall
+      en: A summarized UDR loses to the more specific peering route, and traffic bypasses the firewall
+    body:
+      es: >-
+        Azure elige la ruta por longest prefix match, y con un peering cada subnet recibe rutas de tipo "Virtual
+        network peering" por cada espacio de direcciones de la VNet peereada. Si esa ruta es más específica que
+        una UDR resumida (por ejemplo, una 10.0.0.0/8 hacia el firewall), Azure elige la del peering y el tráfico
+        no pasa por el NVA. Usá UDR con prefijos tan específicos como los del peering. Existe una capacidad en
+        preview, disablePeeringRoute, que suprime esas rutas, pero hoy el provider AzureRM no la soporta y hay
+        que usar AzAPI.
+      en: >-
+        Azure picks routes by longest prefix match, and with a peering each subnet gets routes of type "Virtual
+        network peering" for every address space of the peered VNet. If that route is more specific than a
+        summarized UDR (for example, a 10.0.0.0/8 to the firewall), Azure picks the peering route and traffic
+        bypasses the NVA. Use UDRs with prefixes as specific as the peering's. A preview capability,
+        disablePeeringRoute, suppresses those routes, but the AzureRM provider doesn't support it today and you
+        have to use AzAPI.
+    sources:
+      - https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview
+    verified_at: 2026-10-24
+    roles: [routing]
+    exams: [AZ-700]
+  - id: firewall-subnet-name-size-no-nsg
+    severity: networking
+    title:
+      es: La subnet del firewall se llama AzureFirewallSubnet, es de /26 como mínimo y no admite NSG
+      en: The firewall subnet must be named AzureFirewallSubnet, at least /26, and doesn't support NSGs
+    body:
+      es: >-
+        Azure Firewall exige una subnet llamada AzureFirewallSubnet con un rango de al menos /26, y Microsoft
+        recomienda /26 como mínimo para cubrir límites futuros de tamaño. Esa subnet no admite NSG: los NSG a
+        nivel de subnet están deshabilitados para evitar interrupciones del servicio. Reservá el /26 en el
+        diseño del hub y filtrá con la política del firewall, no con un NSG en esa subnet.
+      en: >-
+        Azure Firewall requires a subnet named AzureFirewallSubnet with an address range of at least /26, and
+        Microsoft recommends /26 as the minimum to cover future size limits. That subnet doesn't support NSGs:
+        subnet-level NSGs are disabled to prevent service interruptions. Reserve the /26 in the hub design and
+        filter with the firewall policy, not with an NSG on that subnet.
+    sources:
+      - https://learn.microsoft.com/azure/architecture/networking/architecture/hub-spoke
+      - https://learn.microsoft.com/azure/firewall/firewall-faq
+    verified_at: 2026-10-24
+    roles: [inspection, hub]
+    exams: [AZ-700, AZ-104]
+  - id: gateway-transit-flags
+    severity: networking
+    title:
+      es: Para que los spokes usen el gateway del hub hay tres flags de peering, y el spoke no puede tener gateway propio
+      en: For spokes to use the hub's gateway you need three peering flags, and the spoke can't have its own gateway
+    body:
+      es: >-
+        El peering del hub tiene que permitir gateway transit, el de cada spoke tiene que usar el gateway de la
+        VNet remota, y todos los peerings tienen que permitir tráfico reenviado. Una VNet que usa un gateway remoto
+        no puede tener el suyo, porque una VNet puede tener un solo gateway. Si un spoke ya tiene gateway
+        propio, no puede usar el del hub. Definí los tres flags en la plantilla de alta de spoke.
+      en: >-
+        The hub's peering must allow gateway transit, each spoke's peering must use the remote virtual network's
+        gateway, and all peerings must allow forwarded traffic. A VNet that uses a remote gateway can't have its
+        own, because a VNet can have only one gateway. If a spoke already has its own gateway, it can't use the
+        hub's. Set all three flags in the spoke onboarding template.
+    sources:
+      - https://learn.microsoft.com/azure/architecture/networking/architecture/hub-spoke
+      - https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview
+    verified_at: 2026-10-24
+    roles: [hub, routing]
+    exams: [AZ-700]
+  - id: firewall-hourly-fee-and-direct-peering
+    severity: cost
+    title:
+      es: Azure Firewall cobra una tarifa fija por hora por despliegue, más el procesamiento de datos
+      en: Azure Firewall charges a fixed hourly fee per deployment, plus data processing
+    body:
+      es: >-
+        La facturación tiene una parte fija y otra variable: una tarifa por hora por cada despliegue del firewall,
+        sin importar la escala, y un cargo aparte por los datos que procesa. Una hora parcial se factura como hora
+        completa. Si desasignás el firewall con PowerShell, la facturación se detiene, pero la IP privada puede
+        cambiar y romper las UDR. Para flujos de alto volumen y bajo riesgo entre spokes, Microsoft sugiere un
+        peering directo que esquive el hub, a cambio de perder la inspección de ese flujo.
+      en: >-
+        Billing has a fixed part and a variable part: an hourly fee per firewall deployment regardless of scale, and
+        a separate charge for the data it processes. A partial hour is billed as a full hour. If you deallocate the
+        firewall with PowerShell, billing stops, but the private IP address might change and break the UDRs. For
+        high-throughput, low-risk flows between spokes, Microsoft suggests a direct peering that bypasses the hub,
+        at the price of losing inspection for that flow.
+    sources:
+      - https://azure.microsoft.com/pricing/details/azure-firewall/
+      - https://learn.microsoft.com/azure/firewall/firewall-faq
+      - https://learn.microsoft.com/azure/architecture/networking/architecture/hub-spoke
+    verified_at: 2026-10-24
+    roles: [inspection]
+    exams: [AZ-700, AZ-305]
+cost:
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Azure Firewall (por hora de despliegue)", en: "Azure Firewall (per deployment hour)" }
+  notes:
+    es: El firewall se factura por hora de despliegue más el procesamiento de datos. El tráfico por peering también tiene un cargo.
+    en: The firewall is billed per deployment hour plus data processing. Traffic over a peering also has a charge.

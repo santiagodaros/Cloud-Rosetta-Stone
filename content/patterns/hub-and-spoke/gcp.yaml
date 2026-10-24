@@ -1,0 +1,124 @@
+provider: gcp
+bindings:
+  hub:
+    service: VPC network
+    config: { es: "VPC hub peereada con cada spoke; alternativa: Network Connectivity Center con VPC spokes", en: "Hub VPC peered with each spoke; alternative: Network Connectivity Center with VPC spokes" }
+    from:
+      azure:
+        es: "El peering tampoco es transitivo, y además las custom routes (estáticas y dinámicas) no se intercambian por defecto: hay que activar export en el hub e import en cada spoke."
+        en: "Peering isn't transitive here either, and custom routes (static and dynamic) aren't exchanged by default: you have to turn on export at the hub and import at each spoke."
+  routing:
+    service: { es: "VPC Network Peering con intercambio de custom routes", en: "VPC Network Peering with custom route exchange" }
+    config: { es: "export_custom_routes en el peering del hub; import_custom_routes en el de cada spoke", en: "export_custom_routes on the hub's peering; import_custom_routes on each spoke's" }
+    equivalence: partial
+    notes:
+      es: "El peering intercambia rutas pero no ofrece ruteo transitivo, así que no reenvía tráfico entre spokes."
+      en: "Peering exchanges routes but doesn't provide transitive routing, so it doesn't forward traffic between spokes."
+  inspection:
+    service: { es: "Cloud NGFW: firewall endpoints + política de firewall con perfil de seguridad", en: "Cloud NGFW: firewall endpoints + firewall policy with security profile" }
+    config: { es: "Un endpoint zonal asociado a cada VPC; reglas con acción apply_security_profile_group", en: "A zonal endpoint associated with each VPC; rules with the apply_security_profile_group action" }
+    equivalence: partial
+    notes:
+      es: "La política de cada VPC selecciona el tráfico y los paquetes interceptados se mandan al firewall endpoint para inspección de capa 7."
+      en: "Each VPC's policy selects traffic and intercepted packets are sent to the firewall endpoint for layer 7 inspection."
+gotchas:
+  - id: peering-not-transitive-no-spoke-to-spoke
+    severity: networking
+    title:
+      es: "Dos spokes peereados con el mismo hub no se ven entre sí: el peering no hace ruteo transitivo"
+      en: "Two spokes peered with the same hub can't see each other: peering doesn't provide transitive routing"
+    body:
+      es: >-
+        VPC Network Peering no provee ruteo transitivo, así que la VPC hub no reenvía tráfico entre dos spokes
+        peereados con ella. Es la misma propiedad que aparece con private services access en otros patrones
+        (psa-peering-not-transitive). Si necesitás spoke a spoke, peereá esos spokes directamente o usá Network
+        Connectivity Center con VPC spokes.
+      en: >-
+        VPC Network Peering doesn't provide transitive routing, so the hub VPC doesn't forward traffic between two
+        spokes peered with it. It's the same property that shows up with private services access in other patterns
+        (psa-peering-not-transitive). If you need spoke-to-spoke, peer those spokes directly or use Network
+        Connectivity Center with VPC spokes.
+    sources:
+      - https://docs.cloud.google.com/vpc/docs/vpc-peering
+      - https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/vpc-spokes-overview
+    verified_at: 2026-10-24
+    roles: [hub, routing]
+    exams: [PCNE, PCA]
+  - id: peering-custom-routes-off-by-default
+    severity: networking
+    title:
+      es: Las rutas hacia on-premises y las rutas estáticas custom no cruzan el peering salvo que activés export e import
+      en: Routes to on-premises and custom static routes don't cross the peering unless you turn on export and import
+    body:
+      es: >-
+        Las rutas de subnet se intercambian siempre (salvo las de subnets con IPv4 públicas de uso privado), pero las
+        rutas dinámicas y las estáticas IPv4 sin network tags con un next hop distinto del internet gateway por
+        defecto no se exportan ni se importan por defecto. Se habilitan con --export-custom-routes en la VPC
+        que las tiene y --import-custom-routes en la que las recibe. Las estáticas con network tags o con el
+        internet gateway por defecto como next hop no se pueden exportar ni importar. Un spoke que no importa
+        las rutas del hub no llega a on-premises por el hub.
+      en: >-
+        Subnet routes are always exchanged (except IPv4 subnet routes using privately used public IPv4 addresses), but
+        dynamic routes and
+        IPv4 static routes without network tags with a next hop other than the default internet gateway aren't
+        exported or imported by default. You enable them with --export-custom-routes on the VPC that has them and
+        --import-custom-routes on the one that receives them. Static routes with network tags or with the default
+        internet gateway as next hop can't be exported or imported. A spoke that doesn't import the hub's routes
+        can't reach on-premises through the hub.
+    sources:
+      - https://docs.cloud.google.com/vpc/docs/vpc-peering
+    verified_at: 2026-10-24
+    roles: [routing]
+    exams: [PCNE]
+  - id: ncc-vpc-spokes-change-the-design
+    severity: networking
+    title:
+      es: "Con Network Connectivity Center el diseño cambia: no se combina con peering entre los mismos spokes"
+      en: "With Network Connectivity Center the design changes: it can't be combined with peering between the same spokes"
+    body:
+      es: >-
+        Los VPC spokes de NCC intercambian las rutas de subnet con los demás spokes del hub. No se puede usar VPC
+        Network Peering entre dos VPC spokes que ya estén conectados por un hub de NCC, el intercambio de rutas
+        estáticas entre VPC spokes no está soportado y en la topología estrella NCC no conecta entre sí a los
+        spokes del edge group. Elegí el modelo antes de crear las VPC, porque no se pueden mezclar entre los
+        mismos spokes.
+      en: >-
+        NCC VPC spokes exchange subnet routes with the other spokes on the hub. You can't use VPC Network Peering
+        between two VPC spokes that are also connected through an NCC hub, static route exchange across VPC spokes
+        isn't supported, and in the star topology NCC doesn't connect the spokes in the edge group to each other.
+        Choose the model before creating the VPCs, because you can't mix them between the same spokes.
+    sources:
+      - https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/vpc-spokes-overview
+    verified_at: 2026-10-24
+    roles: [hub]
+    exams: [PCNE]
+  - id: firewall-endpoint-zonal-per-vpc
+    severity: reliability
+    title:
+      es: El firewall endpoint es zonal, se asocia a una VPC por zona y solo inspecciona el tráfico que una regla selecciona
+      en: The firewall endpoint is zonal, associates with a VPC per zone, and only inspects traffic that a rule selects
+    body:
+      es: >-
+        Un firewall endpoint es un recurso zonal, y la asociación lo vincula a una VPC en la misma zona. Una VPC
+        puede asociarse a un solo endpoint por zona, sea de organización o de proyecto. Cloud NGFW redirige el
+        tráfico al endpoint solo cuando coincide con una regla de política con la acción
+        apply_security_profile_group. Para cubrir las zonas donde corren los workloads, creá un endpoint y una
+        asociación por zona y por VPC, y verificá que cada flujo a inspeccionar tenga su regla.
+      en: >-
+        A firewall endpoint is a zonal resource, and the association links it to a VPC network in the same zone. A
+        VPC network can associate with only one endpoint per zone, organization-level or project-level. Cloud NGFW
+        redirects traffic to the endpoint only when it matches a policy rule with the apply_security_profile_group
+        action. To cover the zones where workloads run, create one endpoint and one association per zone and per
+        VPC, and check that every flow to inspect has its rule.
+    sources:
+      - https://docs.cloud.google.com/firewall/docs/about-firewall-endpoints
+      - https://docs.cloud.google.com/firewall/docs/about-intrusion-prevention
+    verified_at: 2026-10-24
+    roles: [inspection]
+    exams: [PCNE, PCSE]
+cost:
+  scales_to_zero: 'partial'
+  fixed_cost_drivers: []
+  notes:
+    es: Pendiente de verificar contra la página oficial de precios cómo se factura el firewall endpoint; completar antes de publicar.
+    en: Pending verification against the official pricing page of how the firewall endpoint is billed; complete before publishing.
