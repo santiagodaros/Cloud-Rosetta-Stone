@@ -121,7 +121,7 @@ export function wordDiff(before: string, after: string): { op: 'same' | 'del' | 
   let i = 0;
   let j = 0;
   while (i < n && j < m) {
-    if (a[i] === b[j]) push('same', a[i++]), j++;
+    if (a[i] === b[j]) { push('same', a[i++]); j++; }
     else if (dp[i + 1][j] >= dp[i][j + 1]) push('del', a[i++]);
     else push('ins', b[j++]);
   }
