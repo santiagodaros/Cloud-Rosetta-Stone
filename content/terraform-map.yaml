@@ -9,7 +9,7 @@ providers:
   azurerm: "~> 5.8"
   aws: "~> 6.67"
   google: "~> 8.6"
-verified_at: 2026-10-06
+verified_at: 2026-10-24
 entries:
   # --- Organización ------------------------------------------------------------
   - id: hierarchy-folder
@@ -307,6 +307,79 @@ entries:
       en: >-
         Azure and AWS model inbound and outbound endpoints. In GCP inbound is a server policy and outbound is a
         forwarding_config block inside a managed zone.
+  - id: managed-firewall
+    title: { es: Firewall administrado (la instancia), en: Managed firewall (the instance) }
+    capability: managed-firewall
+    match: partial
+    resources:
+      azure: [azurerm_firewall, azurerm_firewall_policy]
+      aws: [aws_networkfirewall_firewall, aws_networkfirewall_firewall_policy]
+      gcp: [google_network_security_firewall_endpoint, google_network_security_firewall_endpoint_association]
+    notes:
+      es: >-
+        Azure Firewall es un recurso que se despliega en la VNet (en una subnet propia) y una policy aparte lleva
+        sus reglas. Network Firewall crea un endpoint por zona de disponibilidad en las subnets que indicás y las
+        route tables tienen que apuntar a él. En GCP el firewall endpoint es zonal y se asocia a cada VPC; no
+        inspecciona nada hasta que una regla de la network firewall policy con la acción
+        apply_security_profile_group le manda el tráfico (ver firewall-rules).
+      en: >-
+        Azure Firewall is a resource deployed into the VNet (in its own subnet) and a separate policy holds its
+        rules. Network Firewall creates one endpoint per availability zone in the subnets you give it and the
+        route tables must point at it. In GCP the firewall endpoint is zonal and is associated with each VPC; it
+        inspects nothing until a network firewall policy rule with the apply_security_profile_group action sends
+        it traffic (see firewall-rules).
+    sources:
+      - https://learn.microsoft.com/azure/firewall/overview
+      - https://docs.aws.amazon.com/network-firewall/latest/developerguide/what-is-aws-network-firewall.html
+      - https://docs.cloud.google.com/firewall/docs/about-firewall-endpoints
+  - id: firewall-rules
+    title: { es: Reglas del firewall administrado (incl. filtrado por FQDN), en: Managed firewall rules (incl. FQDN filtering) }
+    capability: egress-fqdn-filtering
+    match: partial
+    resources:
+      azure: [azurerm_firewall_policy_rule_collection_group]
+      aws: [aws_networkfirewall_rule_group]
+      gcp: [google_compute_network_firewall_policy, google_compute_network_firewall_policy_association, google_compute_network_firewall_policy_rule]
+    notes:
+      es: >-
+        En Azure las reglas viven en collection groups de una firewall policy, y las de FQDN pueden ser de
+        aplicación o de red. En AWS el filtrado por dominio es un rule group stateful (que después se referencia
+        desde la firewall policy) y Network Firewall usa Suricata. En GCP las reglas son de una network firewall
+        policy que se asocia a la VPC, y los FQDN objects son una capacidad del tier Standard.
+      en: >-
+        In Azure rules live in collection groups of a firewall policy, and FQDN rules can be application or
+        network rules. In AWS domain filtering is a stateful rule group (later referenced from the firewall
+        policy) and Network Firewall uses Suricata. In GCP rules belong to a network firewall policy associated
+        with the VPC, and FQDN objects are a Standard-tier capability.
+    sources:
+      - https://learn.microsoft.com/azure/firewall/overview
+      - https://docs.aws.amazon.com/network-firewall/latest/developerguide/what-is-aws-network-firewall.html
+      - https://docs.cloud.google.com/firewall/docs/about-firewalls
+  - id: transit-hub
+    title: { es: Hub de tránsito entre redes, en: Network transit hub }
+    capability: virtual-network
+    match: partial
+    resources:
+      azure: [azurerm_virtual_wan, azurerm_virtual_hub, azurerm_virtual_hub_connection]
+      aws: [aws_ec2_transit_gateway, aws_ec2_transit_gateway_vpc_attachment, aws_ec2_transit_gateway_route_table, aws_ec2_transit_gateway_route_table_association, aws_ec2_transit_gateway_route_table_propagation, aws_ec2_transit_gateway_route]
+      gcp: [google_network_connectivity_hub, google_network_connectivity_spoke]
+    notes:
+      es: >-
+        Son las alternativas al peering cuando querés tránsito entre spokes: Virtual WAN (el hub es una red
+        administrada por Microsoft con un router propio), Transit Gateway (attachments con una route table
+        por asociación y propagación explícita) y Network Connectivity Center (hub global con spokes; los VPC
+        spokes intercambian subnet routes). Los módulos del patrón usan peering en Azure y GCP (no transitivo)
+        y Transit Gateway en AWS: no son la misma topología.
+      en: >-
+        These are the alternatives to peering when you want transit between spokes: Virtual WAN (the hub is a
+        Microsoft-managed network with its own router), Transit Gateway (attachments with one route table per
+        association and explicit propagation) and Network Connectivity Center (global hub with spokes; VPC spokes
+        exchange subnet routes). The pattern's modules use peering in Azure and GCP (not transitive) and Transit
+        Gateway in AWS: they are not the same topology.
+    sources:
+      - https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about
+      - https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html
+      - https://docs.cloud.google.com/network-connectivity/docs/network-connectivity-center/concepts/overview
 
   # --- Datos -------------------------------------------------------------------------
   - id: object-storage
@@ -383,6 +456,75 @@ entries:
         their versions, but the name stays taken.
     sources:
       - https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key
+  - id: secret-access
+    title: { es: Acceso a un secreto concreto, en: Access to a specific secret }
+    capability: secrets-store
+    match: partial
+    resources:
+      azure: [azurerm_role_assignment]
+      aws: [aws_secretsmanager_secret_policy, aws_iam_role_policy]
+      gcp: [google_secret_manager_secret_iam_member]
+    notes:
+      es: >-
+        En Azure el acceso a los datos del vault se da con un role assignment (por ejemplo Key Vault Secrets
+        User), recomendado al scope del vault; asignarlo sobre un secreto individual es la excepción. En AWS se
+        puede combinar una resource policy del secreto con una política de la identidad. En GCP el binding
+        (Secret Manager Secret Accessor) se puede dar sobre el secreto.
+      en: >-
+        In Azure data-plane access to the vault is granted with a role assignment (for example Key Vault Secrets
+        User), recommended at vault scope; assigning it on an individual secret is the exception. In AWS you can
+        combine a resource policy on the secret with an identity policy. In GCP the binding (Secret Manager
+        Secret Accessor) can be granted on the secret.
+    sources:
+      - https://learn.microsoft.com/azure/key-vault/general/rbac-guide
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html
+      - https://docs.cloud.google.com/secret-manager/docs/access-control
+  - id: secret-rotation
+    title: { es: Rotación automática de secretos, en: Automatic secret rotation }
+    capability: secrets-store
+    match: gap
+    resources:
+      azure: []
+      aws: [aws_secretsmanager_secret_rotation]
+      gcp: [google_secret_manager_secret.rotation]
+    notes:
+      es: >-
+        Solo AWS tiene un recurso que programa la rotación (con una función Lambda para la mayoría de los
+        secretos). En GCP el bloque rotation del secreto solo publica notificaciones a Pub/Sub y un suscriptor
+        tiene que crear la versión nueva. En Azure Key Vault no hay recurso de rotación para secretos: publica
+        un evento de casi vencimiento a Event Grid y una función hace la rotación.
+      en: >-
+        Only AWS has a resource that schedules rotation (with a Lambda function for most secrets). In GCP the
+        secret's rotation block only publishes notifications to Pub/Sub and a subscriber has to create the new
+        version. Azure Key Vault has no rotation resource for secrets: it publishes a near-expiry event to Event
+        Grid and a function does the rotation.
+    sources:
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html
+      - https://docs.cloud.google.com/secret-manager/docs/secret-rotation
+      - https://learn.microsoft.com/azure/key-vault/secrets/tutorial-rotation
+  - id: secret-access-audit
+    title: { es: Auditoría de accesos a secretos, en: Auditing secret access }
+    capability: secrets-store
+    match: partial
+    resources:
+      azure: [azurerm_monitor_diagnostic_setting]
+      aws: [aws_cloudtrail]
+      gcp: [google_project_iam_audit_config]
+    notes:
+      es: >-
+        En Azure los resource logs del vault (categoría AuditEvent) no se recolectan hasta crear un diagnostic
+        setting. En GCP los Data Access audit logs están apagados por defecto y se activan con la audit config
+        del proyecto. En AWS CloudTrail registra las llamadas a Secrets Manager; un trail (aws_cloudtrail) sirve
+        para conservar los eventos más allá de los 90 días del historial.
+      en: >-
+        In Azure the vault's resource logs (AuditEvent category) aren't collected until you create a diagnostic
+        setting. In GCP Data Access audit logs are off by default and are turned on with the project's audit
+        config. In AWS CloudTrail records Secrets Manager calls; a trail (aws_cloudtrail) keeps events beyond the
+        90-day event history.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings
+      - https://docs.cloud.google.com/logging/docs/audit/configure-data-access
+      - https://docs.aws.amazon.com/secretsmanager/latest/userguide/monitoring-cloudtrail.html
 
   # --- Cómputo y mensajería -----------------------------------------------------------
   - id: message-queue
