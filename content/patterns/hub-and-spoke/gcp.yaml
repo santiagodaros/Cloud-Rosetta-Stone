@@ -122,8 +122,9 @@ gotchas:
     roles: [inspection]
     exams: [PCNE, PCSE]
 cost:
-  scales_to_zero: 'partial'
-  fixed_cost_drivers: []
+  scales_to_zero: 'no'
+  fixed_cost_drivers:
+    - { es: "Firewall endpoint de Cloud NGFW Enterprise (por hora, uno por zona, mientras exista)", en: "Cloud NGFW Enterprise firewall endpoint (hourly, one per zone, while it exists)" }
   notes:
-    es: Sin verificar cómo se factura el firewall endpoint; el valor de scales_to_zero es provisional hasta contrastarlo con la página oficial de precios.
-    en: How the firewall endpoint is billed is unverified; the scales_to_zero value is provisional until checked against the official pricing page.
+    es: El endpoint se factura por hora mientras está desplegado, más procesamiento por GiB inspeccionado (en ambas direcciones del flujo).
+    en: The endpoint is billed hourly while deployed, plus per-GiB processing for inspected traffic (in both directions of a flow).
