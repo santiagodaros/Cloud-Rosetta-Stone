@@ -58,11 +58,11 @@ const tabs = [
     <script is:inline>
       // "Mi nube" (F4-09) se aplica antes de pintar para que las notas no parpadeen.
       try {
-        var o = localStorage.getItem('letra-chica:origin');
+        const o = localStorage.getItem('letra-chica:origin');
         if (o === 'azure' || o === 'aws' || o === 'gcp') document.documentElement.dataset.origin = o;
-        var th = localStorage.getItem('letra-chica:theme');
+        const th = localStorage.getItem('letra-chica:theme');
         if (th === 'light' || th === 'dark') document.documentElement.dataset.theme = th;
-      } catch (e) {}
+      } catch { /* localStorage no disponible: se ignora */ }
     </script>
     <link rel="alternate" type="application/atom+xml" title={`${BRAND.name} — ${s.changesTitle}`} href={href(`${lang}/feed.xml`)} />
   </head>
