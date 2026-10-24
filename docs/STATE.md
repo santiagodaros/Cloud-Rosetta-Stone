@@ -28,6 +28,8 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [ ] #15 hub-and-spoke, #16 secretos, #17 egress/NAT.
 - [ ] Un patrón nuevo por mes, sin funciones nuevas en paralelo.
 
+> Pasos concretos de las secciones 3 y 4 (comandos `gh`, qué habilita cada uno y cómo comprobarlo): `docs/MANTENEDOR-SETUP.md`.
+
 ### 3. Precios
 - [ ] Crear secret `GCP_BILLING_API_KEY` para que los 7 meters de GCP salgan de la API (hoy manuales del 2026-10-06).
 - [ ] Probar `prices.yml` a mano una vez: el cambio de key a header `x-goog-api-key` no se probó con key real.
