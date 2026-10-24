@@ -92,6 +92,7 @@ resource "aws_ec2_transit_gateway_route_table_association" "inspection" {
 # --- Network Firewall --------------------------------------------------------------
 
 resource "aws_networkfirewall_rule_group" "egress_domains" {
+  #checkov:skip=CKV_AWS_345:Sin var.kms_key_arn se usa la clave propiedad de AWS; con ella el bloque dinámico cifra con la CMK (el análisis estático no lo resuelve).
   count = length(var.allowed_egress_domains) > 0 ? 1 : 0
 
   name     = "${var.name}-egress-domains"
@@ -107,9 +108,18 @@ resource "aws_networkfirewall_rule_group" "egress_domains" {
       }
     }
   }
+
+  dynamic "encryption_configuration" {
+    for_each = var.kms_key_arn == null ? [] : [var.kms_key_arn]
+    content {
+      type   = "CUSTOMER_KMS"
+      key_id = encryption_configuration.value
+    }
+  }
 }
 
 resource "aws_networkfirewall_firewall_policy" "this" {
+  #checkov:skip=CKV_AWS_346:Sin var.kms_key_arn se usa la clave propiedad de AWS; con ella el bloque dinámico cifra con la CMK (el análisis estático no lo resuelve).
   name = var.name
 
   firewall_policy {
@@ -123,19 +133,38 @@ resource "aws_networkfirewall_firewall_policy" "this" {
       }
     }
   }
+
+  dynamic "encryption_configuration" {
+    for_each = var.kms_key_arn == null ? [] : [var.kms_key_arn]
+    content {
+      type   = "CUSTOMER_KMS"
+      key_id = encryption_configuration.value
+    }
+  }
 }
 
 # Un endpoint por subnet de firewall, es decir, uno por AZ; cada uno se factura por hora
 # (gotcha: tgw-and-firewall-hourly-charges).
 resource "aws_networkfirewall_firewall" "this" {
+  #checkov:skip=CKV_AWS_345:Sin var.kms_key_arn se usa la clave propiedad de AWS; con ella el bloque dinámico cifra con la CMK (el análisis estático no lo resuelve).
+  #checkov:skip=CKV2_AWS_63:El destino de logs (CloudWatch, S3 o Firehose) lo decide el logging centralizado del hub; el módulo no crea uno.
   name                = var.name
   firewall_policy_arn = aws_networkfirewall_firewall_policy.this.arn
   vpc_id              = aws_vpc.inspection.id
+  delete_protection   = var.delete_protection
 
   dynamic "subnet_mapping" {
     for_each = aws_subnet.firewall
     content {
       subnet_id = subnet_mapping.value.id
+    }
+  }
+
+  dynamic "encryption_configuration" {
+    for_each = var.kms_key_arn == null ? [] : [var.kms_key_arn]
+    content {
+      type   = "CUSTOMER_KMS"
+      key_id = encryption_configuration.value
     }
   }
 }

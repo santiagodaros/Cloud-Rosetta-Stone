@@ -39,12 +39,20 @@ resource "azurerm_public_ip" "firewall" {
 }
 
 resource "azurerm_firewall_policy" "this" {
+  #checkov:skip=CKV_AZURE_220:IDPS solo existe en el SKU Premium; el módulo lo pone en Deny cuando firewall_sku_tier = "Premium" (bloque dinámico que el análisis estático no resuelve).
   name                     = "afwp-${var.name}"
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
   sku                      = var.firewall_sku_tier
   threat_intelligence_mode = "Deny"
   tags                     = var.tags
+
+  dynamic "intrusion_detection" {
+    for_each = var.firewall_sku_tier == "Premium" ? [1] : []
+    content {
+      mode = "Deny"
+    }
+  }
 }
 
 # Sin reglas, el firewall bloquea el tráfico de los spokes: se permite solo lo que se declara.
@@ -93,6 +101,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "spokes" {
 
 # Se factura por hora de despliegue (gotcha: firewall-hourly-fee-and-direct-peering).
 resource "azurerm_firewall" "this" {
+  #checkov:skip=CKV_AZURE_216:Con firewall_policy_id el modo de threat intelligence lo define la policy (threat_intelligence_mode = "Deny"), no el atributo threat_intel_mode del firewall.
   name                = "afw-${var.name}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
@@ -127,6 +136,24 @@ resource "azurerm_subnet" "workload" {
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.spoke[each.key].name
   address_prefixes     = [each.value.address_space]
+}
+
+# NSG de la subnet de workload (la del firewall no admite NSG; esta sí). Solo las reglas por
+# defecto de Azure: lo que cada workload necesite se agrega fuera del patrón.
+resource "azurerm_network_security_group" "workload" {
+  for_each = var.spokes
+
+  name                = "nsg-${var.name}-${each.key}"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  tags                = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "workload" {
+  for_each = var.spokes
+
+  subnet_id                 = azurerm_subnet.workload[each.key].id
+  network_security_group_id = azurerm_network_security_group.workload[each.key].id
 }
 
 # El peering no es transitivo: spoke a spoke pasa por el firewall solo si la UDR lo fuerza

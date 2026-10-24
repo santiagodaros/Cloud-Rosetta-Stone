@@ -45,6 +45,18 @@ variable "allowed_egress_domains" {
   default     = []
 }
 
+variable "kms_key_arn" {
+  description = "CMK para cifrar el firewall, su policy y el rule group. Null = clave propiedad de AWS."
+  type        = string
+  default     = null
+}
+
+variable "delete_protection" {
+  description = "Protege el firewall contra borrado accidental. Ponelo en false para poder destruirlo (terraform destroy)."
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Tags comunes."
   type        = map(string)

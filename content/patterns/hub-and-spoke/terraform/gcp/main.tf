@@ -18,6 +18,7 @@ locals {
 }
 
 resource "google_compute_network" "this" {
+  #checkov:skip=CKV2_GCP_18:El filtrado lo hace la política de firewall de red (Cloud NGFW) cuando hay security_profile_group; el check solo reconoce google_compute_firewall.
   for_each = local.networks
 
   project                 = var.project_id
@@ -33,6 +34,8 @@ resource "google_compute_subnetwork" "this" {
   region        = var.region
   network       = google_compute_network.this[each.key].id
   ip_cidr_range = each.value
+
+  private_ip_google_access = true
 
   log_config {
     aggregation_interval = "INTERVAL_5_SEC"
