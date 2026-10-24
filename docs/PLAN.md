@@ -180,7 +180,7 @@ Lo que sigue depende de las decisiones de abajo.
 
 **Decisiones del mantenedor (bloquean su ítem):**
 
-- **F4-21** medir retención: Cloudflare Web Analytics o solo métricas proxy.
+- **F4-21** medir retención: ✅ decidido el 2026-10-24: solo métricas proxy, sin analytics (ver más abajo).
 - **F4-03** (hecho con fallback): para precios de GCP por API, crear el secret `GCP_BILLING_API_KEY` (Cloud
   Billing Catalog API); y habilitar "Allow GitHub Actions to create and approve pull requests" para que el
   workflow semanal abra el PR. **F4-04** Infracost sigue pidiendo su API key.
@@ -210,7 +210,7 @@ Lo que sigue depende de las decisiones de abajo.
 | F4-18 ✅ | **Widgets embebibles**: card de gotcha o comparación para blogs y Notion | Snippet `<iframe>`/HTML estático con link de vuelta; respeta CC BY-SA (atribución incluida) |
 | F4-19 ✅ | **PWA offline** (service worker + manifest) | Estudiar desde el celular sin conexión; sitio ya es estático |
 | F4-20 | **Votación del próximo patrón** con reacciones en GitHub Discussions, visible en el sitio | El ranking se lee en build time; la comunidad empuja el roadmap |
-| F4-21 | **Decisión: medir retención** sin romper "sin trackers": Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores RSS, tráfico de GitHub, descargas del dataset) | Decide el mantenedor antes de F4-09; si se adopta, actualizar README y D8 |
+| F4-21 | **Decisión: medir retención** sin romper "sin trackers": Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores RSS, tráfico de GitHub, descargas del dataset) | Decide el mantenedor antes de F4-09; si se adopta, actualizar README y D8 | **Decidido (2026-10-24): solo métricas proxy.** El "sin trackers, $0" es un diferencial (D8) y sin tráfico que lo justifique no vale romperlo. Se miran las estadísticas de tráfico de GitHub (vistas, clones, referrers), estrellas, forks y PR/issues externos. Se revisa si el proyecto llega a ~1.000 estrellas (el benchmark de la sección 5) o si aparece una pregunta que las métricas proxy no puedan responder.
 | F4-22 ✅ | **Isla interactiva sobre el diagrama ELK**: hover/foco traza rol o conexión; click fija un panel con bindings por nube y gotchas del tramo; recorridos predefinidos (escritura, token, expiración, perímetro); contador de gotchas por rol; equivalentes parciales punteados. En mobile: tap expande el rol inline | Encima del mismo layout de ADR-0003, sin LLM ni dependencia nueva. Requiere schema: `role` opcional por gotcha y `equivalence: full \| partial \| none` por binding (validación cruzada en `content.ts`) |
 
 F4-09 a F4-22 apuntan a **uso recurrente**: que el sitio entre en el trabajo diario (PRs, ADRs,
