@@ -1,5 +1,6 @@
 id: async-worker
 status: published
+legacy_unreviewed: true
 category: async-event
 title:
   es: Worker asíncrono con escala a cero y dead-letter

@@ -1,5 +1,6 @@
 id: private-web-api
 status: published
+legacy_unreviewed: true
 category: compute-web
 title:
   es: Web API privada Zero Trust con PostgreSQL sin contraseñas

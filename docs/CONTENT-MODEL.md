@@ -28,6 +28,7 @@ Con N nubes, hub-and-spoke necesita N entradas por concepto; el mapeo par a par 
 - `paths` (opcional): recorridos predefinidos para el diagrama interactivo (`{ id, label, roles: [...] }`).
   Cada par de roles consecutivos tiene que estar unido por un edge.
 - `status: draft` permite subir un patrón incompleto (warnings); `published` exige las 3 nubes y su Terraform.
+- `published` exige además al menos un gotcha con `verified_by` (revisión externa) en cada nube. Los patrones publicados antes de esta regla llevan `legacy_unreviewed: true` y solo dan warning; no se agrega a patrones nuevos.
 
 ## Implementation (por nube)
 
@@ -103,6 +104,7 @@ menos una opción.
 | Roles y capabilities referenciadas existen; edges apuntan a roles existentes | error |
 | Cada rol capability tiene binding en cada nube; los actores no | error |
 | Patrón `published` tiene las 3 implementaciones y los 3 módulos con `main.tf`, `tests/` y versión pinneada | error |
+| Patrón `published` sin ningún gotcha con `verified_by` en alguna nube | error (warning si lleva `legacy_unreviewed: true`) |
 | Gotchas únicos por nube; `verified_at` no futuro | error |
 | `verified_at` > 180 días | warning (+ issue semanal) |
 | Examen de un gotcha inexistente en el catálogo o de otra nube; `replaced_by` inexistente | error |

@@ -22,6 +22,7 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] Segunda verificación independiente de esas correcciones (2026-10-24): 29 gotchas releídos, 13 confirmados y 16 parciales (frases que quedaron más amplias que su fuente: títulos absolutos, comparaciones entre nubes sin respaldo, inferencias; una era mía: "token fresco cada vez" en `rds-iam-token-lifetime`). Se recortaron o se ajustaron a la fuente.
 - [ ] Re-verificar de verdad (acción humana): `pnpm freshness --review` lista la cola por nube, los más severos primero. Al revisar uno, actualizar `verified_at` y sumar `verified_by`. Así las fechas dejan de ser todas el 2026-10-06.
 - [x] Declarar en README, `/methodology` y CONTRIBUTING qué verifica el schema (hay fuente oficial) y qué no (que sea cierto).
+- [x] Regla de publicación en el validador: un patrón `published` necesita al menos un gotcha con `verified_by` por nube (error; warning para los 5 patrones con `legacy_unreviewed: true`).
 - [ ] Al incorporar un revisor: descomentar su nube en `.github/CODEOWNERS`.
 
 ### 2. Patrones (meta: 12 a seis meses; hoy 5)

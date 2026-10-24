@@ -124,6 +124,12 @@ export const Pattern = z.strictObject({
   edges: z.array(Edge).min(1),
   paths: z.array(PatternPath).default([]),
   tags: z.array(slug).default([]),
+  /**
+   * Marca un patrón que se publicó antes de existir la regla de revisión externa. Un patrón `published` sin
+   * ningún gotcha con `verified_by` en alguna nube es un error, salvo que lleve esta marca (entonces es un warning).
+   * No se agrega a patrones nuevos: la deuda se paga revisando, no marcando.
+   */
+  legacy_unreviewed: z.boolean().optional(),
 });
 export type Pattern = z.infer<typeof Pattern>;
 

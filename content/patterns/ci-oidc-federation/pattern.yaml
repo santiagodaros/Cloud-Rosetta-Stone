@@ -1,5 +1,6 @@
 id: ci-oidc-federation
 status: published
+legacy_unreviewed: true
 category: identity
 title:
   es: Despliegue desde CI sin secretos (federación OIDC)

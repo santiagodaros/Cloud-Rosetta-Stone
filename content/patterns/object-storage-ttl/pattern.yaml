@@ -1,5 +1,6 @@
 id: object-storage-ttl
 status: published
+legacy_unreviewed: true
 category: storage-data
 title:
   es: Ingesta privada de objetos con expiración (TTL)
