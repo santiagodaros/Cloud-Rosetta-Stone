@@ -87,15 +87,16 @@ gotchas:
       en: ARM adds Entra admins; the app's role is created with SQL
     body:
       es: >-
-        Terraform/ARM agrega principals Entra como administradores (azure_pg_admin, CREATEROLE, CREATEDB). Para
-        que la identidad de la app sea un usuario común, un admin Entra puede ejecutar
-        pgaadauth_create_principal('<nombre>', false, false). Para identidades administradas y
-        service principals el nombre es el display name. El módulo deja el SQL exacto como output.
+        Desde el portal de Azure o la ARM API se agregan principals Entra como administradores. Con isAdmin=true,
+        pgaadauth_create_principal les da azure_pg_admin, CREATEROLE y CREATEDB. Para que la identidad de la app sea
+        un usuario común, un admin Entra puede ejecutar pgaadauth_create_principal('<nombre>', false, false). Para
+        identidades administradas y service principals el nombre es el display name. El módulo deja el SQL exacto
+        como output.
       en: >-
-        Terraform/ARM adds Entra principals as administrators (azure_pg_admin, CREATEROLE, CREATEDB). For the app
-        identity to be a regular user, an Entra admin can run pgaadauth_create_principal('<name>', false,
-        false). For managed identities and service principals the name is the display name.
-        The module outputs the exact SQL.
+        Entra principals are added as administrators from the Azure portal or the ARM API. With isAdmin=true,
+        pgaadauth_create_principal gives them azure_pg_admin, CREATEROLE and CREATEDB. For the app identity to be a
+        regular user, an Entra admin can run pgaadauth_create_principal('<name>', false, false). For managed
+        identities and service principals the name is the display name. The module outputs the exact SQL.
     sources:
       - https://learn.microsoft.com/azure/postgresql/security/security-manage-entra-users
     verified_at: 2026-10-06
@@ -129,12 +130,12 @@ gotchas:
       en: Stopping the database stops compute billing, but it restarts on its own after 7 days
     body:
       es: >-
-        ACA puede bajar a cero réplicas, pero PostgreSQL Flexible factura cómputo mientras está encendido. Detenerlo
-        corta el cobro de cómputo (no el de storage), pero el servicio lo vuelve a arrancar automáticamente a los 7
-        días. Para entornos de desarrollo, automatizá el stop en vez de confiar en un stop manual.
+        PostgreSQL Flexible factura cómputo mientras está encendido. Detenerlo corta el cobro de cómputo (no el de
+        storage), pero el servicio lo vuelve a arrancar automáticamente a los 7 días. Para entornos de desarrollo,
+        automatizá el stop en vez de confiar en un stop manual.
       en: >-
-        ACA can go down to zero replicas, but PostgreSQL Flexible bills compute while it's on. Stopping it stops
-        compute billing (not storage), but the service automatically restarts it after 7 days. For dev
+        PostgreSQL Flexible bills compute while it's on. Stopping it stops compute billing (not storage), but the
+        service automatically restarts it after 7 days. For dev
         environments, automate the stop instead of relying on a manual one.
     sources:
       - https://learn.microsoft.com/azure/postgresql/configure-maintain/concepts-limits
