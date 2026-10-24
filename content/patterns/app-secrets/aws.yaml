@@ -110,7 +110,7 @@ gotchas:
       - https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html
     verified_at: 2026-10-24
     roles: [store, key]
-    exams: [SCS-C03]
+    exams: []
   - id: cmk-needs-kms-permission
     severity: iam
     title:

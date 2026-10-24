@@ -101,7 +101,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "spokes" {
 
 # Se factura por hora de despliegue (gotcha: firewall-hourly-fee-and-direct-peering).
 resource "azurerm_firewall" "this" {
-  #checkov:skip=CKV_AZURE_216:Con firewall_policy_id el modo de threat intelligence lo define la policy (threat_intelligence_mode = "Deny"), no el atributo threat_intel_mode del firewall.
+  #checkov:skip=CKV_AZURE_216:El modo de threat intelligence se configura en la policy (threat_intelligence_mode = "Deny" en azurerm_firewall_policy.this); el check solo inspecciona el atributo threat_intel_mode del azurerm_firewall clásico. No se verificó qué hace la API de Azure si se setea también en el firewall, así que no se agrega para evitar drift.
   name                = "afw-${var.name}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location

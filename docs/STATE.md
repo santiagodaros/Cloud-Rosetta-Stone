@@ -31,7 +31,8 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 - [x] Terraform validado localmente (2026-10-24) con las versiones del CI: `fmt`, `validate`, `test` (9 módulos nuevos), tflint 0.27.0 y checkov (432 pasan, 0 fallan, 69 skips con motivo en el código). Pisos de costo en `content/pricing.yaml` y filas en `content/terraform-map.yaml` cargados.
 - [ ] Para publicar cada uno: CI verde en GitHub, revisión humana de su nube (ver `docs/REVISORES.md`) y recién ahí `status: published`.
 - [x] Resueltos (2026-10-24): costo del firewall endpoint de GCP en hub-and-spoke (1.75 USD/h por endpoint, leído de la página oficial; `scales_to_zero: no`); `ip_protocol = "all"` de GCP en controlled-egress (la doc no lo respalda: se reemplazó por los 7 protocolos nombrados; el deny ya no cubre protocolos que solo se indican por número); skips de checkov `CKV2_AWS_63` y `CKV2_AWS_11` de hub-and-spoke AWS (ahora hay logging y flow logs opcionales; ojo: con el default `null` no se crean, checkov los da por satisfechos por presencia de los recursos).
-- [ ] Abiertos: el NAT Gateway de Azure en controlled-egress usa el precio del SKU Standard como referencia (el módulo usa StandardV2 y la API de Retail Prices solo publica un cargo mensual "Log Enabled", no una tarifa por hora); `CKV_AZURE_216` apoyado en que la policy ya cubre threat intelligence.
+- [ ] Abiertos: el NAT Gateway de Azure en controlled-egress usa el precio del SKU Standard como referencia (el módulo usa StandardV2 y la API de Retail Prices solo publica un cargo mensual "Log Enabled", no una tarifa por hora); el skip `CKV_AZURE_216` (controlled-egress y hub-and-spoke, Azure) se mantiene porque el check solo mira el atributo del firewall clásico y las policies ya tienen `Deny`; se podría eliminar seteando `threat_intel_mode = "Deny"` en el firewall, pero hace falta un `terraform plan` o apply real para descartar drift.
+- [x] Etiquetas `SCS-C03` verificadas contra la guía oficial de SCS-C03 (2026-10-24): 27 de 29 OK; se quitó la etiqueta de `metadata-not-encrypted` (app-secrets) y de `rds-iam-user-needs-sql` (private-web-api), y `misconfigured-trail-redelivery-charges` quedó con SCS-C03 (encaje moderado: tareas 1.2.2 y 1.3.2).
 - [ ] #15 hub-and-spoke, #16 secretos, #17 egress/NAT.
 - [ ] Un patrón nuevo por mes, sin funciones nuevas en paralelo.
 
@@ -44,10 +45,10 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 
 ### 4. Pendientes de la maintainer (Settings de GitHub / Vercel)
 - [ ] Env `VERCEL_DEEP_CLONE=true` y secret `VERCEL_DEPLOY_HOOK_URL` (rebuild semanal).
-- [ ] Topic `hacktoberfest` en el repo.
-- [ ] Discussions (lo referencia el template de issues y F4-20).
-- [ ] Private vulnerability reporting (lo referencia SECURITY.md).
-- [ ] Labels `freshness`, `good first issue`, `dependencies`, `terraform`.
+- [x] Topics (incl. `hacktoberfest`) y descripción del repo aplicados (2026-10-24).
+- [x] Discussions habilitado (2026-10-24).
+- [ ] Private vulnerability reporting (lo referencia SECURITY.md): la API de GitHub responde 404 (lectura y escritura) con el token actual; se activa desde Settings → Code security → Private vulnerability reporting.
+- [x] Labels `freshness`, `good first issue`, `dependencies`, `terraform`, `reviewer` y `review-queue` creados (2026-10-24).
 - [ ] Decidir F4-21 (medir retención vs. "sin trackers"); si se adopta, actualizar README y D8.
 
 ### 5. Higiene técnica
