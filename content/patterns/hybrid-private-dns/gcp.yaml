@@ -27,21 +27,23 @@ gotchas:
   - id: return-route-35-199-192-0-19
     severity: networking
     title:
-      es: Las consultas reenviadas salen desde 35.199.192.0/19, y on-premises tiene que poder contestarle
-      en: Forwarded queries come from 35.199.192.0/19, and on-premises must be able to reply to it
+      es: Hacia targets Type 1 y 2 las consultas salen desde 35.199.192.0/19; con Type 2, on-premises necesita ruta
+      en: To Type 1 and 2 targets queries come from 35.199.192.0/19; with Type 2, on-premises needs a route to it
     body:
       es: >-
-        Cloud DNS no usa IPs de tu VPC para reenviar: toda consulta a un forwarding target sale desde
-        35.199.192.0/19. El firewall on-premises tiene que permitir UDP y TCP 53 desde ese rango, y on-premises
-        necesita una ruta de vuelta por los túneles VPN o attachments de Interconnect de la misma VPC. Con BGP eso
-        es un anuncio custom del Cloud Router. Sin la ruta, el DNS on-premises recibe la consulta y la respuesta
-        se pierde.
+        Cloud DNS usa el rango 35.199.192.0/19 para todos los clientes, y es el origen de las consultas a
+        targets Type 1 y Type 2 (IP interna de VPC y on-premises por VPN o Interconnect). Los targets Type 3 usan
+        los rangos de Google Public DNS, y en Type 4 el rango depende de las IPs a las que resuelve el nombre.
+        Para un target Type 2, on-premises necesita una ruta a 35.199.192.0/19 cuyo next hop esté en la misma VPC,
+        por un túnel Cloud VPN o un attachment de Interconnect. Con BGP eso es un anuncio de ruta custom en la
+        sesión BGP del Cloud Router.
       en: >-
-        Cloud DNS doesn't use your VPC's IPs to forward: every query to a forwarding target comes from
-        35.199.192.0/19. The on-premises firewall must allow UDP and TCP 53 from that range, and on-premises needs a
-        return route through the VPN tunnels or Interconnect attachments in the same VPC. With BGP that's a custom
-        advertisement on the Cloud Router. Without the route, the on-premises DNS gets the query and the reply is
-        lost.
+        Cloud DNS uses the 35.199.192.0/19 range for all customers, and it is the source of queries to Type 1 and
+        Type 2 targets (VPC internal IPs and on-premises over VPN or Interconnect). Type 3 targets use Google
+        Public DNS source ranges, and for Type 4 the range depends on the IPs the name resolves to. For a Type 2
+        target, on-premises needs a route to 35.199.192.0/19 whose next hop is in the same VPC, through a Cloud VPN
+        tunnel or a Cloud Interconnect VLAN attachment. With BGP that's a custom route advertisement on the Cloud
+        Router's BGP session.
     sources:
       - https://docs.cloud.google.com/dns/docs/zones/forwarding-zones
       - https://docs.cloud.google.com/dns/docs/server-policies-overview
