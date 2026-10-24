@@ -76,7 +76,20 @@ gh label create "good first issue" --repo OWNER/REPO 2>/dev/null || true
 `freshness` y `review-queue` los usan los issues automáticos de `freshness.yml`; `reviewer` y `content` los trae el
 template "Quiero revisar una nube".
 
-## 6. Decisión pendiente: medir retención (F4-21)
+## 6. Instalar Renovate (bot de dependencias)
+
+Habilita: PRs semanales de actualización de npm, acciones de GitHub (con el SHA fijado), providers de Terraform y
+plugins de tflint, según `renovate.json`. Es el único bot de dependencias del repo: se descartó Dependabot, así que
+**hasta instalar la app no se actualiza nada solo**.
+
+1. Instalá la app de Renovate en https://github.com/apps/renovate y dale acceso a este repo.
+2. Renovate abre un PR de onboarding en el primer ciclo; revisalo y mergealo.
+3. Comprobá que los PRs lleguen con el label `dependencies` (y `terraform` para los providers).
+
+Nota: el CI es la red de seguridad de esos PRs (validate, test, tflint y checkov). Mientras el CI de GitHub no corra
+por la facturación, no mergees PRs de Renovate sin correr `pnpm verify` y los tests de Terraform en local.
+
+## 7. Decisión pendiente: medir retención (F4-21)
 
 Cloudflare Web Analytics (sin cookies, sin perfilado) o solo métricas proxy (suscriptores del feed Atom, tráfico de
 GitHub, descargas del dataset). Si se adopta analytics, actualizar README y el diferencial D8 ("sin trackers") en
@@ -84,5 +97,5 @@ GitHub, descargas del dataset). Si se adopta analytics, actualizar README y el d
 
 ## Orden sugerido
 
-2 → 1 → 5 → 4 → 3. Lo primero deja que `prices.yml` funcione; los labels evitan que los workflows fallen al crear
+2 → 1 → 5 → 4 → 3 → 6. Lo primero deja que `prices.yml` funcione; los labels evitan que los workflows fallen al crear
 issues.
