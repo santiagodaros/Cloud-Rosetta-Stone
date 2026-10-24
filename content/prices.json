@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-24T17:48:58Z",
+  "generated_at": "2026-10-24T19:17:00Z",
   "currency": "USD",
   "prices": {
     "aws-alb": {
@@ -65,6 +65,13 @@
       "as_of": "2026-10-24",
       "ref": "AmazonRoute53 GZT83HBHCE5EGFNH: $0.125 per hour per Resolver Network Interface"
     },
+    "aws-s3-standard-storage": {
+      "unit_price": 0.023,
+      "unit": "gb-month",
+      "source": "api",
+      "as_of": "2026-10-24",
+      "ref": "AmazonS3 WP9ANXZGBYYSGJEA: $0.023 per GB - first 50 TB / month of storage used"
+    },
     "aws-secret": {
       "unit_price": 0.4,
       "unit": "month",
@@ -113,6 +120,13 @@
       "source": "api",
       "as_of": "2026-10-24",
       "ref": "Azure Firewall / Standard / Standard Deployment (1 Hour)"
+    },
+    "azure-front-door-premium-base": {
+      "unit_price": 330,
+      "unit": "month",
+      "source": "api",
+      "as_of": "2026-10-24",
+      "ref": "Azure Front Door / Premium / Premium Base Fees (1/Month)"
     },
     "azure-nat-gateway-hour": {
       "unit_price": 0.045,
@@ -218,6 +232,13 @@
       "source": "manual",
       "as_of": "2026-10-06",
       "ref": "https://cloud.google.com/dns/pricing"
+    },
+    "gcp-global-forwarding-rule": {
+      "unit_price": 0.025,
+      "unit": "hour",
+      "source": "manual",
+      "as_of": "2026-10-24",
+      "ref": "https://cloud.google.com/load-balancing/pricing"
     },
     "gcp-nat-external-ip": {
       "unit_price": 0.005,

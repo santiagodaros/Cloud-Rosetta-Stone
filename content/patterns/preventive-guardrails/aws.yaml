@@ -1,0 +1,189 @@
+provider: aws
+bindings:
+  policy:
+    service: { es: "AWS Organizations: Amazon S3 policy (declarative policy), con SCP y RCP como complemento", en: "AWS Organizations: Amazon S3 policy (declarative policy), with SCPs and RCPs as a complement" }
+    config: { es: "S3 policy con public_access_block_configuration en @@assign \"all\", adjunta a la raíz o a OUs", en: "S3 policy with public_access_block_configuration set to @@assign \"all\", attached to the root or to OUs" }
+    equivalence: partial
+    notes:
+      es: "Una S3 policy declara la configuración del servicio sin usar acciones de API; una SCP limita las acciones de los principals y no evalúa la configuración del recurso."
+      en: "An S3 policy declares the service's configuration without using API actions; an SCP limits principals' actions and doesn't evaluate the resource's configuration."
+  exception:
+    service: { es: "Alcance del attachment: OU o cuenta", en: "Attachment scope: OU or account" }
+    config: { es: "Attachment de la política a nivel de OU o de cuenta, para excluir las cuentas que necesitan buckets públicos", en: "Policy attachment at the OU or account level, to exclude the accounts that need public buckets" }
+    equivalence: partial
+    notes:
+      es: "La guía de buenas prácticas propone excluir esas cuentas con attachments a nivel de OU o cuenta, o concentrarlas en cuentas dedicadas."
+      en: "The best-practices guide proposes excluding those accounts with OU-level or account-level attachments, or consolidating them in dedicated accounts."
+  audit:
+    service: { es: "AWS CloudTrail + política efectiva (DescribeEffectivePolicy)", en: "AWS CloudTrail + effective policy (DescribeEffectivePolicy)" }
+    config: { es: "DescribeEffectivePolicy sobre cuentas representativas; CloudTrail para los attachments y la aplicación de la política", en: "DescribeEffectivePolicy on representative accounts; CloudTrail for attachments and policy enforcement" }
+gotchas:
+  - id: scp-skips-management-account-and-slr
+    severity: security
+    title:
+      es: "Las SCP no alcanzan a la cuenta de administración ni a las service-linked roles"
+      en: "SCPs don't reach the management account or service-linked roles"
+    body:
+      es: >-
+        Las SCP afectan solo a las cuentas miembro: no restringen a los usuarios ni a los roles de la cuenta de
+        administración y no afectan a ninguna service-linked role. Tampoco se puede restringir con una SCP una acción
+        hecha con los permisos de una service-linked role. Consecuencia: un recurso creado desde la cuenta de
+        administración queda fuera del guardrail. Mantené los workloads fuera de la cuenta de administración. La
+        documentación de declarative policies agrega que, a diferencia de las SCP y de las RCP, gobiernan las
+        service-linked roles; si ese hueco te importa, evaluá una política declarativa para esa configuración.
+      en: >-
+        SCPs affect only member accounts: they don't restrict users or roles in the management account and they don't
+        affect any service-linked role. An action performed with the permissions of a service-linked role can't be
+        restricted with an SCP either. Consequence: a resource created from the management account falls outside the
+        guardrail. Keep workloads out of the management account. The declarative policies documentation adds that,
+        unlike SCPs and RCPs, they govern service-linked roles; if that gap matters to you, consider a declarative
+        policy for that configuration.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_declarative.html
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [SCS-C03]
+  - id: scp-does-not-cover-external-principals
+    severity: security
+    title:
+      es: "Una SCP no frena a los principals externos que acceden a un bucket de la organización; para eso existen las RCP"
+      en: "An SCP doesn't stop external principals accessing an organization's bucket; that's what RCPs are for"
+    body:
+      es: >-
+        Las SCP restringen a los usuarios y roles de las cuentas de la organización y no afectan a los de cuentas
+        fuera de ella. En el ejemplo de la documentación, el bucket policy del bucket de la cuenta A (dentro de la
+        organización) da acceso a usuarios de la cuenta B (externa): la SCP de A no se aplica a esos usuarios. Una RCP
+        sí se aplica al bucket de A aunque lo acceda la cuenta B. La documentación indica usar una SCP para limitar a
+        los principals de tus cuentas y una RCP para restringir a los principals externos que acceden a recursos de
+        tus cuentas, y Amazon S3 figura entre los servicios que soportan RCP. Las RCP tampoco afectan a los recursos
+        de la cuenta de administración. Para exposición hacia fuera de la organización, una SCP sola no alcanza.
+      en: >-
+        SCPs restrict users and roles of the organization's accounts and don't affect those from accounts outside it.
+        In the documentation's example, the bucket policy of account A's bucket (inside the organization) grants
+        access to users in account B (external): A's SCP doesn't apply to those users. An RCP does apply to A's bucket
+        even when account B accesses it. The documentation says to use an SCP to limit principals in your accounts and
+        an RCP to restrict external principals accessing resources in your accounts, and Amazon S3 is among the
+        services that support RCPs. RCPs don't affect resources in the management account either. For exposure to
+        outside the organization, an SCP alone isn't enough.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [SCS-C03]
+  - id: s3-policy-scope-is-the-exception
+    severity: operations
+    title:
+      es: "Una S3 policy se aplica a todos los recursos S3 de las cuentas alcanzadas: la excepción se resuelve por OU o cuenta"
+      en: "An S3 policy applies to all S3 resources in the accounts it reaches: the exception is handled by OU or account"
+    body:
+      es: >-
+        Una S3 policy define la configuración de todos los recursos de Amazon S3 de las cuentas dentro de su alcance y
+        sobrescribe la configuración a nivel de cuenta. Con @@assign en "all" se habilitan juntas las cuatro opciones
+        de Block Public Access (BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets); la
+        documentación describe solo los valores "all" y "none". La guía de buenas prácticas indica que, si hay cuentas
+        que necesitan buckets públicos por una razón legítima (por ejemplo, un sitio estático), uses attachments a
+        nivel de OU o de cuenta para excluirlas, o concentres esa necesidad en cuentas dedicadas. Y si querés
+        administrar Block Public Access a nivel de cuenta, hay que deshabilitar el tipo de política S3 en la
+        organización. Diseñá las OU para que una excepción sea una OU o cuenta propia, no un bucket suelto en una
+        cuenta general.
+      en: >-
+        An S3 policy defines the configuration of all Amazon S3 resources in the accounts within its scope and
+        overrides the account-level configuration. With @@assign set to "all", the four Block Public Access settings
+        are enabled together (BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets); the
+        documentation describes only the values "all" and "none". The best-practices guide says that, if some accounts
+        need public buckets for a legitimate reason (for example, a static website), you should use OU-level or
+        account-level attachments to exclude them, or consolidate that need in dedicated accounts. And if you want to
+        manage Block Public Access at the account level, you must disable the S3 policy type at the organization.
+        Design the OUs so an exception is an OU or account of its own, not a loose bucket in a general account.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_s3.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_s3_syntax.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_s3_best_practices.html
+    verified_at: 2026-10-24
+    roles: [policy, exception]
+    exams: [SCS-C03]
+  - id: s3-policy-ignores-existing-public-access-does-not-remove-it
+    severity: security
+    title:
+      es: "Con la S3 policy, el acceso público que ya existía se ignora; no se elimina"
+      en: "With the S3 policy, public access that already existed is ignored; it isn't removed"
+    body:
+      es: >-
+        BlockPublicAcls y BlockPublicPolicy no cambian los permisos que ya otorgan acceso público a recursos de S3.
+        IgnorePublicAcls ignora todas las ACL que dan acceso público y RestrictPublicBuckets ignora el acceso público
+        y entre cuentas de los buckets o access points con policies que otorgan acceso público. Si la S3 policy se
+        desadjunta, las cuentas vuelven a su configuración previa a nivel de cuenta, así que lo que hoy se ignora
+        puede volver a tener efecto según cómo estuviera esa configuración. Inventariá y corregí los permisos públicos
+        en vez de confiar solo en que se ignoran.
+      en: >-
+        BlockPublicAcls and BlockPublicPolicy don't change permissions that already grant public access to S3
+        resources. IgnorePublicAcls ignores all ACLs that grant public access and RestrictPublicBuckets ignores public
+        and cross-account access for buckets or access points with policies that grant public access. If the S3 policy
+        is detached, accounts revert to their previous account-level configuration, so what is ignored today can take
+        effect again depending on how that configuration was. Inventory and fix public permissions instead of relying
+        only on their being ignored.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_s3_syntax.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_s3.html
+    verified_at: 2026-10-24
+    roles: [policy, audit]
+    exams: [SCS-C03]
+  - id: test-in-an-ou-before-the-root
+    severity: reliability
+    title:
+      es: "Probá las SCP y las RCP en una OU o en cuentas de prueba antes de subir a la raíz; quitar FullAWSAccess sin reemplazo corta todas las acciones"
+      en: "Test SCPs and RCPs in an OU or test accounts before moving up to the root; removing FullAWSAccess without a replacement cuts all actions"
+    body:
+      es: >-
+        AWS recomienda con énfasis no adjuntar una SCP a la raíz sin probar su impacto en las cuentas: crear una OU y
+        mover las cuentas de a una, o en grupos chicos, para no dejar a nadie sin acceso a servicios clave. Para las
+        RCP recomienda empezar por cuentas de prueba, subir por las OU y revisar en CloudTrail los errores de acceso
+        denegado. Además, no hay que quitar la política FullAWSAccess sin modificarla o reemplazarla por otra con las
+        acciones permitidas: si no, fallan todas las acciones de AWS de las cuentas miembro. Para una S3 policy,
+        después de cada cambio revisá la política efectiva de cuentas representativas con DescribeEffectivePolicy.
+      en: >-
+        AWS strongly recommends not attaching an SCP to the root without testing its impact on the accounts: create an
+        OU and move accounts into it one at a time, or in small groups, so you don't lock anyone out of key services.
+        For RCPs it recommends starting with test accounts, moving up through the OUs and reviewing CloudTrail for
+        Access Denied errors. Also, don't remove the FullAWSAccess policy without modifying it or replacing it with
+        another that has the allowed actions: otherwise all AWS actions from member accounts fail. For an S3 policy,
+        after each change check the effective policy of representative accounts with DescribeEffectivePolicy.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_s3_best_practices.html
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [SCS-C03]
+  - id: disabling-scp-type-detaches-everything
+    severity: reliability
+    title:
+      es: "Deshabilitar el tipo de política SCP en una raíz desadjunta todas las SCP, y los attachments se pierden"
+      en: "Disabling the SCP policy type in a root detaches all SCPs, and the attachments are lost"
+    body:
+      es: >-
+        Al deshabilitar el tipo de política SCP en una raíz, todas las SCP se desadjuntan automáticamente de todas las
+        entidades de Organizations (OU, organización y cuentas). Si volvés a habilitarlas, la raíz queda solo con la
+        política FullAWSAccess que se adjunta por defecto a todas las entidades; los attachments anteriores se pierden
+        y no se recuperan automáticamente, aunque se pueden readjuntar a mano. Consecuencia: los guardrails basados en
+        SCP dejan de aplicar de un momento a otro. Restringí quién puede deshabilitar tipos de política y, después de
+        rehabilitar el tipo, verificá los attachments.
+      en: >-
+        When you disable the SCP policy type in a root, all SCPs are automatically detached from all Organizations
+        entities (OUs, organization and accounts). If you re-enable them, the root reverts to only the FullAWSAccess
+        policy that is attached by default to all entities; the earlier attachments are lost and aren't automatically
+        recoverable, although you can reattach them manually. Consequence: SCP-based guardrails stop applying all at
+        once. Restrict who can disable policy types and, after re-enabling the type, verify the attachments.
+    sources:
+      - https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [SCS-C03]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: "El patrón no despliega cómputo ni red: son políticas y attachments de Organizations. No se verificó en una página de precios de AWS que estas políticas no tengan cargo, así que no se afirma ausencia de costos."
+    en: "The pattern deploys no compute or network: it's Organizations policies and attachments. It wasn't verified on an AWS pricing page that these policies are free, so no absence of costs is claimed."

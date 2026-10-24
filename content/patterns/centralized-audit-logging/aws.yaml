@@ -1,0 +1,178 @@
+provider: aws
+bindings:
+  audit-log:
+    service: { es: "AWS CloudTrail (trail de organización)", en: "AWS CloudTrail (organization trail)" }
+    config: { es: "Trail de organización multi-región con validación de integridad, creado desde la cuenta de management o un administrador delegado", en: "Multi-Region organization trail with log file integrity validation, created from the management account or a delegated administrator" }
+    equivalence: partial
+    notes:
+      es: "Es el registro de auditoría de AWS y entrega los logs como archivos a S3; no es CloudWatch Logs, el servicio que el diccionario asocia a logs centralizados. Las cuentas miembro ven el trail pero no pueden borrarlo, apagarlo ni cambiar qué eventos registra."
+      en: "It is AWS's audit record and delivers logs as files to S3; it isn't CloudWatch Logs, the service the dictionary associates with centralized logging. Member accounts see the trail but can't delete it, turn it off or change which events it logs."
+  destination:
+    service: Amazon S3
+    config: { es: "Decisión del módulo (main.tf): bucket en la cuenta de log archive con SSE-KMS, versionado, acceso público bloqueado y expiración por ciclo de vida", en: "Module decision (main.tf): bucket in the log archive account with SSE-KMS, versioning, public access blocked and lifecycle expiration" }
+    equivalence: partial
+    notes:
+      es: "El destino es un bucket S3 donde CloudTrail entrega los logs como archivos. El cifrado, el versionado y la retención son decisiones del módulo, no un comportamiento documentado del servicio."
+      en: "The destination is an S3 bucket where CloudTrail delivers the logs as files. Encryption, versioning and retention are the module's decisions, not documented service behavior."
+  access:
+    service: { es: "Bucket policy y key policy", en: "Bucket policy and key policy" }
+    config: { es: "Decisión del módulo (main.tf): CloudTrail escribe con aws:SourceArn del trail; si se pasa reader_role_arns, la bucket policy les da s3:GetObject y s3:ListBucket y la key policy les da kms:Decrypt", en: "Module decision (main.tf): CloudTrail writes with the trail's aws:SourceArn; if reader_role_arns is set, the bucket policy grants them s3:GetObject and s3:ListBucket and the key policy grants them kms:Decrypt" }
+gotchas:
+  - id: org-trail-validation-failures-dont-block
+    severity: reliability
+    title:
+      es: CloudTrail crea el trail de organización en las cuentas miembro aunque falle la validación del bucket o de la clave
+      en: CloudTrail creates the organization trail in member accounts even if the bucket or key validation fails
+    body:
+      es: >-
+        CloudTrail crea el trail de organización en las cuentas miembro aunque falle la validación de un recurso; la
+        documentación da como ejemplos una bucket policy incorrecta y permisos insuficientes para cifrar con una clave
+        KMS. Que el apply termine bien no prueba que haya entrega. Revisá get-trail-status: si hay un problema con el
+        bucket, el campo LatestDeliveryError muestra el error de S3 (solo aparece por problemas del bucket de destino,
+        no por requests que expiran). Corregilo con la bucket policy, o creando otro bucket y llamando a update-trail.
+      en: >-
+        CloudTrail creates the organization trail in member accounts even if a resource validation fails; the
+        documentation gives an incorrect bucket policy and insufficient permissions to encrypt with a KMS key as
+        examples. A successful apply doesn't prove there is delivery. Check get-trail-status: if there is a problem
+        with the bucket, the LatestDeliveryError field shows the S3 error (it only appears for problems with the
+        destination bucket, not for requests that time out). Fix it with the bucket policy, or by creating another
+        bucket and calling update-trail.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-troubleshooting.html
+    verified_at: 2026-10-24
+    roles: [audit-log, destination]
+    exams: [SCS-C03]
+  - id: org-bucket-policy-needs-org-statement
+    severity: iam
+    title:
+      es: En el ejemplo oficial, la bucket policy de un trail de organización necesita su propia sentencia y los logs son accesibles solo para management
+      en: In the official example, an organization trail's bucket policy needs its own statement and the logs are accessible only to management
+    body:
+      es: >-
+        Alcance de la fuente: el ejemplo oficial es de un bucket que pertenece a la cuenta de management de la
+        organización; la documentación no cubre un bucket en otra cuenta (como la de log archive de este módulo), así
+        que probalo en un entorno de prueba. El bucket de un trail de organización necesita una policy que deje a
+        CloudTrail escribir los logs de la organización: el ejemplo oficial tiene tres sentencias (GetBucketAcl,
+        PutObject en el prefijo de la cuenta de management y PutObject en el prefijo AWSLogs/o-<id de la
+        organización>/). El aws:SourceArn tiene que ser el ARN de un trail de la cuenta de management, con el ID de
+        esa cuenta. Esa policy no da acceso a usuarios de las cuentas miembro: por defecto, los logs de la
+        organización son accesibles solo para la cuenta de management. Listá de forma explícita a quién querés dar
+        lectura y no asumas que las cuentas miembro leen.
+      en: >-
+        Scope of the source: the official example is a bucket owned by the organization's management account; the
+        documentation doesn't cover a bucket in another account (such as this module's log archive account), so test
+        it in a non-production environment. The bucket of an organization trail needs a policy that lets CloudTrail
+        write the organization's logs: the official example has three statements (GetBucketAcl, PutObject on the
+        management account prefix and PutObject on the AWSLogs/o-<organization id>/ prefix). The aws:SourceArn must be
+        the ARN of a trail owned by the management account, using that account's ID. That policy doesn't give access
+        to users in member accounts: by default, the organization's log files are accessible only to the management
+        account. List explicitly who you want to grant read access to and don't assume member accounts can read.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create-s3-bucket-policy-for-cloudtrail.html
+    verified_at: 2026-10-24
+    roles: [destination, access]
+    exams: [SCS-C03]
+  - id: opt-in-home-region
+    severity: reliability
+    title:
+      es: Si la home Region de un trail multi-región es opt-in, solo envían actividad las cuentas que habilitaron esa región
+      en: If a multi-Region trail's home Region is opt-in, only accounts that enabled that Region send activity
+    body:
+      es: >-
+        Si el trail de organización es multi-región y su home Region es una región opt-in, las cuentas miembro no
+        envían actividad al trail a menos que habiliten esa región; el ejemplo de la documentación es Europe (Spain):
+        solo las cuentas que la habilitaron envían su actividad. Los trails de organización creados desde la consola
+        son multi-región. Elegí como home Region una región habilitada por defecto, o verificá que cada cuenta
+        habilitó la región; si una cuenta no aparece en el bucket, revisá este punto.
+      en: >-
+        If the organization trail is multi-Region and its home Region is an opt-in Region, member accounts don't send
+        activity to the trail unless they opt into that Region; the documentation's example is Europe (Spain): only
+        accounts that enabled it send their activity. Organization trails created in the console are multi-Region.
+        Choose a Region that is enabled by default as the home Region, or verify that each account enabled the Region;
+        if an account doesn't show up in the bucket, check this point.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html
+    verified_at: 2026-10-24
+    roles: [audit-log]
+    exams: [SCS-C03]
+  - id: kms-decrypt-before-enabling
+    severity: security
+    title:
+      es: "Los logs cifrados con KMS solo los lee quien tiene kms:Decrypt: dalo antes de asociar la clave al trail"
+      en: "Logs encrypted with KMS can only be read by whoever has kms:Decrypt: grant it before attaching the key to the trail"
+    body:
+      es: >-
+        Los usuarios con permiso para cifrar pero sin permiso de descifrado no pueden leer los logs cifrados; la
+        documentación indica dar permisos de descifrado a todos los usuarios que los necesiten antes de agregar la
+        clave a la configuración del trail. Además, si el trail tiene cifrado y la clave está deshabilitada o su
+        policy no está bien configurada para CloudTrail, CloudTrail no puede entregar los logs. La key policy necesita
+        GenerateDataKey* para CloudTrail con aws:SourceArn, kms:DescribeKey, el descifrado del servicio y kms:Decrypt
+        para los lectores con la condición del contexto de cifrado aws:cloudtrail:arn.
+      en: >-
+        Users who have encrypt permissions but no decrypt permissions can't read the encrypted logs; the documentation
+        says to give decrypt permissions to all users who need them before you add the key to the trail configuration.
+        Also, if encryption is enabled on a trail and the KMS key is disabled or its policy isn't correctly configured
+        for CloudTrail, CloudTrail can't deliver logs. The key policy needs GenerateDataKey* for CloudTrail with
+        aws:SourceArn, kms:DescribeKey, decryption for the service, and kms:Decrypt for readers with the
+        aws:cloudtrail:arn encryption context condition.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create-kms-key-policy-for-cloudtrail.html
+    verified_at: 2026-10-24
+    roles: [destination, access]
+    exams: [SCS-C03]
+  - id: log-file-validation-is-not-automatic
+    severity: security
+    title:
+      es: Habilitar la validación de integridad entrega archivos digest, pero no valida nada
+      en: Enabling integrity validation delivers digest files, but validates nothing
+    body:
+      es: >-
+        Con la validación de integridad habilitada, CloudTrail crea un hash por cada log que entrega y, cada hora,
+        entrega al bucket un archivo digest firmado, en una carpeta separada de la de los logs. Habilitarla no valida
+        la integridad de los archivos: eso se hace después, con la AWS CLI o con una herramienta propia. La CLI valida
+        los archivos en el lugar donde CloudTrail los entregó; si movés los logs a otro lugar, necesitás tu propia
+        herramienta. Definí quién corre la validación y cada cuánto.
+      en: >-
+        With integrity validation enabled, CloudTrail creates a hash for every log file it delivers and, every hour,
+        delivers a signed digest file to the bucket, in a folder separate from the log files. Enabling it doesn't
+        validate the integrity of the files: that is done afterwards, with the AWS CLI or a tool of your own. The CLI
+        validates files in the location where CloudTrail delivered them; if you move the logs elsewhere, you need your
+        own tool. Define who runs the validation and how often.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html
+    verified_at: 2026-10-24
+    roles: [audit-log, destination]
+    exams: [SCS-C03]
+  - id: misconfigured-trail-redelivery-charges
+    severity: cost
+    title:
+      es: Un trail mal configurado reintenta la entrega durante 30 días y esos intentos se cobran
+      en: A misconfigured trail retries delivery for 30 days and those attempts are charged
+    body:
+      es: >-
+        Si el trail está mal configurado (por ejemplo, el bucket no es alcanzable), CloudTrail intenta reentregar los
+        logs al bucket durante 30 días, y esos intentos de entrega se cobran como CloudTrail estándar. Para evitar los
+        cargos de un trail mal configurado hay que borrarlo. Corregí la bucket policy y la key policy antes de crear
+        el trail (en Terraform, con depends_on del trail sobre ambas) y revisá get-trail-status después.
+      en: >-
+        If the trail is misconfigured (for example, the bucket is unreachable), CloudTrail attempts to redeliver the
+        log files to the bucket for 30 days, and those delivery attempts are subject to standard CloudTrail charges.
+        To avoid charges on a misconfigured trail you need to delete it. Fix the bucket policy and the key policy
+        before creating the trail (in Terraform, with a depends_on of the trail on both) and check get-trail-status
+        afterwards.
+    sources:
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create-s3-bucket-policy-for-cloudtrail.html
+      - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-troubleshooting.html
+    verified_at: 2026-10-24
+    roles: [audit-log, destination]
+cost:
+  scales_to_zero: 'partial'
+  fixed_cost_drivers:
+    - es: "Cada clave KMS que creás cuesta 1 USD por mes (prorrateado por hora), según la página de precios de AWS KMS."
+      en: "Each KMS key you create costs USD 1 per month (prorated hourly), according to the AWS KMS pricing page."
+    - es: "El almacenamiento de los logs en S3: se paga por los objetos almacenados, y la página de precios de CloudTrail indica que S3 se cobra aparte."
+      en: "Storing the logs in S3: you pay for the objects stored, and the CloudTrail pricing page says S3 is charged separately."
+  notes:
+    es: Esta ficha no cuantifica costos. La clasificación partial de scales_to_zero es del autor, sin fuente que la respalde. Un trail mal configurado suma cargos por los reintentos de entrega (ver el gotcha misconfigured-trail-redelivery-charges).
+    en: This card doesn't quantify costs. The partial classification of scales_to_zero is the author's, with no source backing it. A misconfigured trail adds charges for delivery retries (see the misconfigured-trail-redelivery-charges gotcha).

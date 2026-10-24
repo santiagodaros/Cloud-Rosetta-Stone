@@ -7,5 +7,7 @@ describe('renderOgPng', () => {
     expect(png.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
     expect(png.readUInt32BE(16)).toBe(1200);
     expect(png.readUInt32BE(20)).toBe(630);
-  });
+    // La primera llamada carga fuentes y WASM en frío: con la suite en paralelo (el test del changelog corre `git log`)
+    // supera los 5 s por defecto. Aislado tarda menos de 1 s.
+  }, 30_000);
 });

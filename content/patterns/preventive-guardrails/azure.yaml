@@ -1,0 +1,129 @@
+provider: azure
+bindings:
+  policy:
+    service: { es: "Azure Policy (efecto deny) asignada en un management group", en: "Azure Policy (deny effect) assigned at a management group" }
+    config: { es: "Definición custom sobre Microsoft.Storage/storageAccounts/allowBlobPublicAccess; asignación en el management group raíz o en el de una unidad de negocio", en: "Custom definition on Microsoft.Storage/storageAccounts/allowBlobPublicAccess; assignment at the root management group or a business unit's" }
+  exception:
+    service: { es: "Policy exemptions (+ Azure RBAC sobre la asignación)", en: "Policy exemptions (+ Azure RBAC on the assignment)" }
+    config: { es: "Exemption por suscripción con expiresOn y metadata de quién la pidió y quién la aprobó", en: "Per-subscription exemption with expiresOn and metadata on who requested and who approved it" }
+    equivalence: partial
+    notes:
+      es: "La exemption es un objeto propio, hijo del scope exento, con categoría, vencimiento y metadata; no es una propiedad de la política."
+      en: "The exemption is an object of its own, a child of the exempt scope, with a category, an expiry and metadata; it isn't a property of the policy."
+  audit:
+    service: { es: "Azure Policy: estado de cumplimiento", en: "Azure Policy: compliance state" }
+    config: { es: "Informe de cumplimiento de la asignación; las exemptions figuran como Exempt", en: "The assignment's compliance report; exemptions show as Exempt" }
+gotchas:
+  - id: deny-blocks-changes-on-noncompliant-accounts
+    severity: operations
+    title:
+      es: "Con deny, una cuenta existente que no cumple no admite cambios de configuración hasta que se corrija"
+      en: "With deny, an existing account that doesn't comply can't take configuration changes until it's fixed"
+    body:
+      es: >-
+        El efecto deny impide la request de crear o actualizar un recurso que coincide con la regla: vuelve como 403
+        (Forbidden) antes de llegar al resource provider. Al evaluar los recursos que ya existían, los que coinciden
+        con la regla se marcan como no conformes. La documentación de Azure Storage agrega la consecuencia: con esta
+        política asignada, nadie puede hacer cambios de configuración en una cuenta existente cuyo acceso anónimo no
+        cumple, hasta que allowBlobPublicAccess pase a false. Antes de asignar con deny, inventariá las cuentas no
+        conformes y corregilas, para que el primer cambio de configuración de un equipo no falle con un 403.
+      en: >-
+        The deny effect stops the request to create or update a resource that matches the rule: it comes back as a 403
+        (Forbidden) before reaching the resource provider. When existing resources are evaluated, those that match the
+        rule are marked non-compliant. The Azure Storage documentation adds the consequence: with this policy
+        assigned, nobody can make configuration changes to an existing account whose anonymous access doesn't comply,
+        until allowBlobPublicAccess is set to false. Before assigning with deny, inventory the non-compliant accounts
+        and fix them, so a team's first configuration change doesn't fail with a 403.
+    sources:
+      - https://learn.microsoft.com/azure/governance/policy/concepts/effect-deny
+      - https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent
+    verified_at: 2026-10-24
+    roles: [policy]
+    exams: [SC-500, SC-100]
+  - id: audit-does-not-block
+    severity: security
+    title:
+      es: "Con efecto audit, la cuenta con acceso anónimo se crea igual"
+      en: "With the audit effect, the account with anonymous access is created anyway"
+    body:
+      es: >-
+        El efecto audit crea una advertencia cuando un recurso no cumple, pero no detiene la request. Si la asignación
+        queda en audit, la cuenta de almacenamiento se crea con acceso anónimo y solo figura como no conforme en el
+        informe de cumplimiento, que según la documentación puede tardar varios minutos en estar disponible tras crear
+        la asignación. Usá audit para medir y deny para prevenir. El módulo toma el efecto de un parámetro (effect) y
+        por defecto deniega.
+      en: >-
+        The audit effect creates a warning when a resource isn't compliant, but doesn't stop the request. If the
+        assignment stays on audit, the storage account is created with anonymous access and only shows up as
+        non-compliant in the compliance report, which per the documentation can take several minutes to become
+        available after the assignment is created. Use audit to measure and deny to prevent. The module takes the
+        effect from a parameter (effect) and denies by default.
+    sources:
+      - https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent
+      - https://learn.microsoft.com/azure/governance/policy/concepts/effect-basics
+    verified_at: 2026-10-24
+    roles: [policy, audit]
+    exams: [SC-500]
+  - id: donotenforce-evaluates-without-blocking
+    severity: operations
+    title:
+      es: "En modo DoNotEnforce la asignación evalúa el cumplimiento sin aplicar el efecto"
+      en: "In DoNotEnforce mode the assignment evaluates compliance without applying the effect"
+    body:
+      es: >-
+        enforcementMode controla el resultado de una política sobre los recursos sin iniciar el efecto. Con
+        DoNotEnforce el efecto no se aplica al crear o actualizar un recurso y no se escriben entradas en el Activity
+        log; la documentación lo recomienda para probar una asignación nueva, revisar el impacto en el cumplimiento o
+        validar la lógica antes de aplicarla. Consecuencia: mientras dure ese modo las requests que violan la regla no
+        se rechazan, y no hay denegaciones en el Activity log para revisar: el impacto se lee en el informe de
+        cumplimiento. Asigná primero con enforce = false, revisá qué cuentas salen no conformes y pasá a enforce =
+        true cuando el resultado sea el esperado.
+      en: >-
+        enforcementMode controls the outcome of a policy on resources without initiating the effect. With DoNotEnforce
+        the effect isn't applied when a resource is created or updated and no Activity log entries are written; the
+        documentation recommends it for testing a new assignment, reviewing the compliance impact or validating the
+        logic before enforcing. Consequence: while that mode lasts, requests that violate the rule aren't rejected,
+        and there are no denials in the Activity log to review: the impact is read in the compliance report. Assign
+        first with enforce = false, review which accounts come out non-compliant, and switch to enforce = true once
+        the result is the expected one.
+    sources:
+      - https://learn.microsoft.com/azure/governance/policy/concepts/assignment-structure
+    verified_at: 2026-10-24
+    roles: [policy, audit]
+    exams: [SC-500, SC-100]
+  - id: exemption-expiry-is-optional
+    severity: iam
+    title:
+      es: "La exemption de Azure Policy solo vence si le ponés expiresOn, y al vencer queda como registro"
+      en: "An Azure Policy exemption only expires if you set expiresOn, and once expired it stays as a record"
+    body:
+      es: >-
+        expiresOn es una propiedad opcional que define cuándo el recurso o la jerarquía deja de estar exento. Al
+        llegar la fecha la exemption no se borra: se conserva como registro, pero ya no se honra. El metadata admite
+        campos propios (la documentación ejemplifica requestedBy, approvedBy, approvedOn y ticketRef) y, para crearla,
+        hace falta además de Microsoft.Authorization/policyExemptions/write el verbo exempt/Action sobre la
+        asignación. La documentación recomienda las exemptions para escenarios acotados en el tiempo, donde el recurso
+        debe seguir bajo seguimiento; notScopes, en cambio, excluye el scope de la evaluación. Exigí expiresOn y
+        metadata de quién la pidió y la aprobó (el módulo los pide), reservá exempt/Action para quien aprueba y revisá
+        las exemptions con regularidad, borrando las vencidas.
+      en: >-
+        expiresOn is an optional property that sets when the resource or hierarchy is no longer exempt. When the date
+        arrives the exemption isn't deleted: it's kept as a record, but it's no longer honored. The metadata accepts
+        custom fields (the documentation gives requestedBy, approvedBy, approvedOn and ticketRef as examples) and, to
+        create one, you need the exempt/Action verb on the assignment in addition to
+        Microsoft.Authorization/policyExemptions/write. The documentation recommends exemptions for time-bound
+        scenarios where the resource should still be tracked; notScopes, by contrast, excludes the scope from
+        evaluation. Require expiresOn and metadata on who requested and approved it (the module asks for them),
+        reserve exempt/Action for the approver, and review exemptions regularly, deleting expired ones.
+    sources:
+      - https://learn.microsoft.com/azure/governance/policy/concepts/exemption-structure
+      - https://learn.microsoft.com/azure/governance/policy/concepts/assignment-structure
+    verified_at: 2026-10-24
+    roles: [exception, audit]
+    exams: [SC-500, SC-100]
+cost:
+  scales_to_zero: 'yes'
+  fixed_cost_drivers: []
+  notes:
+    es: "El patrón no despliega cómputo ni red: son definiciones, asignaciones y exemptions. No se verificó en una página de precios de Azure Policy si tiene cargo."
+    en: "The pattern deploys no compute or network: it's definitions, assignments and exemptions. Whether Azure Policy itself has a charge wasn't verified on an Azure Policy pricing page."

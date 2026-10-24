@@ -1,0 +1,139 @@
+provider: azure
+bindings:
+  audit-log:
+    service: Azure Monitor Activity Log
+    config: { es: "Un diagnostic setting por suscripción sobre todas las categorías del Activity Log", en: "One diagnostic setting per subscription over all Activity Log categories" }
+    equivalence: partial
+    notes:
+      es: "El Activity Log registra las operaciones de gestión (plano de control) de los recursos, forma parte de Azure Monitor y se exporta con un diagnostic setting. No es el workspace donde se consulta: ese es el destino."
+      en: "The Activity Log records management (control plane) operations on resources, is part of Azure Monitor and is exported with a diagnostic setting. It isn't the workspace where you query it: that is the destination."
+  destination:
+    service: Azure Monitor Logs (Log Analytics workspace)
+    config: { es: "Workspace en la suscripción central con la retención del patrón; opcional, copia en un storage account Standard con inmutabilidad", en: "Workspace in the central subscription with the pattern's retention; optionally, a copy in a Standard storage account with immutability" }
+  access:
+    service: Azure RBAC
+    config: { es: "Log Analytics Reader sobre el workspace; RBAC sobre las dos suscripciones para quien crea los diagnostic settings", en: "Log Analytics Reader on the workspace; RBAC on both subscriptions for whoever creates the diagnostic settings" }
+gotchas:
+  - id: activity-log-default-retention
+    severity: operations
+    title:
+      es: El Activity Log se borra a los 90 días; para conservarlo más hay que exportarlo con un diagnostic setting
+      en: The Activity Log is deleted after 90 days; to keep it longer you have to export it with a diagnostic setting
+    body:
+      es: >-
+        Azure Monitor recolecta el Activity Log sin configuración, pero retiene los eventos 90 días y después los
+        borra. Para conservarlos más tiempo hay que crear un diagnostic setting que los envíe a otro destino (un
+        workspace de Log Analytics, un storage account o Event Hubs). Importa por un dato en particular: el Activity
+        Log es el único lugar donde se guarda quién creó un recurso. Si ya exportabas con log profiles (el método
+        heredado), deshabilitá esa configuración al crear el diagnostic setting.
+      en: >-
+        Azure Monitor collects the Activity Log with no configuration, but it retains events for 90 days and then
+        deletes them. To keep them longer you have to create a diagnostic setting that sends them to another
+        destination (a Log Analytics workspace, a storage account or Event Hubs). It matters for one specific reason:
+        the Activity Log is the only place that stores who created a resource. If you were already exporting with log
+        profiles (the legacy method), disable that configuration when you create the diagnostic setting.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/platform/activity-log
+    verified_at: 2026-10-24
+    roles: [audit-log, destination]
+    exams: [AZ-104]
+  - id: management-group-setting-misses-subscription-events
+    severity: security
+    title:
+      es: Un diagnostic setting en el management group no captura todos los eventos de nivel suscripción
+      en: A diagnostic setting on the management group doesn't capture every subscription-level event
+    body:
+      es: >-
+        Un diagnostic setting de un management group exporta los eventos de ese grupo y de los que tiene debajo, pero
+        no todos los de nivel suscripción: Azure Resource Manager escribe una propiedad de jerarquía que no es
+        obligatoria, y los resource providers fuera de ARM no la completan. Los eventos de suscripción sin esa
+        propiedad no llegan a un setting de management group, ni siquiera al del root. Creá además un diagnostic
+        setting por suscripción con todas las categorías. Si los dos exportan al mismo destino vas a recibir eventos
+        duplicados: se combinan con una consulta que use un hash de todos los campos.
+      en: >-
+        A management group diagnostic setting exports the events of that group and of the groups below it, but not
+        every subscription-level event: Azure Resource Manager writes a hierarchy property that isn't required, and
+        resource providers outside ARM don't populate it. Subscription-level events without that property don't reach
+        a management group setting, not even the root one. Also create a diagnostic setting per subscription with all
+        categories. If both export to the same destination you receive duplicate events: combine them with a query
+        that uses a hash of all fields.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/platform/activity-log
+    verified_at: 2026-10-24
+    roles: [audit-log]
+    exams: [AZ-305, SC-100]
+  - id: destination-in-another-subscription-needs-rbac
+    severity: iam
+    title:
+      es: El destino puede estar en otra suscripción si quien crea el setting tiene acceso RBAC a las dos
+      en: The destination can be in another subscription if whoever creates the setting has RBAC access to both
+    body:
+      es: >-
+        El destino de un diagnostic setting no tiene que estar en la misma suscripción que el recurso que envía los
+        logs, siempre que quien configura el setting tenga el acceso RBAC adecuado sobre ambas suscripciones. Para un
+        destino en otro tenant de Microsoft Entra, la documentación indica usar Azure Lighthouse. El destino también
+        tiene que existir antes de crear el setting. Planificá los permisos de la identidad que aplica el Terraform
+        sobre la suscripción central y sobre cada suscripción de origen.
+      en: >-
+        A diagnostic setting's destination doesn't have to be in the same subscription as the resource sending the
+        logs, as long as whoever configures the setting has the appropriate RBAC access to both subscriptions. For a
+        destination in another Microsoft Entra tenant, the documentation says to use Azure Lighthouse. The destination
+        must also exist before you create the setting. Plan the permissions of the identity that applies the Terraform
+        on the central subscription and on every source subscription.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/platform/diagnostic-settings
+    verified_at: 2026-10-24
+    roles: [destination, access]
+    exams: [AZ-104, AZ-305]
+  - id: storage-destination-requirements
+    severity: reliability
+    title:
+      es: Un storage account de destino con redes virtuales exige permitir servicios de confianza y no puede ser Premium
+      en: A destination storage account with virtual networks must allow trusted services and can't be Premium
+    body:
+      es: >-
+        Los diagnostic settings no pueden acceder a un storage account con redes virtuales habilitadas, salvo que
+        actives "Allow trusted Microsoft services to bypass this firewall" en la cuenta. Los storage accounts Premium
+        no se admiten como destino; los Standard sí. Para archivar el Activity Log (auditoría, análisis estático o
+        backup), la documentación de diagnostic settings recomienda enviar los datos a almacenamiento inmutable para
+        evitar que se modifiquen, con una política de inmutabilidad configurada en la cuenta.
+      en: >-
+        Diagnostic settings can't access a storage account with virtual networks enabled, unless you enable "Allow
+        trusted Microsoft services to bypass this firewall" on the account. Premium storage accounts aren't supported
+        as a destination; Standard ones are. To archive the Activity Log (audit, static analysis or backup), the
+        diagnostic settings documentation recommends sending data to immutable storage to prevent modification, with
+        an immutability policy configured on the account.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/platform/diagnostic-settings
+      - https://learn.microsoft.com/azure/azure-monitor/platform/activity-log
+    verified_at: 2026-10-24
+    roles: [destination]
+    exams: [AZ-104, SC-500]
+  - id: activity-log-ingestion-cost
+    severity: cost
+    title:
+      es: Exportar el Activity Log a Log Analytics no cobra ingesta; la retención se cobra solo después de los 90 días
+      en: Exporting the Activity Log to Log Analytics has no ingestion charge; retention is charged only past 90 days
+    body:
+      es: >-
+        No hay cargos de ingesta de datos por los activity logs en un workspace de Log Analytics, y los cargos de
+        retención aplican solo al período que excede los 90 días por defecto. La regla es sobre el Activity Log: no la
+        extiendas a otros datos que mandes al mismo workspace. Como alternativa, la documentación de diagnostic
+        settings indica que un storage account puede ser más barato que otras opciones y conservarse indefinidamente.
+      en: >-
+        There are no data ingestion charges for activity logs in a Log Analytics workspace, and retention charges
+        apply only to the period beyond the default 90 days. The rule is about the Activity Log: don't extend it to
+        other data you send to the same workspace. As an alternative, the diagnostic settings documentation says a
+        storage account might be less expensive than other options and can be kept indefinitely.
+    sources:
+      - https://learn.microsoft.com/azure/azure-monitor/platform/activity-log
+      - https://learn.microsoft.com/azure/azure-monitor/platform/diagnostic-settings
+    verified_at: 2026-10-24
+    roles: [destination]
+    exams: [AZ-104, AZ-305]
+cost:
+  scales_to_zero: 'partial'
+  fixed_cost_drivers: []
+  notes:
+    es: Esta ficha no cuantifica costos. La clasificación partial de scales_to_zero es del autor, sin fuente que la respalde. El Activity Log no cobra ingesta en Log Analytics y su retención se cobra después de los 90 días (ver el gotcha activity-log-ingestion-cost).
+    en: This card doesn't quantify costs. The partial classification of scales_to_zero is the author's, with no source backing it. The Activity Log has no ingestion charge in Log Analytics and its retention is charged after 90 days (see the activity-log-ingestion-cost gotcha).

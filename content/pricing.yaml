@@ -92,6 +92,13 @@ meters:
     azure: { service: NAT Gateway, region: Global, match: { skuName: Standard, meterName: Standard Gateway } }
     docs: https://azure.microsoft.com/pricing/details/azure-nat-gateway/
 
+  - id: azure-front-door-premium-base
+    provider: azure
+    label: { es: 'Front Door Premium (tarifa base del perfil, por mes)', en: 'Front Door Premium (profile base fee, monthly)' }
+    unit: month
+    azure: { service: Azure Front Door Service, region: Zone 1, per: month, match: { skuName: Premium, meterName: Premium Base Fees } }
+    docs: https://azure.microsoft.com/pricing/details/frontdoor/
+
   # --- AWS (Price List bulk API: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html)
   - id: aws-resolver-eni
     provider: aws
@@ -167,6 +174,13 @@ meters:
     aws: { offer: AWSSecretsManager, match: { usagetype: USE1-AWSSecretsManager-Secrets } }
     docs: https://aws.amazon.com/secrets-manager/pricing/
 
+  - id: aws-s3-standard-storage
+    provider: aws
+    label: { es: 'S3 Standard — almacenamiento (GB-mes, primeros 50 TB)', en: 'S3 Standard — storage (GB-month, first 50 TB)' }
+    unit: gb-month
+    aws: { offer: AmazonS3, match: { usagetype: TimedStorage-ByteHrs } }
+    docs: https://aws.amazon.com/s3/pricing/
+
   # --- GCP (Cloud Billing Catalog API: https://docs.cloud.google.com/billing/docs/how-to/get-pricing-information-api)
   # La API pide key (secret GCP_BILLING_API_KEY). Sin key, el job usa `manual`, tomado del
   # SKU explorer oficial (https://cloud.google.com/skus) con el mismo SKU.
@@ -240,6 +254,14 @@ meters:
     gcp: { service: Cloud NGFW, description: 'Cloud NGFW Enterprise endpoint deployment' }
     manual: { unit_price: 1.75, verified_at: 2026-10-24, source: 'https://cloud.google.com/firewall/pricing' }
     docs: https://cloud.google.com/firewall/pricing
+
+  - id: gcp-global-forwarding-rule
+    provider: gcp
+    label: { es: 'Regla de reenvío global (por hora; tarifa de las primeras 5 reglas)', en: 'Global forwarding rule (hourly; first-5-rules rate)' }
+    unit: hour
+    gcp: { service: Compute Engine, description: 'Global forwarding rule' }
+    manual: { unit_price: 0.025, verified_at: 2026-10-24, source: 'https://cloud.google.com/load-balancing/pricing' }
+    docs: https://cloud.google.com/load-balancing/pricing
 
 floors:
   object-storage-ttl:
@@ -319,3 +341,29 @@ floors:
     # firewall_zones no tiene default: se asume 1 zona (el mínimo que valida el módulo), un endpoint por zona.
     gcp:
       - { meter: gcp-ngfw-endpoint, count: 1 }
+  protected-origin-cdn:
+    # Solo la tarifa base del perfil Premium; pedidos y transferencia no entran (cero tráfico).
+    azure:
+      - { meter: azure-front-door-premium-base, count: 1 }
+    # Con web_acl_arn = null (default) no se crea ni asocia WAF, así que el cargo por web ACL y por regla
+    # (el driver "solo si asociás WAF") no entra al piso; CloudFront pay-as-you-go no tiene cargo fijo.
+    aws: []
+    # Una sola global forwarding rule HTTPS: entra en la tarifa de las primeras 5 reglas.
+    gcp:
+      - { meter: gcp-global-forwarding-rule, count: 1 }
+  preventive-guardrails:
+    # Sin fixed_cost_drivers en las 3 nubes: son políticas (SCP/Azure Policy/org policy), sin cómputo ni red.
+    # No se verificó que el servicio de políticas sea gratis, por eso la ficha no lo afirma.
+    azure: []
+    aws: []
+    gcp: []
+  centralized-audit-logging:
+    # fixed_cost_drivers vacío en Azure y GCP: la ficha no cuantifica costos (ingesta y retención dependen del volumen).
+    azure: []
+    # El módulo crea una sola clave KMS. El bucket S3 va con 1 GB como unidad ilustrativa: el piso real con cero
+    # logs es 0, pero el driver de la ficha (almacenamiento en S3) exige un componente. El trail de organización
+    # no tiene cargo fijo propio (S3 se cobra aparte, según la página de precios de CloudTrail).
+    aws:
+      - { meter: aws-kms-key, count: 1 }
+      - { meter: aws-s3-standard-storage, count: 1 }
+    gcp: []

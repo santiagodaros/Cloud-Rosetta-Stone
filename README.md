@@ -68,7 +68,7 @@ Fase 3 en curso: 5 patrones en las 3 nubes, 74 gotchas con fuente oficial, 31 ca
 | Despliegue desde CI sin secretos (federación OIDC) | Federated identity credential | IAM OIDC provider + rol | Workload Identity Federation + service account |
 | DNS privado híbrido (on-premises ↔ nube) | DNS Private Resolver | Route 53 Resolver | Cloud DNS (inbound policy + forwarding) |
 
-En borrador, todavía sin publicar en el sitio (esperan que el CI valide el Terraform y una revisión humana): **secretos de aplicación** (`app-secrets`), **salida a internet controlada** (`controlled-egress`) y **hub-and-spoke con inspección centralizada** (`hub-and-spoke`). Sus 49 gotchas pasaron una verificación independiente contra las fuentes oficiales; ninguno tiene revisor externo todavía.
+En borrador, todavía sin publicar en el sitio (esperan una revisión humana de cada nube: `pnpm validate` no deja publicar un patrón sin al menos un gotcha con `verified_by` por nube): **secretos de aplicación** (`app-secrets`), **salida a internet controlada** (`controlled-egress`), **hub-and-spoke con inspección centralizada** (`hub-and-spoke`), **guardrails preventivos** (`preventive-guardrails`), **auditoría centralizada** (`centralized-audit-logging`) y **CDN con origen protegido** (`protected-origin-cdn`). Sus 91 gotchas pasaron una verificación independiente contra las fuentes oficiales y su Terraform pasa `fmt`, `validate`, `test`, tflint y checkov; ninguno tiene revisor externo todavía.
 
 ## Desarrollo local
 
