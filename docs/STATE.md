@@ -26,8 +26,9 @@ Estado vivo del proyecto. El hook rehydrate lo reinyecta tras /compact.
 
 ### 2. Patrones (meta: 12 a seis meses; hoy 5)
 - [x] Borradores construidos en rama `feat/new-patterns` (2026-10-24): `app-secrets` (#16), `controlled-egress` (#17), `hub-and-spoke` (#15), 49 gotchas. Cada uno lo escribió un agente y lo verificó otro contra las fuentes (32 confirmados, 14 parciales, 2 dudosos, 1 no verificable); los hallazgos se corrigieron con cita textual o recorte.
-- [ ] Para publicar cada uno: CI verde del Terraform (nunca se ejecutó localmente, no hay `terraform` en la máquina), filas en `content/pricing.yaml` (floors) y `content/terraform-map.yaml`, revisión humana, y recién ahí `status: published`.
-- [ ] Abiertos tras la corrección: `scales_to_zero: partial` provisional en GCP de hub-and-spoke (sin precio verificado del firewall endpoint); `terraform-map` y `pricing` sin cargar; los `#checkov:skip` de app-secrets se escribieron de memoria.
+- [x] Terraform validado localmente (2026-10-24) con las versiones del CI: `fmt`, `validate`, `test` (9 módulos nuevos), tflint 0.27.0 y checkov (432 pasan, 0 fallan, 69 skips con motivo en el código). Pisos de costo en `content/pricing.yaml` y filas en `content/terraform-map.yaml` cargados.
+- [ ] Para publicar cada uno: CI verde en GitHub, revisión humana de su nube (ver `docs/REVISORES.md`) y recién ahí `status: published`.
+- [ ] Abiertos: `scales_to_zero: partial` provisional en GCP de hub-and-spoke (sin precio verificado del firewall endpoint); NAT Gateway de Azure en controlled-egress usa el precio del SKU Standard como referencia (el módulo usa StandardV2, que la API de precios no publica); `ip_protocol = "all"` en GCP de controlled-egress no está confirmado contra la API de GCP; skips de checkov por alcance (`CKV2_AWS_63`, `CKV2_AWS_11`) y `CKV_AZURE_216` apoyado en la policy.
 - [ ] #15 hub-and-spoke, #16 secretos, #17 egress/NAT.
 - [ ] Un patrón nuevo por mes, sin funciones nuevas en paralelo.
 
