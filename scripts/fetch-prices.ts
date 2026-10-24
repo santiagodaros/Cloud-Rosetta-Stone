@@ -44,7 +44,7 @@ async function getJson(url: string, headers: Record<string, string> = {}): Promi
   }
 }
 
-const AWS_UNITS: Record<string, PriceUnit> = { hrs: 'hour', hours: 'hour', hour: 'hour', 'gb-mo': 'gb-month', month: 'month', mo: 'month' };
+const AWS_UNITS: Record<string, PriceUnit> = { keys: 'month', secrets: 'month', hourly: 'hour', hrs: 'hour', hours: 'hour', hour: 'hour', 'gb-mo': 'gb-month', month: 'month', mo: 'month' };
 const GCP_UNITS: Record<string, PriceUnit> = { h: 'hour', mo: 'month', 'GiBy.mo': 'gb-month', 'GiBy.h': 'hour' };
 
 // ---------------------------------------------------------------------------
